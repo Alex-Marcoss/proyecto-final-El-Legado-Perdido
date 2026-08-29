@@ -10,7 +10,7 @@ El desarrollo se realizará utilizando Java como lenguaje de programación y el 
 • Cómo Compilar y Ejecutar: 
 
 - Abrir **Git Bash**
--  Utilizar este comando: [git clone](https://github.com/Alex-Marcoss/proyecto-final)
+-  Utilizar este comando: [git clone](https://github.com/Alex-Marcoss/proyecto-final-El-Legado-Perdido/tree/main))
 -  Abrir el IDE y cargar el proyecto (File > import > Existing Grade Proyect)
 -  Buscar la clase **Lwjgl3Laucher.java** y ejecutarla (Run As > java Application)
 
