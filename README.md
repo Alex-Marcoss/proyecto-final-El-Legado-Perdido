@@ -1,33 +1,23 @@
 # ElLegadoPerdido
 
-A [libGDX](https://libgdx.com/) project generated with [gdx-liftoff](https://github.com/libgdx/gdx-liftoff).
+• Integrantes del Grupo: Facundo Sanzone y Alexia Marcos.
 
-This project was generated with a template including simple application launchers and an `ApplicationAdapter` extension that draws libGDX logo.
+• Descripción Corta del Juego: El objetivo principal del proyecto es diseñar y desarrollar un videojuego 2D aplicando los conceptos aprendidos en Programación Orientada a Objetos. Para ello se implementarán distintos sistemas que funcionarán de manera integrada, como el inventario, la recolección de recursos, la fabricación de herramientas, el combate, la construcción de estructuras y la supervivencia del personaje.
+El desarrollo se realizará utilizando Java como lenguaje de programación y el framework LibGDX para la creación del videojuego.
 
-## Platforms
+• Tecnologías Utilizadas: Java y el framework LibGDX.
 
-- `core`: Main module with the application logic shared by all platforms.
-- `lwjgl3`: Primary desktop platform using LWJGL3; was called 'desktop' in older docs.
+• Cómo Compilar y Ejecutar: 
 
-## Gradle
+- Abrir **Git Bash**
+-  Utilizar este comando: [git clone](https://github.com/Alex-Marcoss/proyecto-final)
+-  Abrir el IDE y cargar el proyecto (File > import > Existing Grade Proyect)
+-  Buscar la clase **Lwjgl3Laucher.java** y ejecutarla (Run As > java Application)
+-  
 
-This project uses [Gradle](https://gradle.org/) to manage dependencies.
-The Gradle wrapper was included, so you can run Gradle tasks using `gradlew.bat` or `./gradlew` commands.
-Useful Gradle tasks and flags:
+• Estado Actual del Proyecto: Configuración inicial
+y estructura del proyecto.
 
-- `--continue`: when using this flag, errors will not stop the tasks from running.
-- `--daemon`: thanks to this flag, Gradle daemon will be used to run chosen tasks.
-- `--offline`: when using this flag, cached dependency archives will be used.
-- `--refresh-dependencies`: this flag forces validation of all dependencies. Useful for snapshot versions.
-- `build`: builds sources and archives of every project.
-- `cleanEclipse`: removes Eclipse project data.
-- `cleanIdea`: removes IntelliJ project data.
-- `clean`: removes `build` folders, which store compiled classes and built archives.
-- `eclipse`: generates Eclipse project data.
-- `idea`: generates IntelliJ project data.
-- `lwjgl3:jar`: builds application's runnable jar, which can be found at `lwjgl3/build/libs`.
-- `lwjgl3:run`: starts the application.
-- `test`: runs unit tests (if any).
+**Enlace a la Wiki del Proyecto (El legado perdido):**
+[Ver la Propuesta Completa del Proyecto aquí](https://github.com/Alex-Marcoss/proyecto-final/wiki)
 
-Note that most tasks that are not specific to a single project can be run with `name:` prefix, where the `name` should be replaced with the ID of a specific project.
-For example, `core:clean` removes `build` folder only from the `core` project.
