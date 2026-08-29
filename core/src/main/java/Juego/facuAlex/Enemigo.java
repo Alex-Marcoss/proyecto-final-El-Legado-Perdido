@@ -1,4 +1,4 @@
-package Juego;
+package Juego.facuAlex;
 
 public class Enemigo {
 

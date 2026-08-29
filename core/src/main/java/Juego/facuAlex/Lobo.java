@@ -1,8 +1,8 @@
-package Juego;
+package Juego.facuAlex;
 
 public class Lobo extends Enemigo { // clase hija de enemigo, Criatura definida
 
-	public Lobo(String nombre, int vida, int daño) { // constructor
+	public Lobo() { // constructor
 		
 		super("Lobo",50,10);
 		

@@ -1,8 +1,8 @@
-package Juego;
+package Juego.facuAlex;
 
 public class Guardian extends Enemigo { // clase hija de enemigo, Criatura definida
 
-	public Guardian(String nombre, int vida, int daño) { // constructor
+	public Guardian() { // constructor
 		
 		super("Guardian del Templo",250,35);
 		

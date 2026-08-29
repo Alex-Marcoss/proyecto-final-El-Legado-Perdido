@@ -1,4 +1,4 @@
-package juego;
+package Juego.facuAlex;
 
 public class inventario{
 	
