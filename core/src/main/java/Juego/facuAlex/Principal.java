@@ -12,6 +12,7 @@ public class Principal extends ApplicationAdapter {
 
     @Override
     public void create() {
+    	System.out.println("El Legado Perdido iniciado correctamente");
         batch = new SpriteBatch();
         image = new Texture("libgdx.png");
     }
