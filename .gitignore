@@ -1,0 +1,15 @@
+# Gradle
+.gradle/
+build/
+
+# Eclipse
+.classpath
+.project
+.settings/
+
+# Compilados
+bin/
+*.class
+
+# Logs
+*.log
