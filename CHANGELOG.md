@@ -38,3 +38,15 @@
 - Se comentaron casi todas las clases para entender mejor el código y que sea mas legible para otro.
   
   Aclaración: Todas las implementaciones mencionadas anteriormente son lógicas, la parte grafica con libGDX todavia no fue implementada.
+
+## [Nuevos avances y mejoras] 2026-08-30
+### Agregados: 
+
+- Creacion de nuevas clases como animal, gema, estructuraRescate, objetivoFinal, comida, Union Sistemas, entre otras.
+- Implementacion logica del final del juego despues de derrotar al jefe, obtener la gema y reconstruir la estructura del rayo.
+- Implementacion de la comida, funcion comer y conexion con inventario para restar cantidades.
+- Implementacion de las mecanicas de pasar hambre y perder vida por falta de comida con el paso del tiempo (vinculado con ciclo dia/noche)
+
+
+
+
