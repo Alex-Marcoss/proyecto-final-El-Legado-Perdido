@@ -1,4 +1,7 @@
-package Juego.facuAlex;
+package Juego.facuAlex.sistemas;
+
+import Juego.facuAlex.inventario;
+import Juego.facuAlex.receta.Ingrediente;
 
 public class Construccion {
 

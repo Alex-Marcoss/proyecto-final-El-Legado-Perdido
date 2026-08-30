@@ -1,0 +1,290 @@
+C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\enemigos\generadorEnemigos.java:3: error: class GeneradorEnemigos is public, should be declared in a file named GeneradorEnemigos.java
+public class GeneradorEnemigos {
+       ^
+C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\herramientas\hacha.java:4: error: class Hacha is public, should be declared in a file named Hacha.java
+public class Hacha extends Herramienta {
+       ^
+C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\herramientas\herramienta.java:3: error: class Herramienta is public, should be declared in a file named Herramienta.java
+public class Herramienta extends Item {
+       ^
+C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\herramientas\pico.java:3: error: class Pico is public, should be declared in a file named Pico.java
+public class Pico extends Herramienta { 
+       ^
+C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\herramientas\tipoherramienta.java:4: error: enum tipoHerramienta is public, should be declared in a file named tipoHerramienta.java
+public enum tipoHerramienta { // creacion de tipos de herramienta
+       ^
+C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Inventario.java:3: error: class inventario is public, should be declared in a file named inventario.java
+public class inventario{
+       ^
+C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\objetomundo.java:3: error: class objetoMundo is public, should be declared in a file named objetoMundo.java
+public class objetoMundo {
+       ^
+C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\recetas\ingrediente.java:3: error: class Ingrediente is public, should be declared in a file named Ingrediente.java
+public class Ingrediente {
+       ^
+C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\recetas\receta.java:3: error: class Receta is public, should be declared in a file named Receta.java
+public class Receta {
+       ^
+C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Sistemas\Ciclo Dia y noche.java:3: error: class CicloDia is public, should be declared in a file named CicloDia.java
+public class CicloDia {
+       ^
+C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Sistemas\Combate.java:3: error: class combate is public, should be declared in a file named combate.java
+public class combate {
+       ^
+C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Sistemas\construccion.java:3: error: class Construccion is public, should be declared in a file named Construccion.java
+public class Construccion {
+       ^
+C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Jugador.java:200: error: cannot find symbol
+    public void construir(Construccion construccion) {
+                          ^
+  symbol:   class Construccion
+  location: class Jugador
+C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Principal.java:3: error: package com.badlogic.gdx does not exist
+import com.badlogic.gdx.ApplicationAdapter;
+                       ^
+C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Principal.java:4: error: package com.badlogic.gdx.graphics does not exist
+import com.badlogic.gdx.graphics.Texture;
+                                ^
+C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Principal.java:5: error: package com.badlogic.gdx.graphics.g2d does not exist
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+                                    ^
+C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Principal.java:6: error: package com.badlogic.gdx.utils does not exist
+import com.badlogic.gdx.utils.ScreenUtils;
+                             ^
+C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Principal.java:9: error: cannot find symbol
+public class Principal extends ApplicationAdapter {
+                               ^
+  symbol: class ApplicationAdapter
+C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Principal.java:10: error: cannot find symbol
+    private SpriteBatch batch;
+            ^
+  symbol:   class SpriteBatch
+  location: class Principal
+C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Principal.java:11: error: cannot find symbol
+    private Texture image;
+            ^
+  symbol:   class Texture
+  location: class Principal
+C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Sistemas\construccion.java:7: error: cannot find symbol
+    private Ingrediente[] materiales;
+            ^
+  symbol:   class Ingrediente
+  location: class Construccion
+C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Sistemas\construccion.java:9: error: cannot find symbol
+    public Construccion(String nombre, int vida, Ingrediente[] materiales) {
+                                                 ^
+  symbol:   class Ingrediente
+  location: class Construccion
+C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Sistemas\construccion.java:23: error: cannot find symbol
+    public Ingrediente[] getMateriales() {
+           ^
+  symbol:   class Ingrediente
+  location: class Construccion
+C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Sistemas\construccion.java:45: error: cannot find symbol
+    public boolean puedeConstruir(inventario inventario) {
+                                  ^
+  symbol:   class inventario
+  location: class Construccion
+C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Sistemas\construccion.java:62: error: cannot find symbol
+    public void gastarMateriales(inventario inventario) {
+                                 ^
+  symbol:   class inventario
+  location: class Construccion
+C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\enemigos\generadorEnemigos.java:15: error: constructor Lobo in class Lobo cannot be applied to given types;
+            return new Lobo();
+                   ^
+  required: String,int,int
+  found:    no arguments
+  reason: actual and formal argument lists differ in length
+C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\enemigos\generadorEnemigos.java:18: error: constructor Araña in class Araña cannot be applied to given types;
+            return new Araña(); // el enemigo varia dependiendo el math.random que elige un numero aleatorio
+                   ^
+  required: String,int,int
+  found:    no arguments
+  reason: actual and formal argument lists differ in length
+C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Principal.java:13: error: method does not override or implement a method from a supertype
+    @Override
+    ^
+C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Principal.java:15: error: cannot find symbol
+        batch = new SpriteBatch();
+                    ^
+  symbol:   class SpriteBatch
+  location: class Principal
+C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Principal.java:16: error: cannot find symbol
+        image = new Texture("libgdx.png");
+                    ^
+  symbol:   class Texture
+  location: class Principal
+C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Principal.java:19: error: method does not override or implement a method from a supertype
+    @Override
+    ^
+C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Principal.java:21: error: cannot find symbol
+        ScreenUtils.clear(0.15f, 0.15f, 0.2f, 1f);
+        ^
+  symbol:   variable ScreenUtils
+  location: class Principal
+C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Principal.java:27: error: method does not override or implement a method from a supertype
+    @Override
+    ^
+C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Sistemas\construccion.java:49: error: cannot find symbol
+            Ingrediente material = materiales[i];
+            ^
+  symbol:   class Ingrediente
+  location: class Construccion
+C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Sistemas\construccion.java:66: error: cannot find symbol
+            Ingrediente material = materiales[i];
+            ^
+  symbol:   class Ingrediente
+  location: class Construccion
+35 errors
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':core:compileJava' (registered by plugin class 'org.gradle.api.plugins.JavaBasePlugin').
+> Compilation failed; see the compiler output below.
+  C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\enemigos\generadorEnemigos.java:15: error: constructor Lobo in class Lobo cannot be applied to given types;
+              return new Lobo();
+                     ^
+    required: String,int,int
+    found:    no arguments
+    reason: actual and formal argument lists differ in length
+  C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\enemigos\generadorEnemigos.java:18: error: constructor Araña in class Araña cannot be applied to given types;
+              return new Araña(); // el enemigo varia dependiendo el math.random que elige un numero aleatorio
+                     ^
+    required: String,int,int
+    found:    no arguments
+    reason: actual and formal argument lists differ in length
+  C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Jugador.java:200: error: cannot find symbol
+      public void construir(Construccion construccion) {
+                            ^
+    symbol:   class Construccion
+    location: class Jugador
+  C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Principal.java:10: error: cannot find symbol
+      private SpriteBatch batch;
+              ^
+    symbol:   class SpriteBatch
+    location: class Principal
+  C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Principal.java:11: error: cannot find symbol
+      private Texture image;
+              ^
+    symbol:   class Texture
+    location: class Principal
+  C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Sistemas\construccion.java:7: error: cannot find symbol
+      private Ingrediente[] materiales;
+              ^
+    symbol:   class Ingrediente
+    location: class Construccion
+  C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Sistemas\construccion.java:9: error: cannot find symbol
+      public Construccion(String nombre, int vida, Ingrediente[] materiales) {
+                                                   ^
+    symbol:   class Ingrediente
+    location: class Construccion
+  C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Sistemas\construccion.java:23: error: cannot find symbol
+      public Ingrediente[] getMateriales() {
+             ^
+    symbol:   class Ingrediente
+    location: class Construccion
+  C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Sistemas\construccion.java:45: error: cannot find symbol
+      public boolean puedeConstruir(inventario inventario) {
+                                    ^
+    symbol:   class inventario
+    location: class Construccion
+  C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Sistemas\construccion.java:62: error: cannot find symbol
+      public void gastarMateriales(inventario inventario) {
+                                   ^
+    symbol:   class inventario
+    location: class Construccion
+  C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Principal.java:15: error: cannot find symbol
+          batch = new SpriteBatch();
+                      ^
+    symbol:   class SpriteBatch
+    location: class Principal
+  C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Principal.java:16: error: cannot find symbol
+          image = new Texture("libgdx.png");
+                      ^
+    symbol:   class Texture
+    location: class Principal
+  C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Principal.java:21: error: cannot find symbol
+          ScreenUtils.clear(0.15f, 0.15f, 0.2f, 1f);
+          ^
+    symbol:   variable ScreenUtils
+    location: class Principal
+  C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Sistemas\construccion.java:49: error: cannot find symbol
+              Ingrediente material = materiales[i];
+              ^
+    symbol:   class Ingrediente
+    location: class Construccion
+  C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Sistemas\construccion.java:66: error: cannot find symbol
+              Ingrediente material = materiales[i];
+              ^
+    symbol:   class Ingrediente
+    location: class Construccion
+  C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Principal.java:13: error: method does not override or implement a method from a supertype
+      @Override
+      ^
+  C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Principal.java:19: error: method does not override or implement a method from a supertype
+      @Override
+      ^
+  C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Principal.java:27: error: method does not override or implement a method from a supertype
+      @Override
+      ^
+  C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Principal.java:9: error: cannot find symbol
+  public class Principal extends ApplicationAdapter {
+                                 ^
+    symbol: class ApplicationAdapter
+  C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Principal.java:3: error: package com.badlogic.gdx does not exist
+  import com.badlogic.gdx.ApplicationAdapter;
+                         ^
+  C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Principal.java:4: error: package com.badlogic.gdx.graphics does not exist
+  import com.badlogic.gdx.graphics.Texture;
+                                  ^
+  C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Principal.java:5: error: package com.badlogic.gdx.graphics.g2d does not exist
+  import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+                                      ^
+  C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Principal.java:6: error: package com.badlogic.gdx.utils does not exist
+  import com.badlogic.gdx.utils.ScreenUtils;
+                               ^
+  C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\enemigos\generadorEnemigos.java:3: error: class GeneradorEnemigos is public, should be declared in a file named GeneradorEnemigos.java
+  public class GeneradorEnemigos {
+         ^
+  C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\herramientas\hacha.java:4: error: class Hacha is public, should be declared in a file named Hacha.java
+  public class Hacha extends Herramienta {
+         ^
+  C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\herramientas\herramienta.java:3: error: class Herramienta is public, should be declared in a file named Herramienta.java
+  public class Herramienta extends Item {
+         ^
+  C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\herramientas\pico.java:3: error: class Pico is public, should be declared in a file named Pico.java
+  public class Pico extends Herramienta { 
+         ^
+  C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\herramientas\tipoherramienta.java:4: error: enum tipoHerramienta is public, should be declared in a file named tipoHerramienta.java
+  public enum tipoHerramienta { // creacion de tipos de herramienta
+         ^
+  C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Inventario.java:3: error: class inventario is public, should be declared in a file named inventario.java
+  public class inventario{
+         ^
+  C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\objetomundo.java:3: error: class objetoMundo is public, should be declared in a file named objetoMundo.java
+  public class objetoMundo {
+         ^
+  C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\recetas\ingrediente.java:3: error: class Ingrediente is public, should be declared in a file named Ingrediente.java
+  public class Ingrediente {
+         ^
+  C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\recetas\receta.java:3: error: class Receta is public, should be declared in a file named Receta.java
+  public class Receta {
+         ^
+  C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Sistemas\Ciclo Dia y noche.java:3: error: class CicloDia is public, should be declared in a file named CicloDia.java
+  public class CicloDia {
+         ^
+  C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Sistemas\Combate.java:3: error: class combate is public, should be declared in a file named combate.java
+  public class combate {
+         ^
+  C:\Proyecto El legado perdido\proyecto-final-El-Legado-Perdido\core\src\main\java\Juego\facuAlex\Sistemas\construccion.java:3: error: class Construccion is public, should be declared in a file named Construccion.java
+  public class Construccion {
+         ^
+  35 errors
+
+* Try:
+> Check your code and dependencies to fix the compilation error(s)
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+
+BUILD FAILED in 6s

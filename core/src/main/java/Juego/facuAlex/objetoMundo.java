@@ -1,5 +1,8 @@
 package Juego.facuAlex;
 
+import Juego.facuAlex.Herramientas.tipoHerramienta;
+import Juego.facuAlex.recursos.Recursos;
+
 public class objetoMundo {
 	
     protected String nombre;

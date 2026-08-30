@@ -1,4 +1,4 @@
-package Juego.facuAlex;
+package Juego.facuAlex.Herramientas;
 
 
 public class hacha extends Herramienta {

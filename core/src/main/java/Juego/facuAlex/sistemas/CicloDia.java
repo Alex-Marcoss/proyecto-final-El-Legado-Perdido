@@ -1,18 +1,22 @@
-package Juego.facuAlex;
+package Juego.facuAlex.sistemas;
+
+import Juego.facuAlex.Jugador;
 
 public class CicloDia {
 
     private int dia;
     private int hora;
     private boolean esNoche;
-
-    public CicloDia() {
+    private Supervivencia sistemaSupervivencia;
+    
+    public CicloDia(Supervivencia sistemaSupervivencia) {
         dia = 1;
         hora = 6;
         esNoche = false;
+        this.sistemaSupervivencia = sistemaSupervivencia;
     }
 
-    public void pasarHora() {
+    public void pasarHora(Jugador jugador) {
 
         hora++;
 
@@ -22,6 +26,8 @@ public class CicloDia {
         }
 
         actualizarMomento();
+
+        sistemaSupervivencia.pasarHora(jugador);
     }
 
     private void actualizarMomento() {

@@ -1,5 +1,8 @@
 package Juego.facuAlex;
 
+import Juego.facuAlex.recursos.Item;
+import Juego.facuAlex.recursos.Recursos;
+
 public class inventario{
 	
 	Item[] items; 
@@ -54,7 +57,7 @@ public class inventario{
 	// -------------------------------------------------------------------------------- 
 	// Verificacion y gasto de recursos
 	
-	// verificacion
+	// verificacion recurso
 	
 	public boolean tieneRecurso(String nombre, int cantidad) {
 
@@ -73,6 +76,23 @@ public class inventario{
 
 	    return false;
 	}
+	
+	// -------------------------------------------------------------------------------
+	
+	//verificacion item
+	
+	public boolean tieneItem(String nombre) {
+
+	    for (int i = 0; i < cantidad; i++) {
+
+	        if (items[i].getNombre().equals(nombre)) {
+	            return true;
+	        }
+	    }
+
+	    return false;
+	}
+	
 	
 	// ---------------------------------- Gasto  ---------------------------------------------- 
 	
@@ -98,6 +118,12 @@ public class inventario{
 
 	    return false;
 	}
+	
+	// ----------------------------------------------------------------------------------------
+	
+	
+	
+	// -------------------------------------------------------------------------------------------------
 	
 	
 	

@@ -1,4 +1,4 @@
-package Juego.facuAlex;
+package Juego.facuAlex.enemigos;
 
 public class Araña extends Enemigo { // clase hija de enemigo, Criatura definida
 

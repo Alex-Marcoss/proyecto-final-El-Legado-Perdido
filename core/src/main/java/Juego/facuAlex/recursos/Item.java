@@ -1,8 +1,8 @@
-package Juego.facuAlex;
+package Juego.facuAlex.recursos;
 
 public class Item{
 	
-	String nombre;
+	protected String nombre;
 	
 	public Item(String nombre) { // constructor
 		this.nombre = nombre;

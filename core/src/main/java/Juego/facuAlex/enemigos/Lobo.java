@@ -1,4 +1,4 @@
-package Juego.facuAlex;
+package Juego.facuAlex.enemigos;
 
 public class Lobo extends Enemigo { // clase hija de enemigo, Criatura definida
 

@@ -1,4 +1,7 @@
-package Juego.facuAlex;
+package Juego.facuAlex.recursos;
+
+import Juego.facuAlex.objetoMundo;
+import Juego.facuAlex.Herramientas.tipoHerramienta;
 
 public class roca extends objetoMundo {
 

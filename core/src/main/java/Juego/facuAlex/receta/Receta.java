@@ -1,4 +1,7 @@
-package Juego.facuAlex;
+package Juego.facuAlex.receta;
+
+import Juego.facuAlex.inventario;
+import Juego.facuAlex.recursos.Item;
 
 public class Receta {
 

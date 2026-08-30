@@ -1,4 +1,4 @@
-package Juego.facuAlex;
+package Juego.facuAlex.receta;
 
 public class Ingrediente {
 

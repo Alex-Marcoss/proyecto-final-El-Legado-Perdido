@@ -1,4 +1,6 @@
-package Juego.facuAlex;
+package Juego.facuAlex.Herramientas;
+
+import Juego.facuAlex.recursos.Item;
 
 public class Herramienta extends Item {
 

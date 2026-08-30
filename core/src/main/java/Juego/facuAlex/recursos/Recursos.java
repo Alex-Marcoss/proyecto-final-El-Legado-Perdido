@@ -1,4 +1,4 @@
-package Juego.facuAlex;
+package Juego.facuAlex.recursos;
 
 public class Recursos extends Item{
 

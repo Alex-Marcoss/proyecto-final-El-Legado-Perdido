@@ -1,4 +1,6 @@
-package Juego.facuAlex;
+package Juego.facuAlex.enemigos;
+
+import Juego.facuAlex.sistemas.CicloDia;
 
 public class GeneradorEnemigos {
 

@@ -1,4 +1,4 @@
-package Juego.facuAlex;
+package Juego.facuAlex.Herramientas;
 
 
 public enum tipoHerramienta { // creacion de tipos de herramienta
