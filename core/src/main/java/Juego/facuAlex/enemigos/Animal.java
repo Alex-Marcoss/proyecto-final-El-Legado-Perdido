@@ -1,26 +1,27 @@
 package Juego.facuAlex.enemigos;
 
+import Juego.facuAlex.recursos.Recursos;
 
 public class Animal extends Enemigo {
 
-    private Comida comida;
-    private boolean comidaObtenida;
+    private Recursos[] drops;
+    private boolean dropsObtenidos;
 
-    public Animal(String nombre, int vida, int daño, Comida comida) {
+    public Animal(String nombre, int vida, int daño, Recursos[] drops) {
 
         super(nombre, vida, daño);
 
-        this.comida = comida;
-        this.comidaObtenida = false;
+        this.drops = drops;
+        this.dropsObtenidos = false;
     }
 
-    public Comida obtenerComida() {
+    public Recursos[] obtenerDrops() {
 
-        if (!estaVivo() && !comidaObtenida) {
+        if (!estaVivo() && !dropsObtenidos) {
 
-            comidaObtenida = true;
+            dropsObtenidos = true;
 
-            return comida;
+            return drops;
         }
 
         return null;
