@@ -1,6 +1,5 @@
 package Juego.facuAlex.enemigos;
 
-import Juego.facuAlex.recursos.Comida;
 
 public class Animal extends Enemigo {
 
@@ -10,6 +9,7 @@ public class Animal extends Enemigo {
     public Animal(String nombre, int vida, int daño, Comida comida) {
 
         super(nombre, vida, daño);
+
         this.comida = comida;
         this.comidaObtenida = false;
     }
