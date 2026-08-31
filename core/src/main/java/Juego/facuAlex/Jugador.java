@@ -338,7 +338,40 @@ public class Jugador {
         construccion.getNombre()
     );
 }
+// -------------------------------------------------
 
+	public void recogerDropsAnimal(Animal animal) {
+
+    Recursos[] drops = animal.obtenerDrops();
+
+    if (drops == null) {
+
+        System.out.println(
+            "Este animal no tiene recursos para entregar."
+        );
+
+        return;
+    }
+
+    for (int i = 0; i < drops.length; i++) {
+
+        inventario.agregarRecurso(
+            drops[i],
+            drops[i].getCantidad()
+        );
+
+        System.out.println(
+            "Conseguiste "
+            + drops[i].getCantidad()
+            + " de "
+            + drops[i].getNombre()
+            + "."
+        );
+    }
+}
+
+
+	
 }
 
 
