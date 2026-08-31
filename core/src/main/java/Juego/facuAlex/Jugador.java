@@ -17,6 +17,8 @@ public class Jugador {
 	int hambre;
 	int energia;
 	private Herramienta herramientaEquipada;
+	private float posicionX;
+	private float posicionY;
 	
 	inventario inventario;
 	
@@ -28,7 +30,27 @@ public class Jugador {
 		this.hambre = 100;
 		this.energia = 100;
 		this.inventario = new inventario();
+		this.posicionX = 0;
+		this.posicionY = 0;
 	}
+	
+	
+	// ------------------------ Movimientos -------------------------------
+	
+	public void mover(float x, float y) {
+
+	    posicionX += x;
+	    posicionY += y;
+	}
+	
+	public float getPosicionX() {
+	    return posicionX;
+	}
+
+	public float getPosicionY() {
+	    return posicionY;
+	}
+	
 	
 	// -------------------------------------
 	// Recoleccion de items y mostrar de inventario
@@ -367,12 +389,15 @@ public class Jugador {
             + drops[i].getNombre()
             + "."
         );
-    }
-}
+    	}
+	}
 
-
+	// ----------------------------------------------
+	
+	
+	
+	
 	
 }
-
 
 
