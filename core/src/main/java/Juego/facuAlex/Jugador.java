@@ -2,6 +2,7 @@ package Juego.facuAlex;
 
 import Juego.facuAlex.Herramientas.Herramienta;
 import Juego.facuAlex.Herramientas.tipoHerramienta;
+import Juego.facuAlex.Mapa.Mapa;
 import Juego.facuAlex.enemigos.Animal;
 import Juego.facuAlex.enemigos.Enemigo;
 import Juego.facuAlex.receta.Receta;
@@ -9,6 +10,7 @@ import Juego.facuAlex.recursos.Comida;
 import Juego.facuAlex.recursos.Item;
 import Juego.facuAlex.recursos.Recursos;
 import Juego.facuAlex.sistemas.Construccion;
+import Juego.facuAlex.sistemas.Energia;
 
 public class Jugador {
 
@@ -19,38 +21,68 @@ public class Jugador {
 	private Herramienta herramientaEquipada;
 	private float posicionX;
 	private float posicionY;
+	private Energia sistemaEnergia;
 	
 	inventario inventario;
 	
 	// -------------------------------------
 	
+
 	public Jugador(String nombre) { // constructor jugador
-		this.nombre = nombre;
-		this.vida = 100 ;
-		this.hambre = 100;
-		this.energia = 100;
-		this.inventario = new inventario();
-		this.posicionX = 0;
-		this.posicionY = 0;
+
+	    this.nombre = nombre;
+	    this.vida = 100;
+	    this.hambre = 100;
+	    this.energia = 100;
+	    this.inventario = new inventario();
+	    this.posicionX = 0;
+	    this.posicionY = 0;
+	    this.sistemaEnergia = new Energia(5, 3);
 	}
 	
 	
 	// ------------------------ Movimientos -------------------------------
 	
-	public void mover(float x, float y) {
+	
+	public void mover(float x, float y, Mapa mapa) {
 
-	    posicionX += x;
-	    posicionY += y;
+	    float nuevaX = posicionX + x;
+	    float nuevaY = posicionY + y;
+
+	    if (mapa.estaDentro(nuevaX, nuevaY)) {
+
+	        posicionX = nuevaX;
+	        posicionY = nuevaY;
+
+	    } else {
+
+	        System.out.println("No podes salir del mapa.");
+	    }
 	}
 	
-	public float getPosicionX() {
-	    return posicionX;
-	}
+	public void correr(float x, float y, Mapa mapa) {
 
-	public float getPosicionY() {
-	    return posicionY;
+	    int energiaNecesaria = 2;
+
+	    if (energia < energiaNecesaria) {
+	        System.out.println("No tenes suficiente energia para correr.");
+	        return;
+	    }
+
+	    float nuevaX = posicionX + x;
+	    float nuevaY = posicionY + y;
+
+	    if (mapa.estaDentro(nuevaX, nuevaY)) {
+
+	        posicionX = nuevaX;
+	        posicionY = nuevaY;
+
+	        gastarEnergia(energiaNecesaria);
+
+	    } else {
+	        System.out.println("No podes salir del mapa.");
+	    }
 	}
-	
 	
 	// -------------------------------------
 	// Recoleccion de items y mostrar de inventario
@@ -104,11 +136,16 @@ public class Jugador {
 	//  ----------------------------- vida -----------------------------
 	
 	public void recibirDanio(int cantidad) {
-		vida = vida - cantidad;
-		if (vida < 0) {
-			vida = 0;
-		}
-		
+	    vida = vida - cantidad;
+
+	    if (vida < 0) {
+	        vida = 0;
+	    }
+
+	    if (vida == 0) {
+	        System.out.println("El jugador ha muerto.");
+	        System.out.println("GAME OVER");
+	    }
 	}
 	
 	public void curar(int cantidad) {
@@ -121,16 +158,25 @@ public class Jugador {
 		
 	}
 	
+	public boolean estaVivo() {
+	    return vida > 0;
+	}
+	
+	public boolean gameOver() {
+	    return vida <= 0;
+	}
+	
 	// ----------------------------- Energia -----------------------------
 	
 	public void gastarEnergia(int cantidad) {
-		
-		energia = energia - cantidad;
-		
-		if (energia < 0) {
-			energia = 0;
-		}
-		
+
+	    energia = energia - cantidad;
+
+	    if (energia < 0) {
+	        energia = 0;
+	    }
+
+	    sistemaEnergia.registrarGasto();
 	}
 	
 	public void recuperarEnergia(int cantidad) {
@@ -140,6 +186,10 @@ public class Jugador {
 			energia = 100;
 		}
 
+	}
+	
+	public void actualizarEnergia(float segundos) {
+	    sistemaEnergia.actualizar(this, segundos);
 	}
 
 	
@@ -274,10 +324,22 @@ public class Jugador {
 	    }
 
 	    int daño = 20;
+	    int energiaNecesaria = 5;
 
+	    // Comprobar energía
+	    if (energia < energiaNecesaria) {
+
+	        System.out.println(
+	            "No tenes suficiente energia para atacar."
+	        );
+
+	        return;
+	    }
+
+	    // Realizar ataque
 	    enemigo.recibirDaño(daño);
 
-	    gastarEnergia(5);
+	    gastarEnergia(energiaNecesaria);
 
 	    System.out.println(
 	        "Atacaste a " + enemigo.getNombre() +
@@ -285,39 +347,47 @@ public class Jugador {
 	    );
 
 	    if (!enemigo.estaVivo()) {
+
 	        System.out.println(
 	            enemigo.getNombre() + " fue derrotado."
 	        );
 	    }
 	}
+	
 	// ----------------------------------------------------------
 	
 	// obtener comida
 	
-	 public void ObtenerComida(Animal animal) {
+	public void recogerDropsAnimal(Animal animal) {
 
-    Comida comida = animal.obtenerComida();
+	    Recursos[] drops = animal.obtenerDrops();
 
-    if (comida == null) {
-        System.out.println(
-            "El animal no puede entregar comida."
-        );
-        return;
-    }
+	    if (drops == null) {
 
-    inventario.agregarRecurso(
-        comida,
-        comida.getCantidad()
-    );
+	        System.out.println(
+	            "Este animal no tiene recursos para entregar."
+	        );
 
-    System.out.println(
-        "Conseguiste " +
-        comida.getCantidad() +
-        " de " +
-        comida.getNombre() +
-        "."
-    );
-}
+	        return;
+	    }
+
+	    for (int i = 0; i < drops.length; i++) {
+
+	        inventario.agregarRecurso(
+	            drops[i],
+	            drops[i].getCantidad()
+	        );
+
+	        System.out.println(
+	            "Conseguiste "
+	            + drops[i].getCantidad()
+	            + " de "
+	            + drops[i].getNombre()
+	            + "."
+	        );
+	    	}
+		}
+
 	
 	
 	// ---------------------------------------------------------------------------------
@@ -362,36 +432,7 @@ public class Jugador {
 }
 // -------------------------------------------------
 
-	public void recogerDropsAnimal(Animal animal) {
-
-    Recursos[] drops = animal.obtenerDrops();
-
-    if (drops == null) {
-
-        System.out.println(
-            "Este animal no tiene recursos para entregar."
-        );
-
-        return;
-    }
-
-    for (int i = 0; i < drops.length; i++) {
-
-        inventario.agregarRecurso(
-            drops[i],
-            drops[i].getCantidad()
-        );
-
-        System.out.println(
-            "Conseguiste "
-            + drops[i].getCantidad()
-            + " de "
-            + drops[i].getNombre()
-            + "."
-        );
-    	}
-	}
-
+	
 	// ----------------------------------------------
 	
 	

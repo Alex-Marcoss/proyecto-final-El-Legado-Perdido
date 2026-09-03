@@ -1,5 +1,7 @@
 package Juego.facuAlex.enemigos;
 
+import Juego.facuAlex.Jugador;
+
 public class Enemigo {
 
 	    private String nombre;
@@ -48,6 +50,34 @@ public class Enemigo {
 	        System.out.println("Daño: " + daño);
 	    }
     // -----------------------------------------------------------------------
+	    
+	    public void atacar(Jugador jugador) {
+
+	        if (jugador == null) {
+	            return;
+	        }
+
+	        if (!estaVivo()) {
+	            return;
+	        }
+
+	        if (!jugador.estaVivo()) {
+	            return;
+	        }
+
+	        jugador.recibirDanio(daño);
+
+	        if (jugador.estaVivo()) {
+	            System.out.println(
+	                getNombre() +
+	                " te atacó y causó " +
+	                daño +
+	                " de daño."
+	            );
+	        }
+	    }
+	    
+	    
 }    
 	
 	

@@ -1,19 +1,42 @@
 package Juego.facuAlex.sistemas;
 
+import Juego.facuAlex.Jugador;
 import Juego.facuAlex.enemigos.Enemigo;
 
 public class combate {
 
-    public void atacar(Enemigo enemigo, int daño) {
+    private static final int ENERGIA_ATAQUE = 5;
 
-        enemigo.recibirDaño(daño);
+    public void atacar(Jugador jugador, Enemigo enemigo) {
 
-        System.out.println(
-            "El enemigo recibió " + daño + " de daño."
-        );
+        if (jugador == null || enemigo == null) {
+            return;
+        }
+
+        if (!jugador.estaVivo()) {
+            return;
+        }
 
         if (!enemigo.estaVivo()) {
-            System.out.println("El enemigo fue derrotado.");
+            System.out.println(
+                enemigo.getNombre() +
+                " ya esta derrotado."
+            );
+            return;
+        }
+
+        if (jugador.getEnergia() < ENERGIA_ATAQUE) {
+            System.out.println(
+                "No tenes suficiente energia para atacar."
+            );
+            return;
+        }
+
+        jugador.atacar(enemigo);
+
+        // El enemigo SOLO ataca si ambos siguen vivos
+        if (jugador.estaVivo() && enemigo.estaVivo()) {
+            enemigo.atacar(jugador);
         }
     }
 }

@@ -1,3 +1,4 @@
+
 package Juego.facuAlex;
 
 import com.badlogic.gdx.ApplicationAdapter;
@@ -5,33 +6,34 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.ScreenUtils;
 
+import Juego.facuAlex.Mapa.Mapa;
+import Juego.facuAlex.Mapa.Zona;
 import Juego.facuAlex.enemigos.Animal;
-import Juego.facuAlex.enemigos.Araña;
-import Juego.facuAlex.enemigos.Guardian;
-import Juego.facuAlex.receta.Ingrediente;
-import Juego.facuAlex.recursos.Comida;
-import Juego.facuAlex.recursos.Gema;
-import Juego.facuAlex.sistemas.CicloDia;
-import Juego.facuAlex.sistemas.EstructuraRescate;
+import Juego.facuAlex.enemigos.Vaca;
 import Juego.facuAlex.sistemas.ObjetivoJuego;
-import Juego.facuAlex.sistemas.Supervivencia;
-import Juego.facuAlex.sistemas.UnionSistema;
+import Juego.facuAlex.sistemas.combate;
+import Juego.facuAlex.enemigos.Gallina;
+import Juego.facuAlex.enemigos.Guardian;
 
-/** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 public class Principal extends ApplicationAdapter {
+
     private SpriteBatch batch;
     private Texture image;
 
     @Override
     public void create() {
-    	System.out.println("El Legado Perdido iniciado correctamente");
+
+        System.out.println("El Legado Perdido iniciado correctamente");
+
         batch = new SpriteBatch();
         image = new Texture("libgdx.png");
     }
 
     @Override
     public void render() {
+
         ScreenUtils.clear(0.15f, 0.15f, 0.2f, 1f);
+
         batch.begin();
         batch.draw(image, 140, 210);
         batch.end();
@@ -39,63 +41,37 @@ public class Principal extends ApplicationAdapter {
 
     @Override
     public void dispose() {
+
         batch.dispose();
         image.dispose();
     }
-    
-    
+
     public static void main(String[] args) {
 
+  
+    	Mapa mapa = new Mapa(900, 600);
+
+    	Jugador jugador = new Jugador("Facu");
+
+    	System.out.println("Energia inicial: " + jugador.getEnergia());
+
+    	jugador.correr(10, 0, mapa);
+
+    	System.out.println("Energia despues de correr: " + jugador.getEnergia());
+
+    	jugador.actualizarEnergia(1);
+
+    	System.out.println("Despues de 1 segundo: " + jugador.getEnergia());
+
+    	jugador.actualizarEnergia(1);
+
+    	System.out.println("Despues de 2 segundos: " + jugador.getEnergia());
+
+    	jugador.actualizarEnergia(1);
+
+    	System.out.println("Despues de 3 segundos: " + jugador.getEnergia());
     	
-
-    	 Jugador jugador = new Jugador("Facu");
-
-         Comida carne = new Comida(
-             "Carne",
-             2,
-             25
-         );
-
-         Animal jabali = new Animal(
-             "Jabali",
-             40,
-             15,
-             carne
-         );
-
-         System.out.println("===== ANIMAL =====");
-
-         jabali.mostrarEstado();
-
-         System.out.println();
-
-         // Derrotar al animal
-         jugador.atacar(jabali);
-         jugador.atacar(jabali);
-
-         System.out.println();
-
-         // Primera recoleccion
-         System.out.println("PRIMERA RECOLECCION:");
-
-         jugador.ObtenerComida(jabali);
-
-         jugador.mostrarInventario();
-
-         System.out.println();
-
-         // Segunda recoleccion
-         System.out.println("SEGUNDA RECOLECCION:");
-
-         jugador.ObtenerComida(jabali);
-
-         jugador.mostrarInventario();
     	
-        
-    }
- }
-
-    
-
-
+}
+}
 

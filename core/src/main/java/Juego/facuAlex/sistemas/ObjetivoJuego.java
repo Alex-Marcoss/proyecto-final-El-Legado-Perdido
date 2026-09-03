@@ -1,11 +1,15 @@
 package Juego.facuAlex.sistemas;
 
+import Juego.facuAlex.Jugador;
 import Juego.facuAlex.inventario;
+import Juego.facuAlex.Mapa.Mapa;
 import Juego.facuAlex.enemigos.Guardian;
 
 public class ObjetivoJuego {
 
-    private EstadoObjetivo estado;
+	    private EstadoObjetivo estado;
+
+	    private Guardian guardian;
 
     public ObjetivoJuego() {
         estado = EstadoObjetivo.EXPLORANDO;
@@ -21,8 +25,15 @@ public class ObjetivoJuego {
 
             estado = EstadoObjetivo.TEMPLO_ENCONTRADO;
 
+            guardian = new Guardian();
+
             System.out.println("Encontraste el templo.");
+            System.out.println("¡El Guardian del Templo apareció!");
         }
+    }
+    
+    public Guardian getGuardian() {
+        return guardian;
     }
 
     public void derrotarBoss() {
@@ -112,6 +123,20 @@ public class ObjetivoJuego {
             System.out.println(
                 "¡VICTORIA!"
             );
+        }
+    }
+    
+    public void comprobarTemplo(Jugador jugador, Mapa mapa) {
+
+        if (estado != EstadoObjetivo.EXPLORANDO) {
+            return;
+        }
+
+        if (mapa.estaEnTemplo(
+                jugador.getPosicionX(),
+                jugador.getPosicionY())) {
+
+            encontrarTemplo();
         }
     }
     
