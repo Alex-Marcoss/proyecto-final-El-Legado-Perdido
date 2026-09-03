@@ -47,6 +47,24 @@
 - Implementacion de la comida, funcion comer y conexion con inventario para restar cantidades.
 - Implementacion de las mecanicas de pasar hambre y perder vida por falta de comida con el paso del tiempo (vinculado con ciclo dia/noche)
 
+## [Nuevos avances y mejoras] 2026-09-02
+### Agregados: 
+
+- Implementado sistema de mapa dividido en 3 zonas. Agregada clase Zona para gestionar las diferentes áreas del mapa.
+- Agregada clase LugarEspecial para representar ubicaciones importantes.
+- Agregada posición X/Y al jugador.
+- Implementado movimiento con límites del mapa.
+- Implementado sistema de correr.
+- Mejorado el sistema de combate entre jugador y enemigos.
+- Implementado sistema de muerte del jugador.
+- Agregado método estaVivo() y gameOver() en Jugador
+- Creada clase Energia. Implementado sistema de recuperación automática de energía, con una recuperación de 5 puntos cada 3 segundos.
+
+
+
+
+
+
 
 
 
