@@ -84,6 +84,15 @@ public class Jugador {
 	    }
 	}
 	
+	public float getPosicionX() {
+		return posicionX;
+	}
+	
+	public float getPosicionY() {
+		return posicionY;
+	}
+	
+	
 	// -------------------------------------
 	// Recoleccion de items y mostrar de inventario
 	
@@ -190,6 +199,10 @@ public class Jugador {
 	
 	public void actualizarEnergia(float segundos) {
 	    sistemaEnergia.actualizar(this, segundos);
+	}
+
+	public Energia getSistemaEnergia() {
+	    return sistemaEnergia;
 	}
 
 	
