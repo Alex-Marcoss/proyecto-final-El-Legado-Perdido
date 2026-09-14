@@ -1,4 +1,4 @@
-`package Juego.facuAlex;
+package Juego.facuAlex;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
