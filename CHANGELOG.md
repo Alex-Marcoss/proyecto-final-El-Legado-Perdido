@@ -60,9 +60,12 @@
 - Agregado método estaVivo() y gameOver() en Jugador
 - Creada clase Energia. Implementado sistema de recuperación automática de energía, con una recuperación de 5 puntos cada 3 segundos.
 
+## [Nuevos avances y mejoras] 2026-09-11
+### Agregados: 
 
-
-
+- Realizado el diseño del jugador y de los enemigos.
+- Ralizados el diseño de los recursos necesarios para el juego.
+- Todos los sprites hechos.
 
 
 
