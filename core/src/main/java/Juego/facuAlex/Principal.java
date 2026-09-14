@@ -1,10 +1,10 @@
+```java
 package Juego.facuAlex;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.utils.ScreenUtils;
 
 import Juego.facuAlex.Mapa.Mapa;
@@ -12,69 +12,204 @@ import Juego.facuAlex.Mapa.Mapa;
 public class Principal extends ApplicationAdapter {
 
     private SpriteBatch batch;
-    private Texture jugadorSprite;
 
     private Jugador jugador;
     private Mapa mapa;
+
+    private JugadorAnimacion jugadorAnimacion;
+    private JugadorControl jugadorControl;
 
     @Override
     public void create() {
 
         batch = new SpriteBatch();
 
-        jugadorSprite = new Texture("jugador.png");
+        // ==============================
+        // CREAR JUGADOR
+        // ==============================
 
         jugador = new Jugador("Facu");
 
+        // ==============================
+        // CREAR MAPA
+        // ==============================
+
         mapa = new Mapa(900, 600);
 
-        // Posición inicial del jugador
+        // Posición inicial
         jugador.mover(400, 250, mapa);
+
+        // ==============================
+        // CREAR ANIMACIONES
+        // ==============================
+
+        jugadorAnimacion = new JugadorAnimacion();
+
+        // ==============================
+        // CREAR CONTROL
+        // ==============================
+
+        jugadorControl = new JugadorControl(jugador);
     }
 
     @Override
     public void render() {
 
-        actualizarMovimiento();
+        float delta = Gdx.graphics.getDeltaTime();
 
-        ScreenUtils.clear(0.15f, 0.15f, 0.2f, 1f);
+        // ==============================
+        // ACTUALIZAR
+        // ==============================
+
+        jugadorControl.actualizar(delta, mapa);
+
+        jugadorAnimacion.actualizar(delta);
+
+        // ==============================
+        // LIMPIAR PANTALLA
+        // ==============================
+
+        ScreenUtils.clear(
+            0.15f,
+            0.15f,
+            0.2f,
+            1f
+        );
+
+        // ==============================
+        // DIBUJAR
+        // ==============================
 
         batch.begin();
 
+        TextureRegion frame =
+            obtenerFrameActual();
+
         batch.draw(
-            jugadorSprite,
+            frame,
             jugador.getPosicionX(),
-            jugador.getPosicionY()
+            jugador.getPosicionY(),
+            64,
+            64
         );
 
         batch.end();
     }
 
-    private void actualizarMovimiento() {
+    // =========================================================
+    // OBTENER FRAME SEGUN ESTADO Y DIRECCION
+    // =========================================================
 
-        float velocidad = 200f * Gdx.graphics.getDeltaTime();
+    private TextureRegion obtenerFrameActual() {
 
-        if (Gdx.input.isKeyPressed(Input.Keys.W)) {
-            jugador.mover(0, velocidad, mapa);
+        JugadorControl.Estado estado =
+            jugadorControl.getEstado();
+
+        JugadorControl.Direccion direccion =
+            jugadorControl.getDireccion();
+
+        // ==============================
+        // IDLE
+        // ==============================
+
+        if (estado == JugadorControl.Estado.IDLE) {
+
+            switch (direccion) {
+
+                case ARRIBA:
+                    return jugadorAnimacion.getFrame(
+                        jugadorAnimacion.getIdleUp()
+                    );
+
+                case ABAJO:
+                    return jugadorAnimacion.getFrame(
+                        jugadorAnimacion.getIdleDown()
+                    );
+
+                case IZQUIERDA:
+                    return jugadorAnimacion.getFrame(
+                        jugadorAnimacion.getIdleLeft()
+                    );
+
+                case DERECHA:
+                    return jugadorAnimacion.getFrame(
+                        jugadorAnimacion.getIdleRight()
+                    );
+            }
         }
 
-        if (Gdx.input.isKeyPressed(Input.Keys.S)) {
-            jugador.mover(0, -velocidad, mapa);
+        // ==============================
+        // CAMINAR
+        // ==============================
+
+        if (estado == JugadorControl.Estado.CAMINAR) {
+
+            switch (direccion) {
+
+                case ARRIBA:
+                    return jugadorAnimacion.getFrame(
+                        jugadorAnimacion.getWalkUp()
+                    );
+
+                case ABAJO:
+                    return jugadorAnimacion.getFrame(
+                        jugadorAnimacion.getWalkDown()
+                    );
+
+                case IZQUIERDA:
+                    return jugadorAnimacion.getFrame(
+                        jugadorAnimacion.getWalkLeft()
+                    );
+
+                case DERECHA:
+                    return jugadorAnimacion.getFrame(
+                        jugadorAnimacion.getWalkRight()
+                    );
+            }
         }
 
-        if (Gdx.input.isKeyPressed(Input.Keys.A)) {
-            jugador.mover(-velocidad, 0, mapa);
+        // ==============================
+        // CORRER
+        // ==============================
+
+        if (estado == JugadorControl.Estado.CORRER) {
+
+            switch (direccion) {
+
+                case ARRIBA:
+                    return jugadorAnimacion.getFrame(
+                        jugadorAnimacion.getRunUp()
+                    );
+
+                case ABAJO:
+                    return jugadorAnimacion.getFrame(
+                        jugadorAnimacion.getRunDown()
+                    );
+
+                case IZQUIERDA:
+                    return jugadorAnimacion.getFrame(
+                        jugadorAnimacion.getRunLeft()
+                    );
+
+                case DERECHA:
+                    return jugadorAnimacion.getFrame(
+                        jugadorAnimacion.getRunRight()
+                    );
+            }
         }
 
-        if (Gdx.input.isKeyPressed(Input.Keys.D)) {
-            jugador.mover(velocidad, 0, mapa);
-        }
+        // Por seguridad
+        return jugadorAnimacion.getFrame(
+            jugadorAnimacion.getIdleDown()
+        );
     }
 
     @Override
     public void dispose() {
 
         batch.dispose();
-        jugadorSprite.dispose();
+
+        jugadorAnimacion.dispose();
     }
 }
+```
