@@ -18,6 +18,8 @@ public class Principal extends ApplicationAdapter {
     private JugadorAnimacion jugadorAnimacion;
     private JugadorControl jugadorControl;
 
+    private static final float TAMANO_JUGADOR = 64f;
+
     @Override
     public void create() {
 
@@ -81,22 +83,21 @@ public class Principal extends ApplicationAdapter {
 
         batch.begin();
 
-        TextureRegion frame =
-            obtenerFrameActual();
+        TextureRegion frame = obtenerFrameActual();
 
         batch.draw(
             frame,
             jugador.getPosicionX(),
             jugador.getPosicionY(),
-            64,
-            64
+            TAMANO_JUGADOR,
+            TAMANO_JUGADOR
         );
 
         batch.end();
     }
 
     // =========================================================
-    // OBTENER FRAME SEGUN ESTADO Y DIRECCION
+    // OBTENER FRAME SEGÚN ESTADO Y DIRECCIÓN
     // =========================================================
 
     private TextureRegion obtenerFrameActual() {
@@ -211,4 +212,3 @@ public class Principal extends ApplicationAdapter {
         jugadorAnimacion.dispose();
     }
 }
-```
