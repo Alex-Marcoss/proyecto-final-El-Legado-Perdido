@@ -2,6 +2,7 @@ package Juego.facuAlex;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.utils.ScreenUtils;
@@ -11,6 +12,7 @@ import Juego.facuAlex.Mapa.Mapa;
 public class Principal extends ApplicationAdapter {
 
     private SpriteBatch batch;
+    private OrthographicCamera camara;
 
     private Jugador jugador;
     private Mapa mapa;
@@ -25,31 +27,29 @@ public class Principal extends ApplicationAdapter {
 
         batch = new SpriteBatch();
 
+        // Configurar cámara (vista de 900x600)
+        camara = new OrthographicCamera();
+        camara.setToOrtho(false, 900, 600);
+
         // ==============================
-        // CREAR JUGADOR
+        // CREAR JUGADOR Y MAPA
         // ==============================
 
         jugador = new Jugador("Facu");
-
-        // ==============================
-        // CREAR MAPA
-        // ==============================
-
         mapa = new Mapa(900, 600);
 
-        // Posición inicial
+        // Posicionar jugador
         jugador.mover(400, 250, mapa);
 
+        // Centrar la cámara en la posición del jugador al iniciar
+        camara.position.set(jugador.getPosicionX(), jugador.getPosicionY(), 0);
+        camara.update();
+
         // ==============================
-        // CREAR ANIMACIONES
+        // ANIMACIÓN Y CONTROLES
         // ==============================
 
         jugadorAnimacion = new JugadorAnimacion();
-
-        // ==============================
-        // CREAR CONTROL
-        // ==============================
-
         jugadorControl = new JugadorControl(jugador);
     }
 
@@ -58,29 +58,26 @@ public class Principal extends ApplicationAdapter {
 
         float delta = Gdx.graphics.getDeltaTime();
 
-        // ==============================
-        // ACTUALIZAR
-        // ==============================
-
+        // Actualizar jugador
         jugadorControl.actualizar(delta, mapa);
-
         jugadorAnimacion.actualizar(delta);
 
-        // ==============================
-        // LIMPIAR PANTALLA
-        // ==============================
-
-        ScreenUtils.clear(
-            0.15f,
-            0.15f,
-            0.2f,
-            1f
+        // Centrar siempre la cámara donde está el jugador
+        camara.position.set(
+            jugador.getPosicionX() + TAMANO_JUGADOR / 2f,
+            jugador.getPosicionY() + TAMANO_JUGADOR / 2f,
+            0
         );
+        camara.update();
 
-        // ==============================
-        // DIBUJAR
-        // ==============================
+        // Limpiar pantalla
+        ScreenUtils.clear(0.15f, 0.15f, 0.2f, 1f);
 
+        // 1. DIBUJAR MAPA .TMX
+        mapa.dibujar(camara);
+
+        // 2. DIBUJAR JUGADOR
+        batch.setProjectionMatrix(camara.combined);
         batch.begin();
 
         TextureRegion frame = obtenerFrameActual();
@@ -96,119 +93,45 @@ public class Principal extends ApplicationAdapter {
         batch.end();
     }
 
-    // =========================================================
-    // OBTENER FRAME SEGÚN ESTADO Y DIRECCIÓN
-    // =========================================================
-
     private TextureRegion obtenerFrameActual() {
 
-        JugadorControl.Estado estado =
-            jugadorControl.getEstado();
-
-        JugadorControl.Direccion direccion =
-            jugadorControl.getDireccion();
-
-        // ==============================
-        // IDLE
-        // ==============================
+        JugadorControl.Estado estado = jugadorControl.getEstado();
+        JugadorControl.Direccion direccion = jugadorControl.getDireccion();
 
         if (estado == JugadorControl.Estado.IDLE) {
-
             switch (direccion) {
-
-                case ARRIBA:
-                    return jugadorAnimacion.getFrame(
-                        jugadorAnimacion.getIdleUp()
-                    );
-
-                case ABAJO:
-                    return jugadorAnimacion.getFrame(
-                        jugadorAnimacion.getIdleDown()
-                    );
-
-                case IZQUIERDA:
-                    return jugadorAnimacion.getFrame(
-                        jugadorAnimacion.getIdleLeft()
-                    );
-
-                case DERECHA:
-                    return jugadorAnimacion.getFrame(
-                        jugadorAnimacion.getIdleRight()
-                    );
+                case ARRIBA: return jugadorAnimacion.getFrame(jugadorAnimacion.getIdleUp());
+                case ABAJO: return jugadorAnimacion.getFrame(jugadorAnimacion.getIdleDown());
+                case IZQUIERDA: return jugadorAnimacion.getFrame(jugadorAnimacion.getIdleLeft());
+                case DERECHA: return jugadorAnimacion.getFrame(jugadorAnimacion.getIdleRight());
             }
         }
-
-        // ==============================
-        // CAMINAR
-        // ==============================
 
         if (estado == JugadorControl.Estado.CAMINAR) {
-
             switch (direccion) {
-
-                case ARRIBA:
-                    return jugadorAnimacion.getFrame(
-                        jugadorAnimacion.getWalkUp()
-                    );
-
-                case ABAJO:
-                    return jugadorAnimacion.getFrame(
-                        jugadorAnimacion.getWalkDown()
-                    );
-
-                case IZQUIERDA:
-                    return jugadorAnimacion.getFrame(
-                        jugadorAnimacion.getWalkLeft()
-                    );
-
-                case DERECHA:
-                    return jugadorAnimacion.getFrame(
-                        jugadorAnimacion.getWalkRight()
-                    );
+                case ARRIBA: return jugadorAnimacion.getFrame(jugadorAnimacion.getWalkUp());
+                case ABAJO: return jugadorAnimacion.getFrame(jugadorAnimacion.getWalkDown());
+                case IZQUIERDA: return jugadorAnimacion.getFrame(jugadorAnimacion.getWalkLeft());
+                case DERECHA: return jugadorAnimacion.getFrame(jugadorAnimacion.getWalkRight());
             }
         }
-
-        // ==============================
-        // CORRER
-        // ==============================
 
         if (estado == JugadorControl.Estado.CORRER) {
-
             switch (direccion) {
-
-                case ARRIBA:
-                    return jugadorAnimacion.getFrame(
-                        jugadorAnimacion.getRunUp()
-                    );
-
-                case ABAJO:
-                    return jugadorAnimacion.getFrame(
-                        jugadorAnimacion.getRunDown()
-                    );
-
-                case IZQUIERDA:
-                    return jugadorAnimacion.getFrame(
-                        jugadorAnimacion.getRunLeft()
-                    );
-
-                case DERECHA:
-                    return jugadorAnimacion.getFrame(
-                        jugadorAnimacion.getRunRight()
-                    );
+                case ARRIBA: return jugadorAnimacion.getFrame(jugadorAnimacion.getRunUp());
+                case ABAJO: return jugadorAnimacion.getFrame(jugadorAnimacion.getRunDown());
+                case IZQUIERDA: return jugadorAnimacion.getFrame(jugadorAnimacion.getRunLeft());
+                case DERECHA: return jugadorAnimacion.getFrame(jugadorAnimacion.getRunRight());
             }
         }
 
-        // Por seguridad
-        return jugadorAnimacion.getFrame(
-            jugadorAnimacion.getIdleDown()
-        );
+        return jugadorAnimacion.getFrame(jugadorAnimacion.getIdleDown());
     }
 
     @Override
     public void dispose() {
-
         batch.dispose();
-
         jugadorAnimacion.dispose();
+        mapa.dispose();
     }
 }
