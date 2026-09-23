@@ -9,32 +9,43 @@ public class JugadorAnimacion {
 
     private Texture sheetTexture;
 
+    // =========================
     // IDLE
+    // =========================
+
+    private Animation<TextureRegion> idleDown;
     private Animation<TextureRegion> idleUp;
     private Animation<TextureRegion> idleLeft;
     private Animation<TextureRegion> idleRight;
-    private Animation<TextureRegion> idleDown;
 
+    // =========================
     // CAMINAR
+    // =========================
+
+    private Animation<TextureRegion> walkDown;
     private Animation<TextureRegion> walkUp;
     private Animation<TextureRegion> walkLeft;
     private Animation<TextureRegion> walkRight;
-    private Animation<TextureRegion> walkDown;
 
+    // =========================
     // CORRER
+    // =========================
+
+    private Animation<TextureRegion> runDown;
     private Animation<TextureRegion> runUp;
     private Animation<TextureRegion> runLeft;
     private Animation<TextureRegion> runRight;
-    private Animation<TextureRegion> runDown;
 
     private float stateTime;
 
     public JugadorAnimacion() {
 
+        // Cargar sprite sheet
         sheetTexture = new Texture(
-            Gdx.files.internal("sprites/jugador2.png")
+            Gdx.files.internal("sprites/jugador.png")
         );
 
+        // Pixel art: sin suavizado
         sheetTexture.setFilter(
             Texture.TextureFilter.Nearest,
             Texture.TextureFilter.Nearest
@@ -47,11 +58,21 @@ public class JugadorAnimacion {
 
     private void cargarAnimaciones() {
 
-        int frameWidth =
-            sheetTexture.getWidth() / 10;
+        /*
+         * Sprite sheet:
+         *
+         * 1020 x 576
+         *
+         * 10 columnas
+         * 4 filas
+         *
+         * Cada frame:
+         *
+         * 102 x 144
+         */
 
-        int frameHeight =
-            sheetTexture.getHeight() / 4;
+        int frameWidth = 102;
+        int frameHeight = 144;
 
         TextureRegion[][] frames =
             TextureRegion.split(
@@ -60,100 +81,101 @@ public class JugadorAnimacion {
                 frameHeight
             );
 
-        // ==========================
+        // =========================
+        // FILAS
+        // =========================
+        //
+        // Fila 0 = DOWN
+        // Fila 1 = UP
+        // Fila 2 = LEFT
+        // Fila 3 = RIGHT
+        //
+
+        // =========================
         // IDLE
-        // ==========================
+        // =========================
 
         idleDown = new Animation<TextureRegion>(
             0.15f,
-            new TextureRegion(frames[0][0])
+            frames[0][0]
         );
 
         idleUp = new Animation<TextureRegion>(
             0.15f,
-            new TextureRegion(frames[1][0])
+            frames[1][0]
         );
 
         idleLeft = new Animation<TextureRegion>(
             0.15f,
-            new TextureRegion(frames[2][0])
+            frames[2][0]
         );
 
         idleRight = new Animation<TextureRegion>(
             0.15f,
-            new TextureRegion(frames[3][0])
+            frames[3][0]
         );
 
-        // ==========================
+        // =========================
         // CAMINAR
-        // ==========================
+        // =========================
 
         walkDown = new Animation<TextureRegion>(
             0.10f,
-            extraerFrames(frames, 0)
+            frames[0]
         );
 
         walkUp = new Animation<TextureRegion>(
             0.10f,
-            extraerFrames(frames, 1)
+            frames[1]
         );
 
         walkLeft = new Animation<TextureRegion>(
             0.10f,
-            extraerFrames(frames, 2)
+            frames[2]
         );
 
         walkRight = new Animation<TextureRegion>(
             0.10f,
-            extraerFrames(frames, 3)
+            frames[3]
         );
 
-        // ==========================
+        // =========================
         // CORRER
-        // ==========================
+        // =========================
 
         runDown = new Animation<TextureRegion>(
             0.05f,
-            extraerFrames(frames, 0)
+            frames[0]
         );
 
         runUp = new Animation<TextureRegion>(
             0.05f,
-            extraerFrames(frames, 1)
+            frames[1]
         );
 
         runLeft = new Animation<TextureRegion>(
             0.05f,
-            extraerFrames(frames, 2)
+            frames[2]
         );
 
         runRight = new Animation<TextureRegion>(
             0.05f,
-            extraerFrames(frames, 3)
+            frames[3]
         );
     }
 
-    private TextureRegion[] extraerFrames(
-        TextureRegion[][] frames,
-        int fila
-    ) {
-
-        TextureRegion[] resultado =
-            new TextureRegion[10];
-
-        for (int i = 0; i < 10; i++) {
-
-            resultado[i] =
-                new TextureRegion(frames[fila][i]);
-        }
-
-        return resultado;
-    }
+    // =========================
+    // ACTUALIZAR
+    // =========================
 
     public void actualizar(float delta) {
 
         stateTime += delta;
     }
+
+    // =========================
+    // OBTENER FRAME
+    // =========================
 
     public TextureRegion getFrame(
         Animation<TextureRegion> animacion
@@ -165,9 +187,13 @@ public class JugadorAnimacion {
         );
     }
 
-    // ==========================
+    // =========================
     // IDLE
-    // ==========================
+    // =========================
+
+    public Animation<TextureRegion> getIdleDown() {
+        return idleDown;
+    }
 
     public Animation<TextureRegion> getIdleUp() {
         return idleUp;
@@ -181,13 +207,13 @@ public class JugadorAnimacion {
         return idleRight;
     }
 
-    public Animation<TextureRegion> getIdleDown() {
-        return idleDown;
-    }
-
-    // ==========================
+    // =========================
     // CAMINAR
-    // ==========================
+    // =========================
+
+    public Animation<TextureRegion> getWalkDown() {
+        return walkDown;
+    }
 
     public Animation<TextureRegion> getWalkUp() {
         return walkUp;
@@ -201,13 +227,13 @@ public class JugadorAnimacion {
         return walkRight;
     }
 
-    public Animation<TextureRegion> getWalkDown() {
-        return walkDown;
-    }
-
-    // ==========================
+    // =========================
     // CORRER
-    // ==========================
+    // =========================
+
+    public Animation<TextureRegion> getRunDown() {
+        return runDown;
+    }
 
     public Animation<TextureRegion> getRunUp() {
         return runUp;
@@ -221,9 +247,9 @@ public class JugadorAnimacion {
         return runRight;
     }
 
-    public Animation<TextureRegion> getRunDown() {
-        return runDown;
-    }
+    // =========================
+    // DISPOSE
+    // =========================
 
     public void dispose() {
 
