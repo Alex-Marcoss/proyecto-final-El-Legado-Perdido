@@ -67,6 +67,13 @@
 - Ralizados el diseño de los recursos necesarios para el juego.
 - Todos los sprites hechos.
 
+## [Nuevos avances y mejoras] 2026-09-21
+### Agregados: 
+
+- Se incorporo el mapa.
+- Se incorporo el jugador.
+- Se incorporo el seguimiento con la camara al jugador.
+
 
 
 
