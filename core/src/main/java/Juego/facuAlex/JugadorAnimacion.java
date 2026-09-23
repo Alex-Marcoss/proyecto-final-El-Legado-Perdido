@@ -32,7 +32,7 @@ public class JugadorAnimacion {
     public JugadorAnimacion() {
 
         sheetTexture = new Texture(
-            Gdx.files.internal("sprites/jugador.png")
+            Gdx.files.internal("sprites/jugador2.png")
         );
 
         sheetTexture.setFilter(
