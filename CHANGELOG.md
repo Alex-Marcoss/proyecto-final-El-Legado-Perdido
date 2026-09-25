@@ -74,6 +74,19 @@
 - Se incorporo el jugador.
 - Se incorporo el seguimiento con la camara al jugador.
 
+## [Nuevos avances y mejoras] 2026-09-24
+### Agregados: 
+- Creacion de arboles en el mapa
+- Creacion de accion para talar y guardar madera en el inventario
+- creacion grafica de inventario con 30 slots de guardado y cantidades de recursos
+
+## [Nuevos avances y mejoras] 2026-09-24
+### Agregados: 
+
+- Creacion grafica de barras de supervivencia (vida hambre y energia)
+- Gasto de las barras
+
+
 
 
 
