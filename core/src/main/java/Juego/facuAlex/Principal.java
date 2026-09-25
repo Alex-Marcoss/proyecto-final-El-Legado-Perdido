@@ -29,6 +29,7 @@ public class Principal extends ApplicationAdapter {
     
     private InventarioUI inventarioUI;
     
+    private BarrasSupervivencia barrasSupervivencia;
     
     @Override
     public void create() {
@@ -50,6 +51,8 @@ public class Principal extends ApplicationAdapter {
         mapa = new Mapa(900, 600);
 
         jugador = new Jugador("Facu");
+        
+        barrasSupervivencia = new BarrasSupervivencia(jugador);
         
         hacha hachaInicial = new hacha(20, 10);
         jugador.getInventario().agregarItem(hachaInicial);
@@ -138,12 +141,9 @@ public class Principal extends ApplicationAdapter {
 
      batch.end();
 
+     barrasSupervivencia.dibujar();
 
-     // =========================
-     // DIBUJAR INVENTARIO
-     // =========================
-
-     inventarioUI.dibujar();
+     inventarioUI.dibujar();inventarioUI.dibujar();
     }
 
     // ==========================================================
@@ -280,6 +280,7 @@ public class Principal extends ApplicationAdapter {
         jugadorAnimacion.dispose();
         mapa.dispose();
         inventarioUI.dispose();
+        barrasSupervivencia.dispose();
     }
     
    
