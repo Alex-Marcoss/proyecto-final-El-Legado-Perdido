@@ -9,6 +9,7 @@ import Juego.facuAlex.receta.Receta;
 import Juego.facuAlex.recursos.Comida;
 import Juego.facuAlex.recursos.Item;
 import Juego.facuAlex.recursos.Recursos;
+import Juego.facuAlex.recursos.arbol;
 import Juego.facuAlex.sistemas.Construccion;
 import Juego.facuAlex.sistemas.Energia;
 
@@ -253,17 +254,27 @@ public class Jugador {
 	// Herramientas y equipacion
 	
 	public void equiparHerramienta(Herramienta herramienta) {
+
 	    herramientaEquipada = herramienta;
-	}
 
-	public void mostrarHerramienta() {
+	    if (herramienta != null) {
 
-	    if (herramientaEquipada != null) {
-	        System.out.println("Herramienta equipada: " 
-	                           + herramientaEquipada.getNombre());
+	        System.out.println(
+	            "Equipaste: " +
+	            herramienta.getNombre()
+	        );
+
 	    } else {
-	        System.out.println("No hay ninguna herramienta equipada.");
+
+	        System.out.println(
+	            "No tenes ninguna herramienta equipada."
+	        );
 	    }
+	}
+	
+	public Herramienta getHerramientaEquipada() {
+
+	    return herramientaEquipada;
 	}
 	
 	// -------------------------------------------------------------------------
@@ -445,8 +456,71 @@ public class Jugador {
 }
 // -------------------------------------------------
 
-	
-	// ----------------------------------------------
+    public void talarArbol(arbol arbol, Mapa mapa) {
+
+        if (arbol == null || mapa == null) {
+            return;
+        }
+
+        // Comprobar herramienta equipada
+        if (herramientaEquipada == null) {
+            System.out.println(
+                "Necesitas equipar un hacha para talar."
+            );
+            return;
+        }
+
+        // Comprobar que sea un hacha
+        if (herramientaEquipada.getTipo() != tipoHerramienta.HACHA) {
+            System.out.println(
+                "Necesitas tener un hacha equipada."
+            );
+            return;
+        }
+
+        int energiaNecesaria =
+            arbol.getEnergiaNecesaria();
+
+        if (energia < energiaNecesaria) {
+            System.out.println(
+                "No tienes suficiente energia."
+            );
+            return;
+        }
+
+        // Usar el hacha equipada
+        if (!herramientaEquipada.usar()) {
+            return;
+        }
+
+        gastarEnergia(energiaNecesaria);
+
+        Recursos madera =
+            arbol.recolectarRecurso();
+
+        if (madera != null) {
+
+            inventario.agregarRecurso(
+                madera,
+                madera.getCantidad()
+            );
+
+            System.out.println(
+                "Conseguiste " +
+                madera.getCantidad() +
+                " de madera."
+            );
+        }
+
+        if (arbol.estaTalado()) {
+
+            mapa.eliminarArbol(arbol);
+
+            System.out.println(
+                "El arbol fue talado completamente."
+            );
+        }
+    }
 	
 	
 	

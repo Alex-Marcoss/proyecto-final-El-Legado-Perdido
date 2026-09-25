@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.utils.ScreenUtils;
 
+import Juego.facuAlex.Herramientas.hacha;
 import Juego.facuAlex.Mapa.Mapa;
 import Juego.facuAlex.recursos.arbol;
 
@@ -25,7 +26,10 @@ public class Principal extends ApplicationAdapter {
     private JugadorControl jugadorControl;
 
     private static final float TAMANO_JUGADOR = 64f;
-
+    
+    private InventarioUI inventarioUI;
+    
+    
     @Override
     public void create() {
 
@@ -42,10 +46,13 @@ public class Principal extends ApplicationAdapter {
         // ==============================
         // CREAR MAPA Y JUGADOR
         // ==============================
-
+ 
         mapa = new Mapa(900, 600);
 
         jugador = new Jugador("Facu");
+        
+        hacha hachaInicial = new hacha(20, 10);
+        jugador.getInventario().agregarItem(hachaInicial);
 
         // ==============================
         // POSICIÓN INICIAL
@@ -60,6 +67,8 @@ public class Principal extends ApplicationAdapter {
         jugadorAnimacion = new JugadorAnimacion();
 
         jugadorControl = new JugadorControl(jugador);
+        
+        inventarioUI = new InventarioUI(jugador);
 
         // ==============================
         // CÁMARA INICIAL
@@ -79,18 +88,17 @@ public class Principal extends ApplicationAdapter {
 
         float delta = Gdx.graphics.getDeltaTime();
 
-        // ==============================
-        // ACTUALIZAR JUGADOR
-        // ==============================
+        // Inventario
+        inventarioUI.actualizar();
 
-        jugadorControl.actualizar(delta, mapa);
+        // Mientras el inventario está abierto no movemos al jugador
+        if (!inventarioUI.estaAbierto()) {
+            jugadorControl.actualizar(delta, mapa);
+        }
 
         jugadorAnimacion.actualizar(delta);
 
-        // ==============================
-        // SEGUIR AL JUGADOR
-        // ==============================
-
+        // Cámara sigue al jugador
         camara.position.set(
             jugador.getPosicionX() + TAMANO_JUGADOR / 2f,
             jugador.getPosicionY() + TAMANO_JUGADOR / 2f,
@@ -99,54 +107,43 @@ public class Principal extends ApplicationAdapter {
 
         camara.update();
 
-        // ==============================
-        // LIMPIAR PANTALLA
-        // ==============================
+        ScreenUtils.clear(0.15f, 0.15f, 0.2f, 1f);
 
-        ScreenUtils.clear(
-            0.15f,
-            0.15f,
-            0.2f,
-            1f
-        );
+     // =========================
+     // DIBUJAR EL MUNDO
+     // =========================
 
-        // ==============================
-        // DIBUJAR MAPA
-        // ==============================
+     mapa.dibujar(camara);
 
-        mapa.dibujar(camara);
+     batch.setProjectionMatrix(camara.combined);
 
-        // ==============================
-        // DIBUJAR ÁRBOLES
-        // ==============================
+     batch.begin();
 
-        batch.setProjectionMatrix(camara.combined);
+     for (arbol arbol : mapa.getArboles()) {
 
-        batch.begin();
+         if (!arbol.estaTalado()) {
+             arbol.dibujar(batch);
+         }
+     }
 
-        for (arbol arbol : mapa.getArboles()) {
+     TextureRegion frame = obtenerFrameActual();
 
-            // Solo dibujar árboles que todavía existen
-            if (!arbol.estaTalado()) {
-                arbol.dibujar(batch);
-            }
-        }
+     batch.draw(
+         frame,
+         jugador.getPosicionX(),
+         jugador.getPosicionY(),
+         TAMANO_JUGADOR,
+         TAMANO_JUGADOR
+     );
 
-        // ==============================
-        // DIBUJAR JUGADOR
-        // ==============================
+     batch.end();
 
-        TextureRegion frame = obtenerFrameActual();
 
-        batch.draw(
-            frame,
-            jugador.getPosicionX(),
-            jugador.getPosicionY(),
-            TAMANO_JUGADOR,
-            TAMANO_JUGADOR
-        );
+     // =========================
+     // DIBUJAR INVENTARIO
+     // =========================
 
-        batch.end();
+     inventarioUI.dibujar();
     }
 
     // ==========================================================
@@ -280,9 +277,11 @@ public class Principal extends ApplicationAdapter {
     public void dispose() {
 
         batch.dispose();
-
         jugadorAnimacion.dispose();
-
         mapa.dispose();
+        inventarioUI.dispose();
     }
+    
+   
+	
 }

@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 
 import Juego.facuAlex.Mapa.Mapa;
+import Juego.facuAlex.recursos.arbol;
 
 public class JugadorControl {
 
@@ -56,6 +57,30 @@ public class JugadorControl {
             || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT);
 
         float velocidad;
+        
+        if (Gdx.input.isKeyJustPressed(Input.Keys.E)) {
+
+            arbol arbolCercano =
+                mapa.obtenerArbolCercano(
+                    jugador.getPosicionX(),
+                    jugador.getPosicionY(),
+                    100f
+                );
+
+            if (arbolCercano != null) {
+
+                jugador.talarArbol(
+                    arbolCercano,
+                    mapa
+                );
+
+            } else {
+
+                System.out.println(
+                    "No hay ningun arbol cerca."
+                );
+            }
+        }
 
         // ==========================================
         // NINGUNA TECLA

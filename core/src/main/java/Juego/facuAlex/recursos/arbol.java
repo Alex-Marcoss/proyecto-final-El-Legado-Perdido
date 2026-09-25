@@ -91,7 +91,9 @@ public class arbol extends objetoMundo {
 
         maderaDisponible--;
 
-        return new Recursos("Madera", cantidad);
+        Recursos madera = new Recursos("Madera", cantidad);
+        madera.cargarIcono("objetos/madera.png");
+        return madera;
     }
 
     @Override
@@ -103,6 +105,18 @@ public class arbol extends objetoMundo {
     public boolean estaTalado() {
 
         return maderaDisponible <= 0;
+    }
+    
+    public boolean estaCerca(float jugadorX, float jugadorY, float distancia) {
+
+        float dx = jugadorX - posicionX;
+        float dy = jugadorY - posicionY;
+
+        float distanciaReal = (float) Math.sqrt(
+            dx * dx + dy * dy
+        );
+
+        return distanciaReal <= distancia;
     }
 
     public void dispose() {

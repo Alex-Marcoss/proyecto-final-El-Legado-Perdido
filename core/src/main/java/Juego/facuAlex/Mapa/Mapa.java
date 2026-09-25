@@ -172,7 +172,7 @@ public class Mapa {
         }
 
         return false;
-    }w
+    }
     
     // ==========================================================
     // COMPROBAR AGUA
@@ -303,6 +303,44 @@ public class Mapa {
     public List<arbol> getArboles() {
 
         return arboles;
+    }
+    
+    public void eliminarArbol(arbol arbol) {
+
+        if (arbol != null) {
+            arbol.dispose();
+            arboles.remove(arbol);
+        }
+    }
+    
+    public arbol obtenerArbolCercano(
+            float jugadorX,
+            float jugadorY,
+            float distanciaMaxima) {
+
+        arbol arbolCercano = null;
+
+        float distanciaMenor = distanciaMaxima;
+
+        for (arbol arbolActual : arboles) {
+
+            float dx =
+                jugadorX - arbolActual.getPosicionX();
+
+            float dy =
+                jugadorY - arbolActual.getPosicionY();
+
+            float distancia =
+                (float) Math.sqrt(dx * dx + dy * dy);
+
+            if (distancia <= distanciaMenor) {
+
+                distanciaMenor = distancia;
+                arbolCercano = arbolActual;
+            }
+        }
+
+        return arbolCercano;
     }
 
     // ==========================================================

@@ -1,132 +1,197 @@
 package Juego.facuAlex;
 
+import Juego.facuAlex.Herramientas.Herramienta;
+import Juego.facuAlex.Herramientas.tipoHerramienta;
 import Juego.facuAlex.recursos.Item;
 import Juego.facuAlex.recursos.Recursos;
 
-public class inventario{
-	
-	Item[] items; 
-	int cantidad;
-	
-	public inventario() { // constructor inventario
-		
-		this.items = new Item[10];
-		cantidad = 0;
-	}
-	
-	// --------------------------------------------------------------------
-	// agregar item, recurso y mostrar inventario
-	
-	// ---------------------------------- item ----------------------------------------------
-	public void agregarItem(Item item) {
+public class inventario {
 
-	    if (cantidad < items.length) {
-	        items[cantidad] = item;
-	        cantidad++;
-	    }
-	}
-	
-	// ---------------------------------- Recurso ---------------------------------------------- 
-	
-	public void agregarRecurso(Recursos recurso, int cantidad) {
+    private Item[] items;
 
-	    for (int i = 0; i < this.cantidad; i++) {
+    private int cantidad;
 
-	        if (items[i].getNombre().equals(recurso.getNombre())) { // si el nombre del item es igual al obtenido
-	            items[i].agregarCantidad(cantidad);
-	            return;
-	        }
-	    }
+    public inventario() {
 
-	    if (this.cantidad < items.length) {
-	        items[this.cantidad] = recurso;
-	        this.cantidad++;
-	    }
-	}
-	
-	// ---------------------------------- Mostrar Inventario  ---------------------------------------------- 
-	
-	public void mostrarInventario() {
-		
-		System.out.println("------------------ Inventario ------------------");
-	    for (int i = 0; i < cantidad; i++) {
-	        items[i].mostrarInfo();
-	    }
-	}
-	
-	// -------------------------------------------------------------------------------- 
-	// Verificacion y gasto de recursos
-	
-	// verificacion recurso
-	
-	public boolean tieneRecurso(String nombre, int cantidad) {
+        this.items = new Item[20];
 
-	    for (int i = 0; i < this.cantidad; i++) {
+        cantidad = 0;
+    }
 
-	        if (items[i].getNombre().equals(nombre)) { // si el nombre del item es igual al obtenido
+    // ==========================================================
+    // AGREGAR ITEM
+    // ==========================================================
 
-	            if (items[i] instanceof Recursos) { // si item pertenece a recursos
+    public void agregarItem(Item item) {
 
-	                Recursos recurso = (Recursos) items[i];
+        if (item == null) {
+            return;
+        }
 
-	                return recurso.getCantidad() >= cantidad;
-	            }
-	        }
-	    }
+        if (cantidad < items.length) {
 
-	    return false;
-	}
-	
-	// -------------------------------------------------------------------------------
-	
-	//verificacion item
-	
-	public boolean tieneItem(String nombre) {
+            items[cantidad] = item;
 
-	    for (int i = 0; i < cantidad; i++) {
+            cantidad++;
+        }
+    }
 
-	        if (items[i].getNombre().equals(nombre)) {
-	            return true;
-	        }
-	    }
+    // ==========================================================
+    // AGREGAR RECURSO
+    // ==========================================================
 
-	    return false;
-	}
-	
-	
-	// ---------------------------------- Gasto  ---------------------------------------------- 
-	
-	public boolean gastarRecurso(String nombre, int cantidad) {
+    public void agregarRecurso(
+            Recursos recurso,
+            int cantidad) {
 
-	    for (int i = 0; i < this.cantidad; i++) {
+        for (int i = 0; i < this.cantidad; i++) {
 
-	        if (items[i].getNombre().equals(nombre)) { // si el nombre del item es igual al obtenido
+            if (items[i].getNombre().equals(
+                    recurso.getNombre())) {
 
-	            if (items[i] instanceof Recursos) { // si item pertenece a recursos
+                items[i].agregarCantidad(cantidad);
 
-	                Recursos recurso = (Recursos) items[i];
+                return;
+            }
+        }
 
-	                if (recurso.getCantidad() >= cantidad) {
+        if (this.cantidad < items.length) {
 
-	                    recurso.agregarCantidad(-cantidad);
+            items[this.cantidad] = recurso;
 
-	                    return true;
-	                }
-	            }
-	        }
-	    }
+            this.cantidad++;
+        }
+    }
 
-	    return false;
-	}
-	
-	// ----------------------------------------------------------------------------------------
-	
-	
-	
-	// -------------------------------------------------------------------------------------------------
-	
-	
-	
+    // ==========================================================
+    // OBTENER ITEMS
+    // ==========================================================
+
+    public Item getItem(int posicion) {
+
+        if (posicion < 0 ||
+            posicion >= cantidad) {
+
+            return null;
+        }
+
+        return items[posicion];
+    }
+
+    public int getCantidad() {
+
+        return cantidad;
+    }
+
+    // ==========================================================
+    // MOSTRAR INVENTARIO
+    // ==========================================================
+
+    public void mostrarInventario() {
+
+        System.out.println(
+            "------------------ Inventario ------------------"
+        );
+
+        for (int i = 0; i < cantidad; i++) {
+
+            items[i].mostrarInfo();
+        }
+    }
+
+    // ==========================================================
+    // VERIFICAR RECURSO
+    // ==========================================================
+
+    public boolean tieneRecurso(
+            String nombre,
+            int cantidad) {
+
+        for (int i = 0; i < this.cantidad; i++) {
+
+            if (items[i].getNombre().equals(nombre)) {
+
+                if (items[i] instanceof Recursos) {
+
+                    Recursos recurso =
+                        (Recursos) items[i];
+
+                    return recurso.getCantidad() >= cantidad;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    // ==========================================================
+    // VERIFICAR ITEM
+    // ==========================================================
+
+    public boolean tieneItem(String nombre) {
+
+        for (int i = 0; i < cantidad; i++) {
+
+            if (items[i].getNombre().equals(nombre)) {
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // ==========================================================
+    // OBTENER HERRAMIENTA
+    // ==========================================================
+
+    public Herramienta obtenerHerramienta(
+            tipoHerramienta tipo) {
+
+        for (int i = 0; i < cantidad; i++) {
+
+            if (items[i] instanceof Herramienta) {
+
+                Herramienta herramienta =
+                    (Herramienta) items[i];
+
+                if (herramienta.getTipo() == tipo) {
+
+                    return herramienta;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    // ==========================================================
+    // GASTAR RECURSO
+    // ==========================================================
+
+    public boolean gastarRecurso(
+            String nombre,
+            int cantidad) {
+
+        for (int i = 0; i < this.cantidad; i++) {
+
+            if (items[i].getNombre().equals(nombre)) {
+
+                if (items[i] instanceof Recursos) {
+
+                    Recursos recurso =
+                        (Recursos) items[i];
+
+                    if (recurso.getCantidad() >= cantidad) {
+
+                        recurso.agregarCantidad(-cantidad);
+
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
 }
-	
-
