@@ -1,19 +1,24 @@
 package Juego.facuAlex;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.TextureData;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
-import Juego.facuAlex.Herramientas.Herramienta;
-import Juego.facuAlex.Herramientas.hacha;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import Juego.facuAlex.recursos.Item;
 import Juego.facuAlex.recursos.Recursos;
 
 public class InventarioUI {
 
     private Jugador jugador;
+
     private SpriteBatch batchInventario;
 
     private Texture panelTexture;
@@ -21,9 +26,20 @@ public class InventarioUI {
 
     private BitmapFont fuenteCantidad;
     private GlyphLayout layoutCantidad;
-    
+
     private boolean abierto;
+    private boolean mousePresionadoAnteriormente = false;
+
     private int slotSeleccionado;
+
+    // =====================================================
+    // DRAG & DROP
+    // =====================================================
+
+    private boolean arrastrando;
+    private int slotArrastrado;
+    private float mouseArrastreX;
+    private float mouseArrastreY;
 
     // =====================================================
     // RESOLUCIÓN VIRTUAL
@@ -37,7 +53,6 @@ public class InventarioUI {
     // =====================================================
 
     private static final int CANTIDAD_SLOTS = 30;
-
     private static final int COLUMNAS = 10;
     private static final int FILAS = 3;
 
@@ -46,40 +61,27 @@ public class InventarioUI {
     // =====================================================
 
     private static final float ANCHO_PANEL = 850f;
-    private static final float ALTO_PANEL = 425f;
+    private float altoPanel;
 
     // =====================================================
-    // POSICIÓN DE LOS SLOTS
+    // GRILLA (fracciones del panel, medidas desde ARRIBA)
     // =====================================================
 
-    private static final float INICIO_SLOT_X = 74.71f;
+    private static final float GRILLA_IZQ = 0.094f;
+    private static final float GRILLA_DER = 0.913f;
+    private static final float GRILLA_SUP = 0.300f;
+    private static final float GRILLA_INF = 0.822f;
 
-    private static final float INICIO_SLOT_Y = 86.33f;
-
-    private static final float TAMANO_SLOT_X = 64.77f;
-    private static final float TAMANO_SLOT_Y = 68.07f;
-
-    private static final float ESPACIO_X = 6.64f;
-    private static final float ESPACIO_Y = 6.64f;
+    private static final float ESPACIO = 8f;
 
     // =====================================================
-    // TAMAÑO VISUAL DE LOS OBJETOS
+    // ICONOS Y CANTIDAD
     // =====================================================
 
-    /*
-     * Todos los objetos intentarán ocupar como máximo
-     * este tamaño.
-     *
-     * Se mantiene la proporción original de cada textura.
-     */
-
-    private static final float TAMANO_MAX_ICONO = 40f;
-
-    // =====================================================
-    // POSICIÓN DE LA CANTIDAD
-    // =====================================================
-
+    private static final float PORCENTAJE_ICONO = 0.70f;
     private static final float MARGEN_CANTIDAD = 4f;
+
+    private final Map<Texture, TextureRegion> cacheIconos = new HashMap<>();
 
     // =====================================================
     // CONSTRUCTOR
@@ -91,38 +93,33 @@ public class InventarioUI {
 
         batchInventario = new SpriteBatch();
 
-        panelTexture = new Texture(
-            Gdx.files.internal("inventario/panel.png")
-        );
-
-        slotTexture = new Texture(
-            Gdx.files.internal("inventario/slot.png")
-        );
+        panelTexture = new Texture(Gdx.files.internal("inventario/panel.png"));
+        slotTexture = new Texture(Gdx.files.internal("inventario/slot.png"));
 
         panelTexture.setFilter(
-            Texture.TextureFilter.Nearest,
-            Texture.TextureFilter.Nearest
+                Texture.TextureFilter.Nearest,
+                Texture.TextureFilter.Nearest
         );
 
         slotTexture.setFilter(
-            Texture.TextureFilter.Nearest,
-            Texture.TextureFilter.Nearest
+                Texture.TextureFilter.Nearest,
+                Texture.TextureFilter.Nearest
         );
-      
-        // =================================================
-        // FUENTE PARA CANTIDADES
-        // =================================================
+
+        altoPanel = ANCHO_PANEL * panelTexture.getHeight() / panelTexture.getWidth();
 
         fuenteCantidad = new BitmapFont();
         layoutCantidad = new GlyphLayout();
-        
+
         fuenteCantidad.getRegion().getTexture().setFilter(
-            Texture.TextureFilter.Nearest,
-            Texture.TextureFilter.Nearest
+                Texture.TextureFilter.Nearest,
+                Texture.TextureFilter.Nearest
         );
 
         abierto = false;
         slotSeleccionado = -1;
+        arrastrando = false;
+        slotArrastrado = -1;
     }
 
     // =====================================================
@@ -131,26 +128,73 @@ public class InventarioUI {
 
     public void actualizar() {
 
+        // Abrir / cerrar
         if (Gdx.input.isKeyJustPressed(Input.Keys.I)) {
 
             abierto = !abierto;
 
             if (!abierto) {
+                arrastrando = false;
+                slotArrastrado = -1;
                 slotSeleccionado = -1;
             }
         }
 
         if (!abierto) {
+            mousePresionadoAnteriormente = false;
             return;
         }
 
-        if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
+        boolean mousePresionado = Gdx.input.isButtonPressed(Input.Buttons.LEFT);
 
-            float mouseX = convertirMouseX();
-            float mouseY = convertirMouseY();
+        float mouseX = convertirMouseX();
+        float mouseY = convertirMouseY();
 
-            seleccionarSlot(mouseX, mouseY);
+        // ---------- CLICK INICIAL ----------
+        if (mousePresionado && !mousePresionadoAnteriormente) {
+
+            int slot = obtenerSlotDesdeMouse(mouseX, mouseY);
+
+            if (slot != -1) {
+
+                Item item = jugador.getInventario().getItem(slot);
+
+                if (item != null) {
+
+                    slotSeleccionado = slot;
+
+                    // Empezamos a arrastrar
+                    arrastrando = true;
+                    slotArrastrado = slot;
+
+                    
+                }
+            }
         }
+
+        // ---------- MIENTRAS SE ARRASTRA ----------
+        if (mousePresionado && arrastrando) {
+            mouseArrastreX = mouseX;
+            mouseArrastreY = mouseY;
+        }
+
+        // ---------- SOLTAR ----------
+        if (!mousePresionado && mousePresionadoAnteriormente && arrastrando) {
+
+            int slotDestino = obtenerSlotDesdeMouse(mouseX, mouseY);
+
+            if (slotDestino != -1 && slotDestino != slotArrastrado) {
+
+                jugador.getInventario().moverItem(slotArrastrado, slotDestino);
+
+                slotSeleccionado = slotDestino;
+            }
+
+            arrastrando = false;
+            slotArrastrado = -1;
+        }
+
+        mousePresionadoAnteriormente = mousePresionado;
     }
 
     // =====================================================
@@ -158,138 +202,76 @@ public class InventarioUI {
     // =====================================================
 
     private float convertirMouseX() {
-
-        return
-            Gdx.input.getX()
-            * ANCHO_VIRTUAL
-            / Gdx.graphics.getWidth();
+        return Gdx.input.getX() * ANCHO_VIRTUAL / Gdx.graphics.getWidth();
     }
 
     private float convertirMouseY() {
-
-        return
-            (Gdx.graphics.getHeight() - Gdx.input.getY())
-            * ALTO_VIRTUAL
-            / Gdx.graphics.getHeight();
+        return (Gdx.graphics.getHeight() - Gdx.input.getY())
+                * ALTO_VIRTUAL / Gdx.graphics.getHeight();
     }
 
     // =====================================================
-    // POSICIÓN X DEL SLOT
+    // GEOMETRÍA
     // =====================================================
 
-    private float obtenerSlotX(
-        float panelX,
-        int columna
-    ) {
+    private float panelX() {
+        return (ANCHO_VIRTUAL - ANCHO_PANEL) / 2f;
+    }
 
-        return
-            panelX
-            + INICIO_SLOT_X
-            + columna * (
-                TAMANO_SLOT_X
-                + ESPACIO_X
-            );
+    private float panelY() {
+        return (ALTO_VIRTUAL - altoPanel) / 2f;
+    }
+
+    private float anchoSlot() {
+        float anchoGrilla = ANCHO_PANEL * (GRILLA_DER - GRILLA_IZQ);
+        return (anchoGrilla - ESPACIO * (COLUMNAS - 1)) / COLUMNAS;
+    }
+
+    private float altoSlot() {
+        float altoGrilla = altoPanel * (GRILLA_INF - GRILLA_SUP);
+        return (altoGrilla - ESPACIO * (FILAS - 1)) / FILAS;
+    }
+
+    private float obtenerSlotX(int columna) {
+        return panelX()
+                + ANCHO_PANEL * GRILLA_IZQ
+                + columna * (anchoSlot() + ESPACIO);
+    }
+
+    private float obtenerSlotY(int fila) {
+        // fila 0 = la de arriba
+        float topeGrilla = panelY() + altoPanel * (1f - GRILLA_SUP);
+        return topeGrilla - (fila + 1) * altoSlot() - fila * ESPACIO;
     }
 
     // =====================================================
-    // POSICIÓN Y DEL SLOT
+    // SLOT BAJO EL MOUSE
+    // Usa EXACTAMENTE la misma geometría con la que se dibuja,
+    // y cubre la mitad del espacio entre slots para que soltar
+    // un objeto en un borde no falle.
     // =====================================================
 
-    private float obtenerSlotY(
-        float panelY,
-        int fila
-    ) {
+    private int obtenerSlotDesdeMouse(float mouseX, float mouseY) {
 
-        // Invertimos las filas porque
-        // LibGDX utiliza coordenadas desde abajo.
-
-        int filaInvertida =
-            FILAS - 1 - fila;
-
-        return
-            panelY
-            + INICIO_SLOT_Y
-            + filaInvertida * (
-                TAMANO_SLOT_Y
-                + ESPACIO_Y
-            );
-    }
-
-    // =====================================================
-    // SELECCIONAR SLOT
-    // =====================================================
-
-    private void seleccionarSlot(
-        float mouseX,
-        float mouseY
-    ) {
-
-        float panelX =
-            (ANCHO_VIRTUAL - ANCHO_PANEL) / 2f;
-
-        float panelY =
-            (ALTO_VIRTUAL - ALTO_PANEL) / 2f;
+        float margen = ESPACIO / 2f;
 
         for (int i = 0; i < CANTIDAD_SLOTS; i++) {
 
-            int fila =
-                i / COLUMNAS;
+            float x = obtenerSlotX(i % COLUMNAS);
+            float y = obtenerSlotY(i / COLUMNAS);
 
-            int columna =
-                i % COLUMNAS;
+            if (mouseX >= x - margen && mouseX <= x + anchoSlot() + margen
+                    && mouseY >= y - margen && mouseY <= y + altoSlot() + margen) {
 
-            float x =
-                obtenerSlotX(
-                    panelX,
-                    columna
-                );
-
-            float y =
-                obtenerSlotY(
-                    panelY,
-                    fila
-                );
-
-            if (
-                mouseX >= x &&
-                mouseX <= x + TAMANO_SLOT_X &&
-                mouseY >= y &&
-                mouseY <= y + TAMANO_SLOT_Y
-            ) {
-
-                slotSeleccionado = i;
-
-                Item item =
-                    jugador
-                        .getInventario()
-                        .getItem(i);
-
-                // =================================================
-                // EQUIPAR HERRAMIENTA
-                // =================================================
-
-                if (item instanceof Herramienta) {
-
-                    Herramienta herramienta =
-                        (Herramienta) item;
-
-                    jugador.equiparHerramienta(
-                        herramienta
-                    );
-
-                    System.out.println(
-                        "Equipaste: "
-                        + herramienta.getNombre()
-                    );
-                }
-
-                return;
+                return i;
             }
         }
+
+        return -1;
     }
 
     // =====================================================
-    // DIBUJAR INVENTARIO
+    // DIBUJAR
     // =====================================================
 
     public void dibujar() {
@@ -298,247 +280,197 @@ public class InventarioUI {
             return;
         }
 
-        batchInventario
-            .getProjectionMatrix()
-            .setToOrtho2D(
-                0,
-                0,
-                ANCHO_VIRTUAL,
-                ALTO_VIRTUAL
-            );
-
-        float panelX =
-            (ANCHO_VIRTUAL - ANCHO_PANEL) / 2f;
-
-        float panelY =
-            (ALTO_VIRTUAL - ALTO_PANEL) / 2f;
+        batchInventario.getProjectionMatrix()
+                .setToOrtho2D(0, 0, ANCHO_VIRTUAL, ALTO_VIRTUAL);
 
         batchInventario.begin();
+        batchInventario.setColor(1f, 1f, 1f, 1f);
 
-        batchInventario.setColor(
-            1f,
-            1f,
-            1f,
-            1f
-        );
+        // Panel
+        batchInventario.draw(panelTexture, panelX(), panelY(), ANCHO_PANEL, altoPanel);
 
-        // =================================================
-        // PANEL
-        // =================================================
-
-        batchInventario.draw(
-            panelTexture,
-            panelX,
-            panelY,
-            ANCHO_PANEL,
-            ALTO_PANEL
-        );
-
-        // =================================================
-        // SLOTS
-        // =================================================
-
+        // Slots
         for (int i = 0; i < CANTIDAD_SLOTS; i++) {
 
-            int fila =
-                i / COLUMNAS;
+            float x = obtenerSlotX(i % COLUMNAS);
+            float y = obtenerSlotY(i / COLUMNAS);
 
-            int columna =
-                i % COLUMNAS;
-
-            float x =
-                obtenerSlotX(
-                    panelX,
-                    columna
-                );
-
-            float y =
-                obtenerSlotY(
-                    panelY,
-                    fila
-                );
-
-            // =================================================
-            // SLOT SELECCIONADO
-            // =================================================
-
+            // Slot seleccionado
             if (i == slotSeleccionado) {
 
-                batchInventario.setColor(
-                    1f,
-                    1f,
-                    1f,
-                    0.30f
-                );
-
-                batchInventario.draw(
-                    slotTexture,
-                    x,
-                    y,
-                    TAMANO_SLOT_X,
-                    TAMANO_SLOT_Y
-                );
-
-                batchInventario.setColor(
-                    1f,
-                    1f,
-                    1f,
-                    1f
-                );
+                batchInventario.setColor(1f, 1f, 1f, 0.30f);
+                batchInventario.draw(slotTexture, x, y, anchoSlot(), altoSlot());
+                batchInventario.setColor(1f, 1f, 1f, 1f);
             }
 
-            // =================================================
-            // ITEM
-            // =================================================
+            // El objeto que se está arrastrando no se dibuja en su slot
+            if (arrastrando && i == slotArrastrado) {
+                continue;
+            }
 
-            Item item =
-                jugador
-                    .getInventario()
-                    .getItem(i);
+            Item item = jugador.getInventario().getItem(i);
 
             if (item == null) {
                 continue;
             }
 
-            Texture icono =
-                item.getIcono();
-
-            if (icono != null) {
-
-                dibujarIcono(
-                    icono,
-                    x,
-                    y
-                );
-            }
-
-            // =================================================
-            // CANTIDAD
-            // =================================================
+            dibujarIcono(
+                    item,
+                    x + anchoSlot() / 2f,
+                    y + altoSlot() / 2f,
+                    1f
+            );
 
             if (item instanceof Recursos) {
-
-                Recursos recurso =
-                    (Recursos) item;
-
-                dibujarCantidad(
-                    recurso,
-                    x,
-                    y
-                );
+                dibujarCantidad((Recursos) item, x, y);
             }
         }
 
-        batchInventario.setColor(
-            1f,
-            1f,
-            1f,
-            1f
-        );
+        // Objeto arrastrado (encima de todo)
+        if (arrastrando && slotArrastrado != -1) {
 
+            Item item = jugador.getInventario().getItem(slotArrastrado);
+
+            if (item != null) {
+
+                dibujarIcono(item, mouseArrastreX, mouseArrastreY, 0.85f);
+
+                if (item instanceof Recursos) {
+                    dibujarCantidad(
+                            (Recursos) item,
+                            mouseArrastreX - anchoSlot() / 2f,
+                            mouseArrastreY - altoSlot() / 2f
+                    );
+                }
+            }
+        }
+
+        batchInventario.setColor(1f, 1f, 1f, 1f);
         batchInventario.end();
     }
 
     // =====================================================
-    // DIBUJAR ICONO NORMALIZADO
+    // DIBUJAR ICONO (centrado en un punto)
     // =====================================================
 
-    private void dibujarIcono(
-    Texture icono,
-    float slotX,
-    float slotY
-) {
+    private void dibujarIcono(Item item, float centroX, float centroY, float alpha) {
 
-    float anchoOriginal = icono.getWidth();
-    float altoOriginal = icono.getHeight();
+        Texture textura = item.getIcono();
 
-    float dimensionMayor = Math.max(
-        anchoOriginal,
-        altoOriginal
-    );
-
-    float escala =
-        TAMANO_MAX_ICONO / dimensionMayor;
-
-    float multiplicador = 1f;
-    float DESPLAZAMIENTO_HACHA_X = 10f;
-    
-    Item itemActual = null;
-
-    for (int i = 0; i < 30; i++) {
-
-        Item item = jugador
-            .getInventario()
-            .getItem(i);
-
-        if (item != null && item.getIcono() == icono) {
-            itemActual = item;
-            break;
+        if (textura == null) {
+            return;
         }
+
+        TextureRegion region = obtenerRegionRecortada(textura);
+
+        float maxAncho = anchoSlot() * PORCENTAJE_ICONO;
+        float maxAlto = altoSlot() * PORCENTAJE_ICONO;
+
+        float escala = Math.min(
+                maxAncho / region.getRegionWidth(),
+                maxAlto / region.getRegionHeight()
+        );
+
+        float ancho = region.getRegionWidth() * escala;
+        float alto = region.getRegionHeight() * escala;
+
+        batchInventario.setColor(1f, 1f, 1f, alpha);
+
+        batchInventario.draw(
+                region,
+                centroX - ancho / 2f,
+                centroY - alto / 2f,
+                ancho,
+                alto
+        );
+
+        batchInventario.setColor(1f, 1f, 1f, 1f);
     }
-
-    if (itemActual instanceof hacha) {
-        multiplicador = 3.30f;
-    }
-
-    escala *= multiplicador;
-
-    float ancho =
-        anchoOriginal * escala;
-
-    float alto =
-        altoOriginal * escala;
-
-    float x =
-    	    slotX +
-    	    (TAMANO_SLOT_X - ancho) / 2f;
-
-    	float y =
-    	    slotY +
-    	    (TAMANO_SLOT_Y - alto) / 2f;
-
-    	if (itemActual instanceof hacha) {
-    	    x += DESPLAZAMIENTO_HACHA_X;
-    	}
-
-    batchInventario.draw(
-        icono,
-        x,
-        y,
-        ancho,
-        alto
-    );
-}
 
     // =====================================================
-    // DIBUJAR CANTIDAD
+    // DIBUJAR CANTIDAD (esquina inferior derecha del slot)
     // =====================================================
 
     private void dibujarCantidad(Recursos recurso, float slotX, float slotY) {
 
-    int cantidad = recurso.getCantidad();
+        int cantidad = recurso.getCantidad();
 
-    if (cantidad <= 0) {
-        return;
+        if (cantidad <= 0) {
+            return;
+        }
+
+        String texto = String.valueOf(cantidad);
+
+        layoutCantidad.setText(fuenteCantidad, texto);
+
+        float x = slotX + anchoSlot() - layoutCantidad.width - MARGEN_CANTIDAD;
+        float y = slotY + MARGEN_CANTIDAD + layoutCantidad.height;
+
+        fuenteCantidad.draw(batchInventario, texto, x, y);
     }
 
-    String texto = String.valueOf(cantidad);
+    // =====================================================
+    // RECORTAR TEXTURA A SU PARTE VISIBLE
+    // =====================================================
 
-    // Calculamos el tamaño real del texto
-    layoutCantidad.setText(fuenteCantidad, texto);
+    private TextureRegion obtenerRegionRecortada(Texture textura) {
 
-    float anchoTexto = layoutCantidad.width;
+        TextureRegion cacheada = cacheIconos.get(textura);
 
-    float x = slotX + TAMANO_SLOT_X - anchoTexto - MARGEN_CANTIDAD;
-    float y = slotY + MARGEN_CANTIDAD + layoutCantidad.height;
+        if (cacheada != null) {
+            return cacheada;
+        }
 
-    fuenteCantidad.draw(
-        batchInventario,
-        texto,
-        x,
-        y
-    );
-}
+        TextureData data = textura.getTextureData();
+
+        if (!data.isPrepared()) {
+            data.prepare();
+        }
+
+        Pixmap pixmap = data.consumePixmap();
+
+        int minX = pixmap.getWidth();
+        int minY = pixmap.getHeight();
+        int maxX = -1;
+        int maxY = -1;
+
+        for (int py = 0; py < pixmap.getHeight(); py++) {
+            for (int px = 0; px < pixmap.getWidth(); px++) {
+
+                int alpha = pixmap.getPixel(px, py) & 0xff;
+
+                if (alpha > 10) {
+                    if (px < minX) minX = px;
+                    if (px > maxX) maxX = px;
+                    if (py < minY) minY = py;
+                    if (py > maxY) maxY = py;
+                }
+            }
+        }
+
+        if (maxX < 0) {
+            minX = 0;
+            minY = 0;
+            maxX = pixmap.getWidth() - 1;
+            maxY = pixmap.getHeight() - 1;
+        }
+
+        TextureRegion region = new TextureRegion(
+                textura,
+                minX,
+                minY,
+                maxX - minX + 1,
+                maxY - minY + 1
+        );
+
+        if (data.disposePixmap()) {
+            pixmap.dispose();
+        }
+
+        cacheIconos.put(textura, region);
+
+        return region;
+    }
 
     // =====================================================
     // ESTADO
@@ -548,6 +480,10 @@ public class InventarioUI {
         return abierto;
     }
 
+    public int getSlotSeleccionado() {
+        return slotSeleccionado;
+    }
+
     // =====================================================
     // DISPOSE
     // =====================================================
@@ -555,11 +491,8 @@ public class InventarioUI {
     public void dispose() {
 
         batchInventario.dispose();
-
         panelTexture.dispose();
-
         slotTexture.dispose();
-
         fuenteCantidad.dispose();
     }
 }

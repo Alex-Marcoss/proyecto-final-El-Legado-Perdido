@@ -4,81 +4,118 @@ import Juego.facuAlex.Jugador;
 
 public class Enemigo {
 
-	    private String nombre;
-	    private int vida;
-	    private int daño;
+    private String nombre;
+    private int vida;
+    private int daño;
 
-	    public Enemigo(String nombre, int vida, int daño) { // constructor
-	        this.nombre = nombre;
-	        this.vida = vida;
-	        this.daño = daño;
-	    }
-        // -----------------------------------------------------------------------
-    
-	    public String getNombre() {
-	        return nombre; // obtiene nombre de enemigo
-	    }
+    private float posicionX;
+    private float posicionY;
 
-	    public int getVida() {
-	        return vida; // obtiene vida de enemigo
-	    }
+    public Enemigo(String nombre, int vida, int daño) {
 
-	    public int getDaño() {
-	        return daño; // obtiene el daño que genera el enemigo
-	    }
-    // -----------------------------------------------------------------------
-	    public void recibirDaño(int cantidad) { // funcion para que pierda vida el enemigo
+        this.nombre = nombre;
+        this.vida = vida;
+        this.daño = daño;
 
-	        vida -= cantidad;
+        posicionX = 0;
+        posicionY = 0;
+    }
 
-	        if (vida < 0) {
-	            vida = 0;
-	        }
-	    }
-    // -----------------------------------------------------------------------
-	    public boolean estaVivo() { // funcion que verifica si el enemigo esta vivo o no
-	        if (vida > 0) {
-	        	return true;
-	        }
-	    	return false;
-	    }
-    // -----------------------------------------------------------------------
-	    public void mostrarEstado() { // se muestra el estado del enemigo
+    // =========================================================
+    // INFORMACIÓN
+    // =========================================================
 
-	        System.out.println("Enemigo: " + nombre);
-	        System.out.println("Vida: " + vida);
-	        System.out.println("Daño: " + daño);
-	    }
-    // -----------------------------------------------------------------------
-	    
-	    public void atacar(Jugador jugador) {
+    public String getNombre() {
+        return nombre;
+    }
 
-	        if (jugador == null) {
-	            return;
-	        }
+    public int getVida() {
+        return vida;
+    }
 
-	        if (!estaVivo()) {
-	            return;
-	        }
+    public int getDaño() {
+        return daño;
+    }
 
-	        if (!jugador.estaVivo()) {
-	            return;
-	        }
+    // =========================================================
+    // POSICIÓN
+    // =========================================================
 
-	        jugador.recibirDanio(daño);
+    public float getPosicionX() {
+        return posicionX;
+    }
 
-	        if (jugador.estaVivo()) {
-	            System.out.println(
-	                getNombre() +
-	                " te atacó y causó " +
-	                daño +
-	                " de daño."
-	            );
-	        }
-	    }
-	    
-	    
-}    
-	
-	
+    public float getPosicionY() {
+        return posicionY;
+    }
 
+    public void setPosicion(float x, float y) {
+
+        posicionX = x;
+        posicionY = y;
+    }
+
+    // =========================================================
+    // DAÑO
+    // =========================================================
+
+    public void recibirDaño(int cantidad) {
+
+        vida -= cantidad;
+
+        if (vida < 0) {
+            vida = 0;
+        }
+    }
+
+    // =========================================================
+    // ESTADO
+    // =========================================================
+
+    public boolean estaVivo() {
+        return vida > 0;
+    }
+
+    public void mostrarEstado() {
+
+        System.out.println(
+            "Enemigo: " + nombre
+        );
+
+        System.out.println(
+            "Vida: " + vida
+        );
+
+        System.out.println(
+            "Daño: " + daño
+        );
+    }
+
+    // =========================================================
+    // ATAQUE
+    // =========================================================
+
+    public void atacar(Jugador jugador) {
+
+        if (jugador == null) {
+            return;
+        }
+
+        if (!estaVivo()) {
+            return;
+        }
+
+        if (!jugador.estaVivo()) {
+            return;
+        }
+
+        jugador.recibirDanio(daño);
+
+        System.out.println(
+            getNombre() +
+            " te atacó y causó " +
+            daño +
+            " de daño."
+        );
+    }
+}

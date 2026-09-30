@@ -5,11 +5,11 @@ import com.badlogic.gdx.Input;
 
 import Juego.facuAlex.Mapa.Mapa;
 import Juego.facuAlex.recursos.arbol;
+import Juego.facuAlex.recursos.roca;
 
 public class JugadorControl {
 
     private Jugador jugador;
-
     private Direccion direccion;
     private Estado estado;
 
@@ -27,163 +27,176 @@ public class JugadorControl {
     }
 
     public JugadorControl(Jugador jugador) {
-
         this.jugador = jugador;
-
-        direccion = Direccion.ABAJO;
-        estado = Estado.IDLE;
+        this.direccion = Direccion.ABAJO;
+        this.estado = Estado.IDLE;
     }
-
-    // ==========================================
-    // ACTUALIZAR
-    // ==========================================
 
     public void actualizar(float delta, Mapa mapa) {
 
-        boolean arriba =
-            Gdx.input.isKeyPressed(Input.Keys.W);
+        // =========================
+        // ENTRADA DEL JUGADOR
+        // =========================
 
-        boolean abajo =
-            Gdx.input.isKeyPressed(Input.Keys.S);
+        boolean arriba = Gdx.input.isKeyPressed(Input.Keys.W);
+        boolean abajo = Gdx.input.isKeyPressed(Input.Keys.S);
+        boolean izquierda = Gdx.input.isKeyPressed(Input.Keys.A);
+        boolean derecha = Gdx.input.isKeyPressed(Input.Keys.D);
 
-        boolean izquierda =
-            Gdx.input.isKeyPressed(Input.Keys.A);
+        boolean correr = Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT)
+                || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT);
 
-        boolean derecha =
-            Gdx.input.isKeyPressed(Input.Keys.D);
 
-        boolean correr =
-            Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT)
-            || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT);
+        // =========================
+        // INTERACCIONES
+        // =========================
 
-        float velocidad;
-        
         if (Gdx.input.isKeyJustPressed(Input.Keys.E)) {
 
-            arbol arbolCercano =
-                mapa.obtenerArbolCercano(
+            arbol arbolCercano = mapa.obtenerArbolCercano(
                     jugador.getPosicionX(),
                     jugador.getPosicionY(),
                     100f
-                );
+            );
 
             if (arbolCercano != null) {
 
-                jugador.talarArbol(
-                    arbolCercano,
-                    mapa
-                );
+                jugador.talarArbol(arbolCercano, mapa);
 
             } else {
 
-                System.out.println(
-                    "No hay ningun arbol cerca."
+                roca rocaCercana = mapa.obtenerRocaCercana(
+                        jugador.getPosicionX(),
+                        jugador.getPosicionY(),
+                        100f
                 );
+
+                if (rocaCercana != null) {
+
+                    jugador.minarRoca(rocaCercana, mapa);
+
+                } else {
+
+                    System.out.println("No hay ningun recurso cerca.");
+                }
             }
         }
 
-        // ==========================================
-        // NINGUNA TECLA
-        // ==========================================
+
+        // =========================
+        // SI NO SE MUEVE
+        // =========================
 
         if (!arriba && !abajo && !izquierda && !derecha) {
 
             estado = Estado.IDLE;
-
             return;
         }
 
-        // ==========================================
-        // VELOCIDAD
-        // ==========================================
 
-        if (correr) {
+        // =========================
+        // DIRECCIÓN DEL JUGADOR
+        // =========================
 
-            velocidad = 180f;
-            estado = Estado.CORRER;
+        float direccionX = 0f;
+        float direccionY = 0f;
 
-        } else {
-
-            velocidad = 100f;
-            estado = Estado.CAMINAR;
+        if (arriba) {
+            direccionY += 1f;
         }
 
-        // ==========================================
-        // MOVIMIENTO
-        // ==========================================
-
-    
-        estado = Estado.IDLE;
-        float movimientoX = 0f;
-        float movimientoY = 0f;
-
-        if (!arriba && !abajo && !izquierda && !derecha) {
-            return;
+        if (abajo) {
+            direccionY -= 1f;
         }
 
-        // Determinar estado y velocidad
-        if (correr) {
-            velocidad = 180f;
-            estado = Estado.CORRER;
-        } else {
-            velocidad = 100f;
-            estado = Estado.CAMINAR;
+        if (izquierda) {
+            direccionX -= 1f;
         }
 
-        // Calcular componentes
-        if (arriba) movimientoY += velocidad * delta;
-        if (abajo) movimientoY -= velocidad * delta;
-        if (izquierda) movimientoX -= velocidad * delta;
-        if (derecha) movimientoX += velocidad * delta;
+        if (derecha) {
+            direccionX += 1f;
+        }
 
-        // Actualizar dirección visual según el eje dominante
-        if (Math.abs(movimientoX) > Math.abs(movimientoY)) {
-            if (movimientoX > 0) {
+
+        // Determinar dirección visual
+        if (Math.abs(direccionX) > Math.abs(direccionY)) {
+
+            if (direccionX > 0) {
                 direccion = Direccion.DERECHA;
             } else {
                 direccion = Direccion.IZQUIERDA;
             }
-        } else if (Math.abs(movimientoY) > 0) {
-            if (movimientoY > 0) {
+
+        } else if (Math.abs(direccionY) > 0) {
+
+            if (direccionY > 0) {
                 direccion = Direccion.ARRIBA;
             } else {
                 direccion = Direccion.ABAJO;
             }
         }
 
-        // ==========================================
-        // MOVER
-        // ==========================================
 
-        if (estado == Estado.CORRER) {
+        // =========================
+        // VELOCIDAD
+        // =========================
 
-            jugador.correr(
-                movimientoX,
-                movimientoY,
-                mapa
+        float velocidadCaminar = 100f;
+        float velocidadCorrer = 170f;
+
+        float velocidad;
+
+
+        // =========================
+        // CORRER
+        // =========================
+
+        if (correr && jugador.getEnergia() > 0) {
+
+            velocidad = velocidadCorrer;
+
+            float movimientoX = direccionX * velocidad * delta;
+            float movimientoY = direccionY * velocidad * delta;
+
+            boolean pudoCorrer = jugador.correr(
+                    movimientoX,
+                    movimientoY,
+                    mapa,
+                    delta
             );
 
-        } else {
+            if (pudoCorrer) {
 
-            jugador.mover(
-                movimientoX,
-                movimientoY,
-                mapa
-            );
+                estado = Estado.CORRER;
+                return;
+            }
         }
+
+
+        // =========================
+        // CAMINAR
+        // =========================
+
+        velocidad = velocidadCaminar;
+
+        float movimientoX = direccionX * velocidad * delta;
+        float movimientoY = direccionY * velocidad * delta;
+
+        jugador.mover(
+                movimientoX,
+                movimientoY,
+                mapa
+        );
+
+        estado = Estado.CAMINAR;
     }
 
-    // ==========================================
-    // GETTERS
-    // ==========================================
 
     public Direccion getDireccion() {
-
         return direccion;
     }
 
     public Estado getEstado() {
-
         return estado;
     }
 }

@@ -11,9 +11,8 @@ import Juego.facuAlex.sistemas.UnionSistema;
 public class Pruebas {
 
 public static void main(String[] args) {
-
+/*
         // Crear mapa y jugador
-        Mapa mapa = new Mapa(900, 600);
         Jugador jugador = new Jugador("Facu");
 
         // Crear sistema general
@@ -25,7 +24,7 @@ public static void main(String[] args) {
         // Mover al jugador hacia el templo
         System.out.println("\n=== MOVIENDO AL JUGADOR ===");
 
-        jugador.mover(700, 400, mapa);
+       
 
         System.out.println(
             "Posicion jugador: " +
@@ -98,6 +97,7 @@ public static void main(String[] args) {
      sistemas.actualizarObjetivo(mapa, estructura);
 
      System.out.println("\n=== ESTADO FINAL ===");
-     sistemas.getObjetivo().mostrarObjetivo();
+     sistemas.getObjetivo().mostrarObjetivo();*/
     }
 }
+	

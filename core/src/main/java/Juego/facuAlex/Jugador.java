@@ -10,6 +10,7 @@ import Juego.facuAlex.recursos.Comida;
 import Juego.facuAlex.recursos.Item;
 import Juego.facuAlex.recursos.Recursos;
 import Juego.facuAlex.recursos.arbol;
+import Juego.facuAlex.recursos.roca;
 import Juego.facuAlex.sistemas.Construccion;
 import Juego.facuAlex.sistemas.Energia;
 
@@ -18,7 +19,7 @@ public class Jugador {
 	String nombre;
 	int vida;
 	int hambre;
-	int energia;
+	float energia;
 	private Herramienta herramientaEquipada;
 	private float posicionX;
 	private float posicionY;
@@ -38,7 +39,7 @@ public class Jugador {
 	    this.inventario = new inventario();
 	    this.posicionX = 0;
 	    this.posicionY = 0;
-	    this.sistemaEnergia = new Energia(5, 3);
+	    this.sistemaEnergia = new Energia(2.67f);
 	}
 	
 	
@@ -61,28 +62,35 @@ public class Jugador {
 	    }
 	}
 	
-	public void correr(float x, float y, Mapa mapa) {
+	public boolean correr(float x, float y, Mapa mapa, float delta) {
 
-	    int energiaNecesaria = 2;
-
-	    if (energia < energiaNecesaria) {
-	        System.out.println("No tenes suficiente energia para correr.");
-	        return;
+	    // Energía necesaria para correr durante este frame
+	    float energiaNecesaria = 10f * delta;
+	
+	    // Si no hay energía suficiente, no puede correr
+	    if (energia <= 0) {
+	        return false;
 	    }
-
+	
 	    float nuevaX = posicionX + x;
 	    float nuevaY = posicionY + y;
-
-	    if (mapa.estaDentro(nuevaX, nuevaY)) {
-
-	        posicionX = nuevaX;
-	        posicionY = nuevaY;
-
-	        gastarEnergia(energiaNecesaria);
-
-	    } else {
+	
+	    // Comprobar límites del mapa
+	    if (!mapa.estaDentro(nuevaX, nuevaY)) {
+	
 	        System.out.println("No podes salir del mapa.");
+	
+	        return false;
 	    }
+	
+	    // Mover jugador
+	    posicionX = nuevaX;
+	    posicionY = nuevaY;
+	
+	    // Gastar energía proporcionalmente al tiempo
+	    gastarEnergia(energiaNecesaria);
+	
+	    return true;
 	}
 	
 	public float getPosicionX() {
@@ -138,7 +146,7 @@ public class Jugador {
 	}
 
 	public int getEnergia() {
-	    return energia;
+	    return (int)energia;
 	}
 	
 	// ---------------------------------------------------------------
@@ -178,9 +186,9 @@ public class Jugador {
 	
 	// ----------------------------- Energia -----------------------------
 	
-	public void gastarEnergia(int cantidad) {
+	public void gastarEnergia(float cantidad) {
 
-	    energia = energia - cantidad;
+	    energia -= cantidad;
 
 	    if (energia < 0) {
 	        energia = 0;
@@ -189,13 +197,13 @@ public class Jugador {
 	    sistemaEnergia.registrarGasto();
 	}
 	
-	public void recuperarEnergia(int cantidad) {
-		
-		energia = energia + cantidad;
-		if(energia > 100) {
-			energia = 100;
-		}
+	public void recuperarEnergia(float cantidad) {
 
+	    energia += cantidad;
+
+	    if (energia > 100) {
+	        energia = 100;
+	    }
 	}
 	
 	public void actualizarEnergia(float segundos) {
@@ -336,47 +344,34 @@ public class Jugador {
 	
 	public void atacar(Enemigo enemigo) {
 
-	    if (enemigo == null) {
-	        return;
-	    }
+    if (enemigo == null) {
+        return;
+    }
 
-	    if (!enemigo.estaVivo()) {
-	        System.out.println(
-	            enemigo.getNombre() + " ya esta derrotado."
-	        );
-	        return;
-	    }
+    if (!enemigo.estaVivo()) {
+        return;
+    }
 
-	    int daño = 20;
-	    int energiaNecesaria = 5;
+    int daño = 20;
 
-	    // Comprobar energía
-	    if (energia < energiaNecesaria) {
+    enemigo.recibirDaño(daño);
 
-	        System.out.println(
-	            "No tenes suficiente energia para atacar."
-	        );
+    System.out.println(
+        "Atacaste a " +
+        enemigo.getNombre() +
+        " y causaste " +
+        daño +
+        " de daño."
+    );
 
-	        return;
-	    }
+    if (!enemigo.estaVivo()) {
 
-	    // Realizar ataque
-	    enemigo.recibirDaño(daño);
-
-	    gastarEnergia(energiaNecesaria);
-
-	    System.out.println(
-	        "Atacaste a " + enemigo.getNombre() +
-	        " y causaste " + daño + " de daño."
-	    );
-
-	    if (!enemigo.estaVivo()) {
-
-	        System.out.println(
-	            enemigo.getNombre() + " fue derrotado."
-	        );
-	    }
-	}
+        System.out.println(
+            enemigo.getNombre() +
+            " fue derrotado."
+        );
+    }
+}
 	
 	// ----------------------------------------------------------
 	
@@ -518,6 +513,109 @@ public class Jugador {
 
             System.out.println(
                 "El arbol fue talado completamente."
+            );
+        }
+    }
+    
+    public void minarRoca(roca roca, Mapa mapa) {
+
+        if (roca == null || mapa == null) {
+            return;
+        }
+
+        // ==================================================
+        // COMPROBAR QUE EL PICO ESTÉ EQUIPADO
+        // ==================================================
+
+        if (herramientaEquipada == null) {
+
+            System.out.println(
+                "Necesitas equipar un pico para minar."
+            );
+
+            return;
+        }
+
+        if (herramientaEquipada.getTipo() != tipoHerramienta.PICO) {
+
+            System.out.println(
+                "Necesitas tener un pico equipado."
+            );
+
+            return;
+        }
+
+
+        // ==================================================
+        // COMPROBAR ENERGÍA
+        // ==================================================
+
+        int energiaNecesaria =
+            roca.getEnergiaNecesaria();
+
+        if (energia < energiaNecesaria) {
+
+            System.out.println(
+                "No tienes suficiente energia para minar."
+            );
+
+            return;
+        }
+
+
+        // ==================================================
+        // USAR EL PICO
+        // ==================================================
+
+        if (!herramientaEquipada.usar()) {
+
+            System.out.println(
+                "El pico no tiene suficiente durabilidad."
+            );
+
+            return;
+        }
+
+
+        // ==================================================
+        // GASTAR ENERGÍA
+        // ==================================================
+
+        gastarEnergia(energiaNecesaria);
+
+
+        // ==================================================
+        // OBTENER PIEDRA
+        // ==================================================
+
+        Recursos piedra =
+            roca.recolectarRecurso();
+
+        if (piedra != null) {
+
+            inventario.agregarRecurso(
+                piedra,
+                piedra.getCantidad()
+            );
+
+            System.out.println(
+                "Conseguiste " +
+                piedra.getCantidad() +
+                " de piedra."
+            );
+        }
+
+
+        // ==================================================
+        // COMPROBAR SI LA ROCA SE AGOTÓ
+        // ==================================================
+
+        if (roca.estaAgotada()) {
+
+            mapa.eliminarRoca(roca);
+
+            System.out.println(
+                "La roca se agoto."
             );
         }
     }

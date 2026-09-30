@@ -1,44 +1,187 @@
 package Juego.facuAlex.recursos;
 
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.math.Rectangle;
+
 import Juego.facuAlex.objetoMundo;
 import Juego.facuAlex.Herramientas.tipoHerramienta;
 
 public class roca extends objetoMundo {
 
     private int piedraDisponible;
-    
-    public roca(int piedraDisponible) { // constructor
+
+    private Texture textura;
+
+    private float posicionX;
+    private float posicionY;
+
+    // ==========================================================
+    // TAMAÑO VISUAL
+    // ==========================================================
+
+    private static final float ANCHO = 80f;
+    private static final float ALTO = 80f;
+
+    // ==========================================================
+    // HITBOX
+    // ==========================================================
+
+    private static final float HITBOX_ANCHO = 40f;
+    private static final float HITBOX_ALTO = 20f;
+
+    // ==========================================================
+    // CONSTRUCTOR
+    // ==========================================================
+
+    public roca(float x, float y) {
+
         super("Roca");
-        this.piedraDisponible = piedraDisponible;
+
+        posicionX = x;
+        posicionY = y;
+
+        // Cantidad de veces que se puede minar
+        piedraDisponible = 3;
+
+        // Cargar textura
+        textura = new Texture("recursos/Roca.png");
+
+        textura.setFilter(
+            Texture.TextureFilter.Nearest,
+            Texture.TextureFilter.Nearest
+        );
     }
 
-    // ----------------------------------------------------------------
-    
+    // ==========================================================
+    // DIBUJAR
+    // ==========================================================
+
+    public void dibujar(SpriteBatch batch) {
+
+        batch.draw(
+            textura,
+            posicionX - ANCHO / 2f,
+            posicionY,
+            ANCHO,
+            ALTO
+        );
+    }
+
+    // ==========================================================
+    // HITBOX
+    // ==========================================================
+
+    public Rectangle getHitbox() {
+
+        return new Rectangle(
+            posicionX - HITBOX_ANCHO / 2f,
+            posicionY,
+            HITBOX_ANCHO,
+            HITBOX_ALTO
+        );
+    }
+
+    // ==========================================================
+    // POSICIÓN
+    // ==========================================================
+
+    public float getPosicionX() {
+        return posicionX;
+    }
+
+    public float getPosicionY() {
+        return posicionY;
+    }
+
+    // ==========================================================
+    // HERRAMIENTA NECESARIA
+    // ==========================================================
+
     @Override
     public tipoHerramienta getHerramientaNecesaria() {
-        return tipoHerramienta.PICO; // Roca necesita el tipo de herramienta PICO
+
+        return tipoHerramienta.PICO;
     }
 
-    // ----------------------------------------------------------------
-    
+    // ==========================================================
+    // RECOLECTAR PIEDRA
+    // ==========================================================
+
     @Override
-    public Recursos recolectarRecurso() { // Funcion que extrae la piedra
+    public Recursos recolectarRecurso() {
 
         if (piedraDisponible <= 0) {
             return null;
         }
 
-        int cantidad = (int)(Math.random() * 2) + 1;
+        // Entrega entre 1 y 2 piedras
+        int cantidad =
+            (int) (Math.random() * 2) + 1;
 
         piedraDisponible--;
 
-        return new Recursos("Piedra", cantidad);
+        Recursos piedra =
+            new Recursos("Piedra", cantidad);
+
+        piedra.cargarIcono(
+            "objetos/piedra.png"
+        );
+
+        return piedra;
     }
 
-    // ----------------------------------------------------------------
-    
+    // ==========================================================
+    // ENERGÍA NECESARIA
+    // ==========================================================
+
     @Override
     public int getEnergiaNecesaria() {
-        return 5; // Energia necesaria para minar la roca 
+
+        return 5;
+    }
+
+    // ==========================================================
+    // COMPROBAR SI SE AGOTÓ
+    // ==========================================================
+
+    public boolean estaAgotada() {
+
+        return piedraDisponible <= 0;
+    }
+
+    // ==========================================================
+    // COMPROBAR DISTANCIA
+    // ==========================================================
+
+    public boolean estaCerca(
+        float jugadorX,
+        float jugadorY,
+        float distancia
+    ) {
+
+        float dx =
+            jugadorX - posicionX;
+
+        float dy =
+            jugadorY - posicionY;
+
+        float distanciaReal =
+            (float) Math.sqrt(
+                dx * dx + dy * dy
+            );
+
+        return distanciaReal <= distancia;
+    }
+
+    // ==========================================================
+    // DISPOSE
+    // ==========================================================
+
+    public void dispose() {
+
+        if (textura != null) {
+            textura.dispose();
+        }
     }
 }

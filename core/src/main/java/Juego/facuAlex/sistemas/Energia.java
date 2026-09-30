@@ -4,16 +4,21 @@ import Juego.facuAlex.Jugador;
 
 public class Energia {
 
-    private int energiaRecuperada;
-    private float segundosParaRecuperar;
+    // Cantidad de energía que se recupera por segundo
+    private float energiaPorSegundo;
 
+    // Tiempo acumulado desde el último gasto
     private float tiempoSinGastar;
 
-    public Energia(int energiaRecuperada, float segundosParaRecuperar) {
-        this.energiaRecuperada = energiaRecuperada;
-        this.segundosParaRecuperar = segundosParaRecuperar;
+    public Energia(float energiaPorSegundo) {
+
+        this.energiaPorSegundo = energiaPorSegundo;
         this.tiempoSinGastar = 0;
     }
+
+    // ==========================================================
+    // ACTUALIZAR
+    // ==========================================================
 
     public void actualizar(Jugador jugador, float segundos) {
 
@@ -25,35 +30,44 @@ public class Energia {
             return;
         }
 
+        // Si ya está al máximo no necesitamos recuperar
+        if (jugador.getEnergia() >= 100) {
+            tiempoSinGastar = 0;
+            return;
+        }
+
+        // Acumulamos el tiempo
         tiempoSinGastar += segundos;
 
-        if (tiempoSinGastar >= segundosParaRecuperar) {
+        // Recuperamos energía poco a poco
+        if (tiempoSinGastar > 3) {
 
-            jugador.recuperarEnergia(energiaRecuperada);
-
-            tiempoSinGastar = 0;
-
-            System.out.println(
-                "Recuperaste " +
-                energiaRecuperada +
-                " de energia."
+            jugador.recuperarEnergia(
+                energiaPorSegundo * segundos
             );
         }
     }
 
+    // ==========================================================
+    // REGISTRAR GASTO
+    // ==========================================================
+
     public void registrarGasto() {
+
         tiempoSinGastar = 0;
     }
 
+    // ==========================================================
+    // GETTERS
+    // ==========================================================
+
     public float getTiempoSinGastar() {
+
         return tiempoSinGastar;
     }
 
-    public int getEnergiaRecuperada() {
-        return energiaRecuperada;
-    }
+    public float getEnergiaPorSegundo() {
 
-    public float getSegundosParaRecuperar() {
-        return segundosParaRecuperar;
+        return energiaPorSegundo;
     }
 }

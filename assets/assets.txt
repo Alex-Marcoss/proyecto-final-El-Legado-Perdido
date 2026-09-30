@@ -1,1 +1,25 @@
+10.png
+10.tsx
+7.png
+7.tsx
+barras.png
+fuentes/Cinzel.ttf
+fuentes/CinzelDecorative-Bold.ttf
+fuentes/OFL.txt
+inventario/barraRapida.png
+inventario/panel.png
+inventario/slot.png
+jugador.png
 libgdx.png
+mapa pasto.tmx
+objetos/Piedra.png
+objetos/hacha.png
+objetos/madera.png
+objetos/pico.png
+pantallas/Inicio.jpg
+pantallas/derrota.jpg
+recursos/Arbol.png
+recursos/Roca.png
+sloppymess.png
+sloppymess.tsx
+sprites/jugador.png

@@ -9,11 +9,14 @@ public class inventario {
 
     private Item[] items;
 
+    // Cantidad de espacios ocupados
     private int cantidad;
+
+    private static final int CANTIDAD_SLOTS = 30;
 
     public inventario() {
 
-        this.items = new Item[20];
+        items = new Item[CANTIDAD_SLOTS];
 
         cantidad = 0;
     }
@@ -28,12 +31,19 @@ public class inventario {
             return;
         }
 
-        if (cantidad < items.length) {
+        // Buscar primer espacio libre
+        for (int i = 0; i < items.length; i++) {
 
-            items[cantidad] = item;
+            if (items[i] == null) {
 
-            cantidad++;
+                items[i] = item;
+                cantidad++;
+
+                return;
+            }
         }
+
+        System.out.println("Inventario lleno.");
     }
 
     // ==========================================================
@@ -44,43 +54,144 @@ public class inventario {
             Recursos recurso,
             int cantidad) {
 
-        for (int i = 0; i < this.cantidad; i++) {
+        if (recurso == null || cantidad <= 0) {
+            return;
+        }
 
-            if (items[i].getNombre().equals(
-                    recurso.getNombre())) {
+        // Primero buscar un recurso del mismo tipo
+        for (int i = 0; i < items.length; i++) {
 
-                items[i].agregarCantidad(cantidad);
+            if (items[i] == null) {
+                continue;
+            }
+
+            if (items[i].getNombre().equals(recurso.getNombre())
+                    && items[i] instanceof Recursos) {
+
+                Recursos recursoExistente =
+                        (Recursos) items[i];
+
+                recursoExistente.agregarCantidad(cantidad);
 
                 return;
             }
         }
 
-        if (this.cantidad < items.length) {
+        // Si no existe, buscar espacio libre
+        for (int i = 0; i < items.length; i++) {
 
-            items[this.cantidad] = recurso;
+            if (items[i] == null) {
 
-            this.cantidad++;
+                items[i] = recurso;
+
+                this.cantidad++;
+
+                return;
+            }
         }
+
+        System.out.println("Inventario lleno.");
     }
 
     // ==========================================================
-    // OBTENER ITEMS
+    // OBTENER ITEM
     // ==========================================================
 
     public Item getItem(int posicion) {
 
-        if (posicion < 0 ||
-            posicion >= cantidad) {
-
+        if (posicion < 0 || posicion >= items.length) {
             return null;
         }
 
         return items[posicion];
     }
 
+    // ==========================================================
+    // CANTIDAD DE ITEMS
+    // ==========================================================
+
     public int getCantidad() {
 
         return cantidad;
+    }
+
+    // ==========================================================
+    // CANTIDAD DE SLOTS
+    // ==========================================================
+
+    public int getCantidadSlots() {
+
+        return items.length;
+    }
+
+    // ==========================================================
+    // MOVER / INTERCAMBIAR ITEMS
+    // ==========================================================
+
+    public boolean intercambiarItems(
+            int posicionOrigen,
+            int posicionDestino) {
+
+        if (posicionOrigen < 0 ||
+            posicionOrigen >= items.length ||
+            posicionDestino < 0 ||
+            posicionDestino >= items.length) {
+
+            return false;
+        }
+
+        if (posicionOrigen == posicionDestino) {
+            return false;
+        }
+
+        Item temporal = items[posicionOrigen];
+
+        items[posicionOrigen] = items[posicionDestino];
+
+        items[posicionDestino] = temporal;
+
+        return true;
+    }
+
+    // ==========================================================
+    // MOVER ITEM
+    // ==========================================================
+
+    public boolean moverItem(
+            int posicionOrigen,
+            int posicionDestino) {
+
+        if (posicionOrigen < 0 ||
+            posicionOrigen >= items.length ||
+            posicionDestino < 0 ||
+            posicionDestino >= items.length) {
+
+            return false;
+        }
+
+        if (posicionOrigen == posicionDestino) {
+            return false;
+        }
+
+        if (items[posicionOrigen] == null) {
+            return false;
+        }
+
+        // Si el destino está vacío
+        if (items[posicionDestino] == null) {
+
+            items[posicionDestino] = items[posicionOrigen];
+
+            items[posicionOrigen] = null;
+
+            return true;
+        }
+
+        // Si hay otro objeto, intercambiar
+        return intercambiarItems(
+                posicionOrigen,
+                posicionDestino
+        );
     }
 
     // ==========================================================
@@ -90,12 +201,20 @@ public class inventario {
     public void mostrarInventario() {
 
         System.out.println(
-            "------------------ Inventario ------------------"
+                "------------------ Inventario ------------------"
         );
 
-        for (int i = 0; i < cantidad; i++) {
+        for (int i = 0; i < items.length; i++) {
 
-            items[i].mostrarInfo();
+            if (items[i] != null) {
+
+                System.out.println(
+                        "Slot " + i + ": "
+                        + items[i].getNombre()
+                );
+
+                items[i].mostrarInfo();
+            }
         }
     }
 
@@ -107,17 +226,19 @@ public class inventario {
             String nombre,
             int cantidad) {
 
-        for (int i = 0; i < this.cantidad; i++) {
+        for (int i = 0; i < items.length; i++) {
 
-            if (items[i].getNombre().equals(nombre)) {
+            if (items[i] == null) {
+                continue;
+            }
 
-                if (items[i] instanceof Recursos) {
+            if (items[i].getNombre().equals(nombre)
+                    && items[i] instanceof Recursos) {
 
-                    Recursos recurso =
+                Recursos recurso =
                         (Recursos) items[i];
 
-                    return recurso.getCantidad() >= cantidad;
-                }
+                return recurso.getCantidad() >= cantidad;
             }
         }
 
@@ -130,7 +251,11 @@ public class inventario {
 
     public boolean tieneItem(String nombre) {
 
-        for (int i = 0; i < cantidad; i++) {
+        for (int i = 0; i < items.length; i++) {
+
+            if (items[i] == null) {
+                continue;
+            }
 
             if (items[i].getNombre().equals(nombre)) {
 
@@ -148,12 +273,12 @@ public class inventario {
     public Herramienta obtenerHerramienta(
             tipoHerramienta tipo) {
 
-        for (int i = 0; i < cantidad; i++) {
+        for (int i = 0; i < items.length; i++) {
 
             if (items[i] instanceof Herramienta) {
 
                 Herramienta herramienta =
-                    (Herramienta) items[i];
+                        (Herramienta) items[i];
 
                 if (herramienta.getTipo() == tipo) {
 
@@ -173,21 +298,32 @@ public class inventario {
             String nombre,
             int cantidad) {
 
-        for (int i = 0; i < this.cantidad; i++) {
+        for (int i = 0; i < items.length; i++) {
 
-            if (items[i].getNombre().equals(nombre)) {
+            if (items[i] == null) {
+                continue;
+            }
 
-                if (items[i] instanceof Recursos) {
+            if (items[i].getNombre().equals(nombre)
+                    && items[i] instanceof Recursos) {
 
-                    Recursos recurso =
+                Recursos recurso =
                         (Recursos) items[i];
 
-                    if (recurso.getCantidad() >= cantidad) {
+                if (recurso.getCantidad() >= cantidad) {
 
-                        recurso.agregarCantidad(-cantidad);
+                    recurso.agregarCantidad(-cantidad);
 
-                        return true;
+                    // Si se queda sin unidades,
+                    // liberar el slot.
+                    if (recurso.getCantidad() <= 0) {
+
+                        items[i] = null;
+
+                        this.cantidad--;
                     }
+
+                    return true;
                 }
             }
         }

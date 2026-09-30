@@ -11,6 +11,7 @@ import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 
 import Juego.facuAlex.recursos.arbol;
+import Juego.facuAlex.recursos.roca;
 
 public class Mapa {
 
@@ -19,6 +20,9 @@ public class Mapa {
     
     private static final int CANTIDAD_ARBOLES = 50;
     private static final float DISTANCIA_MINIMA_ARBOLES = 180f;
+    
+    private static final int CANTIDAD_ROCAS = 30;
+    private static final float DISTANCIA_MINIMA_ROCAS = 150f;
 
     private Zona[] zonas;
 
@@ -29,6 +33,8 @@ public class Mapa {
     private OrthogonalTiledMapRenderer mapRenderer;
 
     private List<arbol> arboles;
+    
+    private List<roca> rocas;
 
     private Random random;
 
@@ -109,7 +115,12 @@ public class Mapa {
 
         arboles = new ArrayList<>();
 
+        rocas = new ArrayList<>();
+
         random = new Random();
+
+        crearArboles();
+        crearRocas();
 
         crearArboles();
     }
@@ -173,6 +184,89 @@ public class Mapa {
 
         return false;
     }
+    
+ // ==========================================================
+ // CREAR ROCAS
+ // ==========================================================
+
+    private void crearRocas() {
+
+     int rocasCreadas = 0;
+     int intentos = 0;
+
+     while (
+         rocasCreadas < CANTIDAD_ROCAS &&
+         intentos < 10000
+     ) {
+
+         intentos++;
+
+         float x =
+             100 + random.nextFloat() * (ancho - 200);
+
+         float y =
+             100 + random.nextFloat() * (alto - 200);
+
+         // Comprobar que sea tierra
+         if (!esTierra(x, y)) {
+             continue;
+         }
+
+         // Comprobar distancia con otras rocas
+         if (estaMuyCercaDeOtraRoca(x, y)) {
+             continue;
+         }
+
+         roca nuevaRoca =
+             new roca(x, y);
+
+         rocas.add(nuevaRoca);
+
+         rocasCreadas++;
+
+         System.out.println(
+             "Roca creada: X=" +
+             x +
+             " Y=" +
+             y
+         );
+     }
+
+     System.out.println(
+         "Total de rocas creadas: " +
+         rocasCreadas
+     );
+    }
+    
+    private boolean estaMuyCercaDeOtraRoca(
+    	    float x,
+    	    float y
+    	) {
+
+    	    for (roca rocaExistente : rocas) {
+
+    	        float dx =
+    	            x - rocaExistente.getPosicionX();
+
+    	        float dy =
+    	            y - rocaExistente.getPosicionY();
+
+    	        float distancia =
+    	            (float) Math.sqrt(
+    	                dx * dx + dy * dy
+    	            );
+
+    	        if (
+    	            distancia <
+    	            DISTANCIA_MINIMA_ROCAS
+    	        ) {
+
+    	            return true;
+    	        }
+    	    }
+
+    	    return false;
+    	}
     
     // ==========================================================
     // COMPROBAR AGUA
@@ -305,11 +399,26 @@ public class Mapa {
         return arboles;
     }
     
+    public List<roca> getRocas() {
+
+        return rocas;
+    }
+    
     public void eliminarArbol(arbol arbol) {
 
         if (arbol != null) {
             arbol.dispose();
             arboles.remove(arbol);
+        }
+    }
+    
+    public void eliminarRoca(roca roca) {
+
+        if (roca != null) {
+
+            roca.dispose();
+
+            rocas.remove(roca);
         }
     }
     
@@ -342,6 +451,46 @@ public class Mapa {
 
         return arbolCercano;
     }
+    
+    public roca obtenerRocaCercana(
+    	    float jugadorX,
+    	    float jugadorY,
+    	    float distanciaMaxima
+    	) {
+
+    	    roca rocaCercana = null;
+
+    	    float distanciaMenor =
+    	        distanciaMaxima;
+
+    	    for (roca rocaActual : rocas) {
+
+    	        float dx =
+    	            jugadorX -
+    	            rocaActual.getPosicionX();
+
+    	        float dy =
+    	            jugadorY -
+    	            rocaActual.getPosicionY();
+
+    	        float distancia =
+    	            (float) Math.sqrt(
+    	                dx * dx +
+    	                dy * dy
+    	            );
+
+    	        if (
+    	            distancia <= distanciaMenor
+    	        ) {
+
+    	            distanciaMenor = distancia;
+
+    	            rocaCercana = rocaActual;
+    	        }
+    	    }
+
+    	    return rocaCercana;
+    	}
 
     // ==========================================================
     // DISPOSE
@@ -365,6 +514,14 @@ public class Mapa {
         if (mapRenderer != null) {
 
             mapRenderer.dispose();
+        }
+        
+        if (rocas != null) {
+
+            for (roca roca : rocas) {
+
+                roca.dispose();
+            }
         }
     }
 }
