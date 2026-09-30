@@ -86,7 +86,20 @@
 - Creacion grafica de barras de supervivencia (vida hambre y energia)
 - Gasto de las barras
 
+## [Nuevos avances y mejoras] 2026-09-29
+### Agregados: 
 
+- Creacion grafica de ricas en el mapa
+- Creacion de accion de Minar
+- 
+## [Nuevos avances y mejoras] 2026-09-30
+### Agregados:
+
+- Creacion de barra rapida ya funcional que puede seleccionarse con numeros del 1 al 9 y con la rueda del mouse
+- Mejoras en el inventario permitiendo mover items y conectado con la barra rapida
+- Implementacion de recuperacion de energia y corregido el correr para no gastar energia tan agresivamente
+- Creacion de pantalla de inicio y de la pantalla de derrota al perder toda la vida
+- Primeras pruebas de combate con IA del guardian (jefe final del juego)
 
 
 
