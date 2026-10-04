@@ -27,8 +27,11 @@ public class roca extends objetoMundo {
     // HITBOX
     // ==========================================================
 
-    private static final float HITBOX_ANCHO = 40f;
-    private static final float HITBOX_ALTO = 20f;
+    // El sprite tiene ~9px transparentes abajo, por eso la hitbox
+    // arranca un poco mas arriba de la posicion de la roca.
+    private static final float HITBOX_ANCHO = 48f;
+    private static final float HITBOX_ALTO = 26f;
+    private static final float HITBOX_OFFSET_Y = 8f;
 
     // ==========================================================
     // CONSTRUCTOR
@@ -76,10 +79,16 @@ public class roca extends objetoMundo {
 
         return new Rectangle(
             posicionX - HITBOX_ANCHO / 2f,
-            posicionY,
+            posicionY + HITBOX_OFFSET_Y,
             HITBOX_ANCHO,
             HITBOX_ALTO
         );
+    }
+
+    // Altura (Y) que se usa para decidir si la roca se dibuja
+    // detras o delante del jugador.
+    public float getYOrden() {
+        return posicionY + HITBOX_OFFSET_Y + HITBOX_ALTO / 2f;
     }
 
     // ==========================================================
