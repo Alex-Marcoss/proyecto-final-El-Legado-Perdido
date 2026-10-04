@@ -1,5 +1,7 @@
 package Juego.facuAlex;
 
+import com.badlogic.gdx.math.Rectangle;
+
 import Juego.facuAlex.Herramientas.Herramienta;
 import Juego.facuAlex.Herramientas.tipoHerramienta;
 import Juego.facuAlex.Mapa.Mapa;
@@ -46,53 +48,76 @@ public class Jugador {
 	// ------------------------ Movimientos -------------------------------
 	
 	
-	public void mover(float x, float y, Mapa mapa) {
+	// solo los pies (no todo).
+	// Asi puede pasar "por detras" de un arbol y la colision se siente natural.
+	private static final float HITBOX_ANCHO = 24f;
+	private static final float HITBOX_ALTO = 12f;
+	private static final float HITBOX_OFFSET_X = 20f; // (64 - 24) / 2 -> centrado
+
+	public Rectangle getHitbox() {
+	    return crearHitbox(posicionX, posicionY);
+	}
+
+	private Rectangle crearHitbox(float x, float y) {
+	    return new Rectangle(x + HITBOX_OFFSET_X, y, HITBOX_ANCHO, HITBOX_ALTO);
+	}
+
+	// Mueve en X y en Y por separado: si choca de costado, igual se desliza
+	// por la pared en vez de quedarse trabado.
+	// Devuelve true si se movio aunque sea un poco.
+	private boolean moverConColision(float x, float y, Mapa mapa) {
+
+	    boolean seMovio = false;
 
 	    float nuevaX = posicionX + x;
+
+	    if (mapa.puedeCaminar(crearHitbox(nuevaX, posicionY))) {
+	        posicionX = nuevaX;
+	        seMovio = true;
+	    }
+
 	    float nuevaY = posicionY + y;
 
-	    if (mapa.estaDentro(nuevaX, nuevaY)) {
-
-	        posicionX = nuevaX;
+	    if (mapa.puedeCaminar(crearHitbox(posicionX, nuevaY))) {
 	        posicionY = nuevaY;
-
-	    } else {
-
-	        System.out.println("No podes salir del mapa.");
+	        seMovio = true;
 	    }
+
+	    return seMovio;
 	}
-	
+
+	// Coloca al jugador directamente (sin colisiones). Sirve para el spawn.
+	public void setPosicion(float x, float y) {
+	    posicionX = x;
+	    posicionY = y;
+	}
+
+	public void mover(float x, float y, Mapa mapa) {
+
+	    moverConColision(x, y, mapa);
+	}
+
 	public boolean correr(float x, float y, Mapa mapa, float delta) {
 
-	    // Energía necesaria para correr durante este frame
+	    // Energia necesaria para correr durante este frame
 	    float energiaNecesaria = 10f * delta;
-	
-	    // Si no hay energía suficiente, no puede correr
+
+	    // Si no hay energia suficiente, no puede correr
 	    if (energia <= 0) {
 	        return false;
 	    }
-	
-	    float nuevaX = posicionX + x;
-	    float nuevaY = posicionY + y;
-	
-	    // Comprobar límites del mapa
-	    if (!mapa.estaDentro(nuevaX, nuevaY)) {
-	
-	        System.out.println("No podes salir del mapa.");
-	
+
+	    // Si esta pegado a un obstaculo no se mueve ni gasta energia
+	    if (!moverConColision(x, y, mapa)) {
 	        return false;
 	    }
-	
-	    // Mover jugador
-	    posicionX = nuevaX;
-	    posicionY = nuevaY;
-	
-	    // Gastar energía proporcionalmente al tiempo
+
+	    // Gastar energia proporcionalmente al tiempo
 	    gastarEnergia(energiaNecesaria);
-	
+
 	    return true;
 	}
-	
+
 	public float getPosicionX() {
 		return posicionX;
 	}
