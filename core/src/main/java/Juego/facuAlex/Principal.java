@@ -195,7 +195,10 @@ public class Principal extends ApplicationAdapter {
                 jugador.getInventario().agregarItem(picoInicial);
 
                 // Posición inicial
-                jugador.mover(3072, 3072, mapa);
+                // (si justo hay un arbol, roca o agua, busca el lugar libre mas cercano)
+                float[] spawn = mapa.buscarPosicionLibre(3072, 3072);
+
+                jugador.setPosicion(spawn[0], spawn[1]);
 
                 pantallaCarga.setProgreso(0.75f, "Preparando la interfaz...");
 
@@ -361,18 +364,28 @@ public class Principal extends ApplicationAdapter {
 
         batch.begin();
 
+        // Orden de dibujo: lo que esta mas "arriba" en el mapa queda DETRAS
+        // del jugador, y lo que esta mas "abajo" queda DELANTE. Asi, si el
+        // jugador pasa por detras de un arbol, el arbol lo tapa.
+        float yPies = jugador.getHitbox().y
+                + jugador.getHitbox().height / 2f;
+
+        // 1) Arboles y rocas que quedan DETRAS del jugador
         for (arbol arbol : mapa.getArboles()) {
 
-            if (!arbol.estaTalado()) {
+            if (!arbol.estaTalado() && arbol.getYOrden() > yPies) {
                 arbol.dibujar(batch);
             }
         }
 
         for (roca roca : mapa.getRocas()) {
 
-            roca.dibujar(batch);
+            if (roca.getYOrden() > yPies) {
+                roca.dibujar(batch);
+            }
         }
 
+        // 2) Jugador
         TextureRegion frame = obtenerFrameActual();
 
         batch.draw(
@@ -382,6 +395,21 @@ public class Principal extends ApplicationAdapter {
             TAMANO_JUGADOR,
             TAMANO_JUGADOR
         );
+
+        // 3) Arboles y rocas que quedan DELANTE del jugador
+        for (arbol arbol : mapa.getArboles()) {
+
+            if (!arbol.estaTalado() && arbol.getYOrden() <= yPies) {
+                arbol.dibujar(batch);
+            }
+        }
+
+        for (roca roca : mapa.getRocas()) {
+
+            if (roca.getYOrden() <= yPies) {
+                roca.dibujar(batch);
+            }
+        }
 
         batch.end();
 
