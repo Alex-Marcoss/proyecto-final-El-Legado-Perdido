@@ -20,9 +20,12 @@ public class arbol extends objetoMundo {
     private static final float ANCHO = 96f;
     private static final float ALTO = 96f;
 
-    // Hitbox solamente en la base del tronco
-    private static final float HITBOX_ANCHO = 32f;
-    private static final float HITBOX_ALTO = 16f;
+    // Hitbox en la base del arbol (donde se ve el tronco y el inicio de la copa).
+    // El sprite tiene ~18px transparentes abajo, por eso la hitbox arranca
+    // un poco mas arriba de la posicion del arbol.
+    private static final float HITBOX_ANCHO = 44f;
+    private static final float HITBOX_ALTO = 26f;
+    private static final float HITBOX_OFFSET_Y = 18f;
 
     public arbol(float x, float y) {
 
@@ -59,10 +62,16 @@ public class arbol extends objetoMundo {
 
         return new Rectangle(
             posicionX - HITBOX_ANCHO / 2f,
-            posicionY,
+            posicionY + HITBOX_OFFSET_Y,
             HITBOX_ANCHO,
             HITBOX_ALTO
         );
+    }
+
+    // Altura (Y) que se usa para decidir si el arbol se dibuja
+    // detras o delante del jugador.
+    public float getYOrden() {
+        return posicionY + HITBOX_OFFSET_Y + HITBOX_ALTO / 2f;
     }
 
     public float getPosicionX() {
