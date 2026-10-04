@@ -9,6 +9,7 @@ import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
+import com.badlogic.gdx.math.Rectangle;
 
 import Juego.facuAlex.recursos.arbol;
 import Juego.facuAlex.recursos.roca;
@@ -317,6 +318,83 @@ public class Mapa {
         }
 
         return hayPasto;
+    }
+
+    // ==========================================================
+    // COLISIONES
+    // ==========================================================
+
+    // Devuelve true si el rectangulo (los pies del jugador) puede estar
+    // en esa posicion
+    public boolean puedeCaminar(Rectangle hitbox) {
+
+        // 1) Limites del mapa
+        if (hitbox.x < 0 || hitbox.y < 0
+                || hitbox.x + hitbox.width > ancho
+                || hitbox.y + hitbox.height > alto) {
+            return false;
+        }
+
+        // 2) Agua: las 4 esquinas tienen que estar sobre tierra
+        //    (el hitbox es mas angosto que un tile, asi que alcanza)
+        if (!esTierra(hitbox.x, hitbox.y)
+                || !esTierra(hitbox.x + hitbox.width, hitbox.y)
+                || !esTierra(hitbox.x, hitbox.y + hitbox.height)
+                || !esTierra(hitbox.x + hitbox.width, hitbox.y + hitbox.height)) {
+            return false;
+        }
+
+        // 3) Arboles (los talados ya no estorban)
+        for (arbol a : arboles) {
+
+            if (!a.estaTalado() && hitbox.overlaps(a.getHitbox())) {
+                return false;
+            }
+        }
+
+        // 4) Rocas
+        for (roca r : rocas) {
+
+            if (hitbox.overlaps(r.getHitbox())) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    // Busca el punto libre mas cercano a (x, y) recorriendo en espiral.
+    // Lo usamos para el spawn, por si justo cae sobre un arbol/roca/agua.
+    // El jugador mide 64x64 y su hitbox va corrido 20px a la derecha.
+    public float[] buscarPosicionLibre(float x, float y) {
+
+        final float paso = 16f;
+
+        for (int radio = 0; radio <= 40; radio++) {
+
+            for (int dx = -radio; dx <= radio; dx++) {
+
+                for (int dy = -radio; dy <= radio; dy++) {
+
+                    // solo el borde del cuadrado de este radio
+                    if (Math.max(Math.abs(dx), Math.abs(dy)) != radio) {
+                        continue;
+                    }
+
+                    float px = x + dx * paso;
+                    float py = y + dy * paso;
+
+                    Rectangle pies = new Rectangle(px + 20f, py, 24f, 12f);
+
+                    if (puedeCaminar(pies)) {
+                        return new float[] { px, py };
+                    }
+                }
+            }
+        }
+
+        // No deberia pasar, pero por las dudas
+        return new float[] { x, y };
     }
 
     // ==========================================================
