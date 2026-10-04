@@ -76,6 +76,7 @@
 
 ## [Nuevos avances y mejoras] 2026-09-24
 ### Agregados: 
+
 - Creacion de arboles en el mapa
 - Creacion de accion para talar y guardar madera en el inventario
 - creacion grafica de inventario con 30 slots de guardado y cantidades de recursos
@@ -91,7 +92,7 @@
 
 - Creacion grafica de ricas en el mapa
 - Creacion de accion de Minar
-- 
+  
 ## [Nuevos avances y mejoras] 2026-09-30
 ### Agregados:
 
@@ -100,6 +101,12 @@
 - Implementacion de recuperacion de energia y corregido el correr para no gastar energia tan agresivamente
 - Creacion de pantalla de inicio y de la pantalla de derrota al perder toda la vida
 - Primeras pruebas de combate con IA del guardian (jefe final del juego)
+
+## [Nuevos avances y mejoras] 2026-10-03
+### Agregados:
+
+-Limites del mapa.
+-colisiones con rocas y arboles.
 
 
 
