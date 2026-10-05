@@ -108,6 +108,11 @@
 -Limites del mapa.
 -colisiones con rocas y arboles.
 
+## [Nuevos avances y mejoras] 2026-10-04
+### Agregados:
 
+- Creacion de estructura de rescate creada por fases, que va cambiando con la cada construccion
+- Pantalla de victoria despues de armar la estructura y solicitar el rescate
+  
 
 
