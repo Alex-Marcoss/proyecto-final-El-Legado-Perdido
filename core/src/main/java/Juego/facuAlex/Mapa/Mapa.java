@@ -13,6 +13,7 @@ import com.badlogic.gdx.math.Rectangle;
 
 import Juego.facuAlex.recursos.arbol;
 import Juego.facuAlex.recursos.roca;
+import Juego.facuAlex.sistemas.EstructuraRescateMundo;
 
 public class Mapa {
 
@@ -28,6 +29,8 @@ public class Mapa {
     private Zona[] zonas;
 
     private LugarEspecial templo;
+    
+    private EstructuraRescateMundo estructuraRescate;
 
     private TiledMap tiledMap;
 
@@ -109,6 +112,15 @@ public class Mapa {
                 100,
                 100
         );
+        
+	     // ==============================
+	     // ESTRUCTURA DE RESCATE
+	     // ==============================
+	
+	     estructuraRescate = new EstructuraRescateMundo(
+	             ancho * 0.50f,
+	             alto * 0.50f
+	     );
 
         // ==============================
         // ÁRBOLES
@@ -125,7 +137,16 @@ public class Mapa {
 
         crearArboles();
     }
-
+    
+     // ==========================================================
+ 	 // ESTRUCTURA DE RESCATE
+ 	 // ==========================================================
+ 	
+ 	 public EstructuraRescateMundo getEstructuraRescate() {
+ 	
+ 	     return estructuraRescate;
+ 	 }    
+ 	 
     // ==========================================================
     // CREAR ÁRBOLES
     // ==========================================================
@@ -319,6 +340,8 @@ public class Mapa {
 
         return hayPasto;
     }
+    
+	 
 
     // ==========================================================
     // COLISIONES
@@ -601,5 +624,11 @@ public class Mapa {
                 roca.dispose();
             }
         }
+        
+        if (estructuraRescate != null) {
+
+            estructuraRescate.dispose();
+        }
+        
     }
 }

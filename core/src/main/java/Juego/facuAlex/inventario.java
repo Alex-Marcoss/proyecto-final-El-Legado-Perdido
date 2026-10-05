@@ -265,6 +265,31 @@ public class inventario {
 
         return false;
     }
+    
+    
+	 // ==========================================================
+	 // GASTAR ITEM
+	 // ==========================================================
+	
+	 public boolean gastarItem(String nombre) {
+	
+	     for (int i = 0; i < items.length; i++) {
+	
+	         if (items[i] == null) {
+	             continue;
+	         }
+	
+	         if (items[i].getNombre().equals(nombre)) {
+	
+	             items[i] = null;
+	             cantidad--;
+	
+	             return true;
+	         }
+	     }
+	
+	     return false;
+	 }
 
     // ==========================================================
     // OBTENER HERRAMIENTA

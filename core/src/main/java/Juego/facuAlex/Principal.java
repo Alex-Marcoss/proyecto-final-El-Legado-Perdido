@@ -2,6 +2,7 @@ package Juego.facuAlex;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -10,8 +11,14 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import Juego.facuAlex.Herramientas.hacha;
 import Juego.facuAlex.Herramientas.pico;
 import Juego.facuAlex.Mapa.Mapa;
+import Juego.facuAlex.enemigos.Guardian;
+import Juego.facuAlex.recursos.GemaAzul;
+import Juego.facuAlex.recursos.GemaMundo;
 import Juego.facuAlex.recursos.arbol;
 import Juego.facuAlex.recursos.roca;
+import Juego.facuAlex.sistemas.EstructuraRescateMundo;
+import Juego.facuAlex.sistemas.PanelEstructuraRescate;
+import Juego.facuAlex.sistemas.combate;
 
 public class Principal extends ApplicationAdapter {
 
@@ -42,12 +49,22 @@ public class Principal extends ApplicationAdapter {
 
     private PantallaDerrota pantallaDerrota;
 
+    private PantallaVictoria pantallaVictoria;
+
     // Estado del juego
     private boolean enMenu;
 
     private boolean cargando;
 
     private boolean derrota;
+
+    private boolean victoria;
+
+    // Segundos que se ve el rayo azul de la estructura activada
+    // antes de mostrar la pantalla de victoria
+    private static final float TIEMPO_ANTES_VICTORIA = 4f;
+
+    private float tiempoRescateActivo;
 
     // Carga por pasos
     private static final int PASOS_CARGA = 5;
@@ -59,10 +76,20 @@ public class Principal extends ApplicationAdapter {
 
     private float tiempoCarga;
 
+    private Guardian guardian;
+
+    private combate sistemaCombate;
+
+    private GemaMundo gemaAzul;
+
+    private PanelEstructuraRescate panelEstructuraRescate;
+
     @Override
     public void create() {
 
         batch = new SpriteBatch();
+
+        gemaAzul = null;
 
         // ==============================
         // CÁMARA
@@ -78,6 +105,8 @@ public class Principal extends ApplicationAdapter {
 
         pantallaDerrota = new PantallaDerrota();
 
+        pantallaVictoria = new PantallaVictoria();
+
         pantallaCarga = new PantallaCarga();
 
         menuInicio = new MenuInicio();
@@ -88,6 +117,8 @@ public class Principal extends ApplicationAdapter {
         cargando = false;
 
         derrota = false;
+
+        victoria = false;
     }
 
     // ==========================================================
@@ -99,6 +130,10 @@ public class Principal extends ApplicationAdapter {
         enMenu = false;
 
         derrota = false;
+
+        victoria = false;
+
+        tiempoRescateActivo = 0f;
 
         cargando = true;
 
@@ -147,6 +182,13 @@ public class Principal extends ApplicationAdapter {
 
             case 0:
 
+                // Restablecer la gema (la tiene el guardián)
+                if (gemaAzul != null) {
+                    gemaAzul.dispose();
+                }
+
+                gemaAzul = null;
+
                 // Liberar lo de la partida anterior (si existe)
                 if (mapa != null) {
                     mapa.dispose();
@@ -168,6 +210,10 @@ public class Principal extends ApplicationAdapter {
                     barraRapidaUI.dispose();
                 }
 
+                if (panelEstructuraRescate != null) {
+                    panelEstructuraRescate.dispose();
+                }
+
                 pantallaCarga.setProgreso(0.20f, "Generando el mundo...");
 
                 break;
@@ -187,11 +233,12 @@ public class Principal extends ApplicationAdapter {
                 barrasSupervivencia = new BarrasSupervivencia(jugador);
 
                 barraRapidaUI = new BarraRapidaUI(jugador);
-
-                hacha hachaInicial = new hacha(20, 10);
+                
+                
+                hacha hachaInicial = new hacha(50, 10);
                 jugador.getInventario().agregarItem(hachaInicial);
 
-                pico picoInicial = new pico(30, 15);
+                pico picoInicial = new pico(50, 15);
                 jugador.getInventario().agregarItem(picoInicial);
 
                 // Posición inicial
@@ -199,6 +246,15 @@ public class Principal extends ApplicationAdapter {
                 float[] spawn = mapa.buscarPosicionLibre(3072, 3072);
 
                 jugador.setPosicion(spawn[0], spawn[1]);
+
+                sistemaCombate = new combate();
+
+                guardian = new Guardian();
+
+                guardian.setPosicion(
+                    jugador.getPosicionX() + 100,
+                    jugador.getPosicionY()
+                );
 
                 pantallaCarga.setProgreso(0.75f, "Preparando la interfaz...");
 
@@ -211,6 +267,8 @@ public class Principal extends ApplicationAdapter {
                 jugadorControl = new JugadorControl(jugador);
 
                 inventarioUI = new InventarioUI(jugador);
+
+                panelEstructuraRescate = new PanelEstructuraRescate();
 
                 pantallaCarga.setProgreso(0.95f, "\u00daltimos detalles...");
 
@@ -226,7 +284,9 @@ public class Principal extends ApplicationAdapter {
                 );
 
                 camara.update();
+
                 pantallaCarga.setProgreso(1f, "Listo");
+
                 break;
         }
     }
@@ -238,6 +298,8 @@ public class Principal extends ApplicationAdapter {
     private void volverAlMenu() {
 
         derrota = false;
+
+        victoria = false;
 
         cargando = false;
 
@@ -278,6 +340,25 @@ public class Principal extends ApplicationAdapter {
         }
     }
 
+    private void comprobarMuerteGuardian() {
+
+        if (guardian == null) {
+            return;
+        }
+
+        if (!guardian.estaVivo() && gemaAzul == null) {
+
+            gemaAzul = new GemaMundo(
+                guardian.getPosicionX(),
+                guardian.getPosicionY()
+            );
+
+            System.out.println(
+                "El Guardian dejo caer la Gema Azul."
+            );
+        }
+    }
+
     // ==========================================================
     // RENDER
     // ==========================================================
@@ -313,7 +394,7 @@ public class Principal extends ApplicationAdapter {
         // ¿PERDIÓ?
         // ==============================
 
-        if (!derrota && jugador.gameOver()) {
+        if (!derrota && !victoria && jugador.gameOver()) {
 
             derrota = true;
 
@@ -323,6 +404,31 @@ public class Principal extends ApplicationAdapter {
         if (derrota) {
 
             renderDerrota(delta);
+
+            return;
+        }
+
+        // ==============================
+        // ¿GANÓ? (rescate activado)
+        // Se espera unos segundos para que se vea el rayo azul
+        // ==============================
+
+        if (!victoria
+                && mapa.getEstructuraRescate().getEstructura().estaActiva()) {
+
+            tiempoRescateActivo += delta;
+
+            if (tiempoRescateActivo >= TIEMPO_ANTES_VICTORIA) {
+
+                victoria = true;
+
+                pantallaVictoria.mostrar();
+            }
+        }
+
+        if (victoria) {
+
+            renderVictoria(delta);
 
             return;
         }
@@ -338,7 +444,56 @@ public class Principal extends ApplicationAdapter {
 
         // Mientras el inventario está abierto no movemos al jugador
         if (!inventarioUI.estaAbierto()) {
-            jugadorControl.actualizar(delta, mapa);
+
+            boolean interactuoConEstructura =
+                    comprobarInteraccionEstructura();
+
+            if (!interactuoConEstructura) {
+
+                jugadorControl.actualizar(
+                        delta,
+                        mapa
+                );
+            }
+
+            // ==========================================
+            // ATAQUE DEL JUGADOR
+            // ==========================================
+
+            jugadorControl.actualizarAtaque(
+                    sistemaCombate,
+                    guardian
+            );
+
+            // ==========================================
+            // GUARDIAN
+            // ==========================================
+
+            if (guardian != null && guardian.estaVivo()) {
+
+                guardian.actualizar(
+                        jugador,
+                        delta
+                );
+            }
+
+            comprobarMuerteGuardian();
+        }
+
+        // ==============================
+        // PRUEBA TEMPORAL
+        // ==============================
+
+        if (Gdx.input.isKeyJustPressed(Input.Keys.G)) {
+
+            if (guardian != null && guardian.estaVivo()) {
+
+                guardian.recibirDaño(250);
+
+                System.out.println(
+                    "PRUEBA: Guardian derrotado."
+                );
+            }
         }
 
         jugadorAnimacion.actualizar(delta);
@@ -385,7 +540,10 @@ public class Principal extends ApplicationAdapter {
             }
         }
 
-        // 2) Jugador
+     // 2) Estructura de rescate
+        mapa.getEstructuraRescate().dibujar(batch);
+
+        // 3) Jugador
         TextureRegion frame = obtenerFrameActual();
 
         batch.draw(
@@ -396,10 +554,16 @@ public class Principal extends ApplicationAdapter {
             TAMANO_JUGADOR
         );
 
-        // 3) Arboles y rocas que quedan DELANTE del jugador
+        // 4) Gema azul
+        if (gemaAzul != null) {
+            gemaAzul.dibujar(batch);
+        }
+
+        // 5) Arboles y rocas que quedan DELANTE del jugador
         for (arbol arbol : mapa.getArboles()) {
 
             if (!arbol.estaTalado() && arbol.getYOrden() <= yPies) {
+
                 arbol.dibujar(batch);
             }
         }
@@ -407,9 +571,11 @@ public class Principal extends ApplicationAdapter {
         for (roca roca : mapa.getRocas()) {
 
             if (roca.getYOrden() <= yPies) {
+
                 roca.dibujar(batch);
             }
         }
+        
 
         batch.end();
 
@@ -418,10 +584,67 @@ public class Principal extends ApplicationAdapter {
         barraRapidaUI.actualizar();
 
         if (!inventarioUI.estaAbierto()) {
+
             barraRapidaUI.dibujar();
+
+            comprobarRecogerGema();
+
+            panelEstructuraRescate.dibujar(jugador, mapa.getEstructuraRescate());
         }
 
         inventarioUI.dibujar();
+    }
+
+    private void comprobarRecogerGema() {
+
+        if (gemaAzul == null) {
+            return;
+        }
+
+        if (gemaAzul.estaRecogida()) {
+            return;
+        }
+
+        if (Gdx.input.isKeyJustPressed(Input.Keys.E)) {
+
+            if (gemaAzul.estaCerca(
+                    jugador.getPosicionX(),
+                    jugador.getPosicionY())) {
+
+                jugador.recogerItem(new GemaAzul());
+
+                gemaAzul.recoger();
+
+                System.out.println(
+                    "Recogiste la Gema Azul."
+                );
+            }
+        }
+    }
+
+    private boolean comprobarInteraccionEstructura() {
+
+        if (!Gdx.input.isKeyJustPressed(Input.Keys.E)) {
+            return false;
+        }
+
+        EstructuraRescateMundo estructura =
+                mapa.getEstructuraRescate();
+
+        if (estructura == null) {
+            return false;
+        }
+
+        if (estructura.estaCerca(
+                jugador.getPosicionX(),
+                jugador.getPosicionY())) {
+
+            estructura.interactuar(jugador);
+
+            return true;
+        }
+
+        return false;
     }
 
     // ==========================================================
@@ -435,6 +658,38 @@ public class Principal extends ApplicationAdapter {
         PantallaDerrota.Accion accion = pantallaDerrota.actualizar(delta);
 
         pantallaDerrota.dibujar();
+
+        switch (accion) {
+
+            case JUGAR_DE_NUEVO:
+
+                comenzarCarga();
+
+                break;
+
+            case VOLVER_AL_MENU:
+
+                volverAlMenu();
+
+                break;
+
+            default:
+
+                break;
+        }
+    }
+
+    // ==========================================================
+    // RENDER DE LA PANTALLA DE VICTORIA
+    // ==========================================================
+
+    private void renderVictoria(float delta) {
+
+        ScreenUtils.clear(0f, 0f, 0f, 1f);
+
+        PantallaVictoria.Accion accion = pantallaVictoria.actualizar(delta);
+
+        pantallaVictoria.dibujar();
 
         switch (accion) {
 
@@ -588,6 +843,7 @@ public class Principal extends ApplicationAdapter {
 
         batch.dispose();
         pantallaDerrota.dispose();
+        pantallaVictoria.dispose();
         pantallaCarga.dispose();
         menuInicio.dispose();
 
@@ -610,6 +866,14 @@ public class Principal extends ApplicationAdapter {
 
         if (barraRapidaUI != null) {
             barraRapidaUI.dispose();
+        }
+
+        if (gemaAzul != null) {
+            gemaAzul.dispose();
+        }
+
+        if (panelEstructuraRescate != null) {
+            panelEstructuraRescate.dispose();
         }
     }
 }

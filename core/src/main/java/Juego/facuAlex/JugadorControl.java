@@ -4,8 +4,10 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 
 import Juego.facuAlex.Mapa.Mapa;
+import Juego.facuAlex.enemigos.Guardian;
 import Juego.facuAlex.recursos.arbol;
 import Juego.facuAlex.recursos.roca;
+import Juego.facuAlex.sistemas.combate;
 
 public class JugadorControl {
 
@@ -199,4 +201,31 @@ public class JugadorControl {
     public Estado getEstado() {
         return estado;
     }
+    
+    public void actualizarAtaque(
+            combate sistemaCombate,
+            Guardian guardian) {
+
+        if (sistemaCombate == null) {
+            return;
+        }
+
+        if (guardian == null) {
+            return;
+        }
+
+        if (!guardian.estaVivo()) {
+            return;
+        }
+
+        if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
+
+            sistemaCombate.atacar(
+                jugador,
+                guardian,
+                direccion
+            );
+        }
+    }
+    
 }
