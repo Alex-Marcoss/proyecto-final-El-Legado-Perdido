@@ -1,4 +1,4 @@
-package Juego.facuAlex;
+package Juego.facuAlex.Pantallas;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
@@ -8,6 +8,8 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Rectangle;
+
+import Juego.facuAlex.Fuentes;
 
 public class PantallaDerrota {
 

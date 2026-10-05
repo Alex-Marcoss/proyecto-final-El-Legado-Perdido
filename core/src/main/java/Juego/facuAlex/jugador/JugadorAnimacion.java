@@ -1,4 +1,4 @@
-package Juego.facuAlex;
+package Juego.facuAlex.jugador;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;

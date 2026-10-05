@@ -6,8 +6,8 @@ import com.badlogic.gdx.graphics.TextureData;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
-import Juego.facuAlex.Jugador;
-import Juego.facuAlex.objetoMundo;
+import Juego.facuAlex.jugador.*;
+import Juego.facuAlex.recursos.*;
 
 public class EstructuraRescateMundo extends objetoMundo {
 

@@ -1,10 +1,10 @@
-package Juego.facuAlex;
+package Juego.facuAlex.jugador;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 
 import Juego.facuAlex.Mapa.Mapa;
-import Juego.facuAlex.enemigos.Guardian;
+import Juego.facuAlex.enemigos.guardian.*;
 import Juego.facuAlex.recursos.arbol;
 import Juego.facuAlex.recursos.roca;
 import Juego.facuAlex.sistemas.combate;

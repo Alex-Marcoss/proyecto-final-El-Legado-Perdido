@@ -1,7 +1,6 @@
 package Juego.facuAlex.sistemas;
 
-import Juego.facuAlex.Jugador;
-import Juego.facuAlex.JugadorControl;
+import Juego.facuAlex.jugador.*;
 import Juego.facuAlex.enemigos.Enemigo;
 
 public class combate {

@@ -1,9 +1,9 @@
 package Juego.facuAlex.sistemas;
 
-import Juego.facuAlex.Jugador;
-import Juego.facuAlex.inventario;
+import Juego.facuAlex.jugador.*;
+import Juego.facuAlex.inventario.*;
 import Juego.facuAlex.Mapa.Mapa;
-import Juego.facuAlex.enemigos.Guardian;
+import Juego.facuAlex.enemigos.guardian.*;
 
 public class ObjetivoJuego {
 

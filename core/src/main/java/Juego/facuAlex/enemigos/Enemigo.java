@@ -1,6 +1,6 @@
 package Juego.facuAlex.enemigos;
 
-import Juego.facuAlex.Jugador;
+import Juego.facuAlex.jugador.*;
 
 public class Enemigo {
 

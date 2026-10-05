@@ -8,872 +8,1240 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.utils.ScreenUtils;
 
-import Juego.facuAlex.Herramientas.hacha;
-import Juego.facuAlex.Herramientas.pico;
-import Juego.facuAlex.Mapa.Mapa;
-import Juego.facuAlex.enemigos.Guardian;
-import Juego.facuAlex.recursos.GemaAzul;
-import Juego.facuAlex.recursos.GemaMundo;
-import Juego.facuAlex.recursos.arbol;
-import Juego.facuAlex.recursos.roca;
-import Juego.facuAlex.sistemas.EstructuraRescateMundo;
-import Juego.facuAlex.sistemas.PanelEstructuraRescate;
-import Juego.facuAlex.sistemas.combate;
+import Juego.facuAlex.Herramientas.*;
+
+import Juego.facuAlex.Mapa.*;
+
+import Juego.facuAlex.Pantallas.*;
+
+import Juego.facuAlex.enemigos.guardian.*;
+
+import Juego.facuAlex.inventario.*;
+
+import Juego.facuAlex.jugador.*;
+
+import Juego.facuAlex.recursos.*;
+
+import Juego.facuAlex.sistemas.*;
+
 
 public class Principal extends ApplicationAdapter {
 
-    private SpriteBatch batch;
+private SpriteBatch batch;
 
-    private OrthographicCamera camara;
+private OrthographicCamera camara;
 
-    private Jugador jugador;
+private Jugador jugador;
 
-    private Mapa mapa;
+private Mapa mapa;
 
-    private JugadorAnimacion jugadorAnimacion;
+private JugadorAnimacion jugadorAnimacion;
 
-    private JugadorControl jugadorControl;
+private GuardianAnimacion guardianAnimacion;
 
-    private static final float TAMANO_JUGADOR = 64f;
+private JugadorControl jugadorControl;
 
-    private InventarioUI inventarioUI;
+private static final float TAMANO_JUGADOR = 64f;
 
-    private BarrasSupervivencia barrasSupervivencia;
+private static final float TAMANO_GUARDIAN = 96f;
 
-    private BarraRapidaUI barraRapidaUI;
+private InventarioUI inventarioUI;
 
-    // Pantallas
-    private MenuInicio menuInicio;
+private BarrasSupervivencia barrasSupervivencia;
 
-    private PantallaCarga pantallaCarga;
+private BarraRapidaUI barraRapidaUI;
 
-    private PantallaDerrota pantallaDerrota;
+// Pantallas
 
-    private PantallaVictoria pantallaVictoria;
+private MenuInicio menuInicio;
 
-    // Estado del juego
-    private boolean enMenu;
+private PantallaCarga pantallaCarga;
 
-    private boolean cargando;
+private PantallaDerrota pantallaDerrota;
 
-    private boolean derrota;
+private PantallaVictoria pantallaVictoria;
 
-    private boolean victoria;
+// Estado del juego
 
-    // Segundos que se ve el rayo azul de la estructura activada
-    // antes de mostrar la pantalla de victoria
-    private static final float TIEMPO_ANTES_VICTORIA = 4f;
+private boolean enMenu;
 
-    private float tiempoRescateActivo;
+private boolean cargando;
 
-    // Carga por pasos
-    private static final int PASOS_CARGA = 5;
+private boolean derrota;
 
-    // Segundos mínimos que se muestra la pantalla de carga
-    private static final float TIEMPO_MINIMO_CARGA = 0.4f;
+private boolean victoria;
 
-    private int pasoCarga;
+// Tiempo antes de mostrar victoria
 
-    private float tiempoCarga;
+private static final float TIEMPO_ANTES_VICTORIA = 4f;
 
-    private Guardian guardian;
+private float tiempoRescateActivo;
 
-    private combate sistemaCombate;
+// Carga por pasos
 
-    private GemaMundo gemaAzul;
+private static final int PASOS_CARGA = 5;
 
-    private PanelEstructuraRescate panelEstructuraRescate;
+private static final float TIEMPO_MINIMO_CARGA = 0.4f;
 
-    @Override
-    public void create() {
+private int pasoCarga;
 
-        batch = new SpriteBatch();
+private float tiempoCarga;
 
-        gemaAzul = null;
+private Guardian guardian;
 
-        // ==============================
-        // CÁMARA
-        // ==============================
+private combate sistemaCombate;
 
-        camara = new OrthographicCamera();
+private GemaMundo gemaAzul;
 
-        camara.setToOrtho(false, 900, 600);
+private PanelEstructuraRescate panelEstructuraRescate;
 
-        // ==============================
-        // PANTALLAS (se crean una sola vez)
-        // ==============================
+// ==========================================================
+// CREATE
+// ==========================================================
 
-        pantallaDerrota = new PantallaDerrota();
+@Override
+public void create() {
 
-        pantallaVictoria = new PantallaVictoria();
+    batch = new SpriteBatch();
 
-        pantallaCarga = new PantallaCarga();
+    gemaAzul = null;
 
-        menuInicio = new MenuInicio();
+    camara = new OrthographicCamera();
 
-        // La partida se crea al tocar "Iniciar partida"
-        enMenu = true;
+    camara.setToOrtho(false, 900, 600);
+
+    pantallaDerrota = new PantallaDerrota();
+
+    pantallaVictoria = new PantallaVictoria();
+
+    pantallaCarga = new PantallaCarga();
+
+    menuInicio = new MenuInicio();
+
+    enMenu = true;
+
+    cargando = false;
+
+    derrota = false;
+
+    victoria = false;
+}
+
+// ==========================================================
+// COMENZAR CARGA
+// ==========================================================
+
+private void comenzarCarga() {
+
+    enMenu = false;
+
+    derrota = false;
+
+    victoria = false;
+
+    tiempoRescateActivo = 0f;
+
+    cargando = true;
+
+    pasoCarga = 0;
+
+    tiempoCarga = 0f;
+
+    pantallaCarga.mostrar();
+
+    pantallaCarga.setProgreso(
+        0.05f,
+        "Preparando..."
+    );
+}
+
+// ==========================================================
+// RENDER CARGA
+// ==========================================================
+
+private void renderCarga(float delta) {
+
+    ScreenUtils.clear(
+        0f,
+        0f,
+        0f,
+        1f
+    );
+
+    tiempoCarga += delta;
+
+    pantallaCarga.actualizar(delta);
+
+    pantallaCarga.dibujar();
+
+    if (pasoCarga < PASOS_CARGA) {
+
+        if (pantallaCarga.alcanzoObjetivo()) {
+
+            ejecutarPasoCarga(pasoCarga);
+
+            pasoCarga++;
+        }
+
+    } else if (
+        pantallaCarga.estaCompleta()
+        && tiempoCarga >= TIEMPO_MINIMO_CARGA
+    ) {
 
         cargando = false;
-
-        derrota = false;
-
-        victoria = false;
     }
+}
 
-    // ==========================================================
-    // CARGA DE LA PARTIDA (por pasos, con barra de progreso)
-    // ==========================================================
+// ==========================================================
+// PASOS DE CARGA
+// ==========================================================
 
-    private void comenzarCarga() {
+private void ejecutarPasoCarga(int paso) {
 
-        enMenu = false;
+    switch (paso) {
 
-        derrota = false;
+        case 0:
 
-        victoria = false;
-
-        tiempoRescateActivo = 0f;
-
-        cargando = true;
-
-        pasoCarga = 0;
-
-        tiempoCarga = 0f;
-
-        pantallaCarga.mostrar();
-
-        pantallaCarga.setProgreso(0.05f, "Preparando...");
-    }
-
-    private void renderCarga(float delta) {
-
-        ScreenUtils.clear(0f, 0f, 0f, 1f);
-
-        tiempoCarga += delta;
-
-        pantallaCarga.actualizar(delta);
-
-        pantallaCarga.dibujar();
-
-        if (pasoCarga < PASOS_CARGA) {
-
-            // El siguiente paso se ejecuta recién cuando la barra llegó
-            // al objetivo anterior, así siempre se ve avanzar
-            if (pantallaCarga.alcanzoObjetivo()) {
-
-                ejecutarPasoCarga(pasoCarga);
-
-                pasoCarga++;
+            if (gemaAzul != null) {
+                gemaAzul.dispose();
             }
 
-        } else if (pantallaCarga.estaCompleta()
-                && tiempoCarga >= TIEMPO_MINIMO_CARGA) {
-
-            cargando = false;
-        }
-    }
-
-    // El mensaje que se define al final de cada paso
-    // describe lo que va a hacer el paso siguiente.
-    private void ejecutarPasoCarga(int paso) {
-
-        switch (paso) {
-
-            case 0:
-
-                // Restablecer la gema (la tiene el guardián)
-                if (gemaAzul != null) {
-                    gemaAzul.dispose();
-                }
-
-                gemaAzul = null;
-
-                // Liberar lo de la partida anterior (si existe)
-                if (mapa != null) {
-                    mapa.dispose();
-                }
-
-                if (jugadorAnimacion != null) {
-                    jugadorAnimacion.dispose();
-                }
-
-                if (inventarioUI != null) {
-                    inventarioUI.dispose();
-                }
-
-                if (barrasSupervivencia != null) {
-                    barrasSupervivencia.dispose();
-                }
-
-                if (barraRapidaUI != null) {
-                    barraRapidaUI.dispose();
-                }
-
-                if (panelEstructuraRescate != null) {
-                    panelEstructuraRescate.dispose();
-                }
-
-                pantallaCarga.setProgreso(0.20f, "Generando el mundo...");
-
-                break;
-
-            case 1:
-
-                mapa = new Mapa(900, 600);
-
-                pantallaCarga.setProgreso(0.50f, "Creando al jugador...");
-
-                break;
-
-            case 2:
-
-                jugador = new Jugador("Facu");
-
-                barrasSupervivencia = new BarrasSupervivencia(jugador);
-
-                barraRapidaUI = new BarraRapidaUI(jugador);
-                
-                
-                hacha hachaInicial = new hacha(50, 10);
-                jugador.getInventario().agregarItem(hachaInicial);
-
-                pico picoInicial = new pico(50, 15);
-                jugador.getInventario().agregarItem(picoInicial);
-
-                // Posición inicial
-                // (si justo hay un arbol, roca o agua, busca el lugar libre mas cercano)
-                float[] spawn = mapa.buscarPosicionLibre(3072, 3072);
-
-                jugador.setPosicion(spawn[0], spawn[1]);
-
-                sistemaCombate = new combate();
-
-                guardian = new Guardian();
-
-                guardian.setPosicion(
-                    jugador.getPosicionX() + 100,
-                    jugador.getPosicionY()
-                );
-
-                pantallaCarga.setProgreso(0.75f, "Preparando la interfaz...");
-
-                break;
-
-            case 3:
-
-                jugadorAnimacion = new JugadorAnimacion();
-
-                jugadorControl = new JugadorControl(jugador);
-
-                inventarioUI = new InventarioUI(jugador);
-
-                panelEstructuraRescate = new PanelEstructuraRescate();
-
-                pantallaCarga.setProgreso(0.95f, "\u00daltimos detalles...");
-
-                break;
-
-            case 4:
-
-                // Cámara inicial
-                camara.position.set(
-                    jugador.getPosicionX() + TAMANO_JUGADOR / 2f,
-                    jugador.getPosicionY() + TAMANO_JUGADOR / 2f,
-                    0
-                );
-
-                camara.update();
-
-                pantallaCarga.setProgreso(1f, "Listo");
-
-                break;
-        }
-    }
-
-    // ==========================================================
-    // VOLVER AL MENÚ
-    // ==========================================================
-
-    private void volverAlMenu() {
-
-        derrota = false;
-
-        victoria = false;
-
-        cargando = false;
-
-        enMenu = true;
-
-        menuInicio.mostrar();
-    }
-
-    // ==========================================================
-    // RENDER DEL MENÚ DE INICIO
-    // ==========================================================
-
-    private void renderMenu(float delta) {
-
-        ScreenUtils.clear(0f, 0f, 0f, 1f);
-
-        MenuInicio.Accion accion = menuInicio.actualizar(delta);
-
-        menuInicio.dibujar();
-
-        switch (accion) {
-
-            case INICIAR:
-
-                comenzarCarga();
-
-                break;
-
-            case SALIR:
-
-                Gdx.app.exit();
-
-                break;
-
-            default:
-
-                break;
-        }
-    }
-
-    private void comprobarMuerteGuardian() {
-
-        if (guardian == null) {
-            return;
-        }
-
-        if (!guardian.estaVivo() && gemaAzul == null) {
-
-            gemaAzul = new GemaMundo(
-                guardian.getPosicionX(),
-                guardian.getPosicionY()
+            gemaAzul = null;
+
+            if (mapa != null) {
+                mapa.dispose();
+            }
+
+            if (jugadorAnimacion != null) {
+                jugadorAnimacion.dispose();
+            }
+
+            if (guardianAnimacion != null) {
+                guardianAnimacion.dispose();
+            }
+
+            if (inventarioUI != null) {
+                inventarioUI.dispose();
+            }
+
+            if (barrasSupervivencia != null) {
+                barrasSupervivencia.dispose();
+            }
+
+            if (barraRapidaUI != null) {
+                barraRapidaUI.dispose();
+            }
+
+            if (panelEstructuraRescate != null) {
+                panelEstructuraRescate.dispose();
+            }
+
+            pantallaCarga.setProgreso(
+                0.20f,
+                "Generando el mundo..."
             );
 
-            System.out.println(
-                "El Guardian dejo caer la Gema Azul."
+            break;
+
+        case 1:
+
+            mapa = new Mapa(
+                900,
+                600
             );
-        }
+
+            pantallaCarga.setProgreso(
+                0.50f,
+                "Creando al jugador..."
+            );
+
+            break;
+
+        case 2:
+
+            jugador = new Jugador("Facu");
+
+            barrasSupervivencia =
+                    new BarrasSupervivencia(jugador);
+
+            barraRapidaUI =
+                    new BarraRapidaUI(jugador);
+
+            hacha hachaInicial =
+                    new hacha(50, 10);
+
+            jugador.getInventario().agregarItem(
+                hachaInicial
+            );
+
+            pico picoInicial =
+                    new pico(50, 15);
+
+            jugador.getInventario().agregarItem(
+                picoInicial
+            );
+
+            // Posición inicial
+
+            float[] spawn =
+                    mapa.buscarPosicionLibre(
+                        3072,
+                        3072
+                    );
+
+            jugador.setPosicion(
+                spawn[0],
+                spawn[1]
+            );
+
+            sistemaCombate =
+                    new combate();
+
+            guardian =
+                    new Guardian();
+
+            guardian.setPosicion(
+                jugador.getPosicionX() + 100,
+                jugador.getPosicionY()
+            );
+
+            pantallaCarga.setProgreso(
+                0.75f,
+                "Preparando la interfaz..."
+            );
+
+            break;
+
+        case 3:
+
+            jugadorAnimacion =
+                    new JugadorAnimacion();
+
+            guardianAnimacion =
+                    new GuardianAnimacion();
+
+            jugadorControl =
+                    new JugadorControl(jugador);
+
+            inventarioUI =
+                    new InventarioUI(jugador);
+
+            panelEstructuraRescate =
+                    new PanelEstructuraRescate();
+
+            pantallaCarga.setProgreso(
+                0.95f,
+                "Últimos detalles..."
+            );
+
+            break;
+
+        case 4:
+
+            camara.position.set(
+                jugador.getPosicionX()
+                    + TAMANO_JUGADOR / 2f,
+
+                jugador.getPosicionY()
+                    + TAMANO_JUGADOR / 2f,
+
+                0
+            );
+
+            camara.update();
+
+            pantallaCarga.setProgreso(
+                1f,
+                "Listo"
+            );
+
+            break;
+    }
+}
+
+// ==========================================================
+// VOLVER AL MENÚ
+// ==========================================================
+
+private void volverAlMenu() {
+
+    derrota = false;
+
+    victoria = false;
+
+    cargando = false;
+
+    enMenu = true;
+
+    menuInicio.mostrar();
+}
+
+// ==========================================================
+// MENÚ
+// ==========================================================
+
+private void renderMenu(float delta) {
+
+    ScreenUtils.clear(
+        0f,
+        0f,
+        0f,
+        1f
+    );
+
+    MenuInicio.Accion accion =
+            menuInicio.actualizar(delta);
+
+    menuInicio.dibujar();
+
+    switch (accion) {
+
+        case INICIAR:
+
+            comenzarCarga();
+
+            break;
+
+        case SALIR:
+
+            Gdx.app.exit();
+
+            break;
+
+        default:
+
+            break;
+    }
+}
+
+// ==========================================================
+// MUERTE DEL GUARDIAN
+// ==========================================================
+
+private void comprobarMuerteGuardian() {
+
+    if (guardian == null) {
+        return;
     }
 
-    // ==========================================================
-    // RENDER
-    // ==========================================================
+    if (!guardian.estaVivo()
+            && gemaAzul == null) {
 
-    @Override
-    public void render() {
-
-        float delta = Gdx.graphics.getDeltaTime();
-
-        // ==============================
-        // MENÚ DE INICIO
-        // ==============================
-
-        if (enMenu) {
-
-            renderMenu(delta);
-
-            return;
-        }
-
-        // ==============================
-        // PANTALLA DE CARGA
-        // ==============================
-
-        if (cargando) {
-
-            renderCarga(delta);
-
-            return;
-        }
-
-        // ==============================
-        // ¿PERDIÓ?
-        // ==============================
-
-        if (!derrota && !victoria && jugador.gameOver()) {
-
-            derrota = true;
-
-            pantallaDerrota.mostrar();
-        }
-
-        if (derrota) {
-
-            renderDerrota(delta);
-
-            return;
-        }
-
-        // ==============================
-        // ¿GANÓ? (rescate activado)
-        // Se espera unos segundos para que se vea el rayo azul
-        // ==============================
-
-        if (!victoria
-                && mapa.getEstructuraRescate().getEstructura().estaActiva()) {
-
-            tiempoRescateActivo += delta;
-
-            if (tiempoRescateActivo >= TIEMPO_ANTES_VICTORIA) {
-
-                victoria = true;
-
-                pantallaVictoria.mostrar();
-            }
-        }
-
-        if (victoria) {
-
-            renderVictoria(delta);
-
-            return;
-        }
-
-        // ==============================
-        // JUEGO NORMAL
-        // ==============================
-
-        jugador.actualizarEnergia(delta);
-
-        // Inventario
-        inventarioUI.actualizar();
-
-        // Mientras el inventario está abierto no movemos al jugador
-        if (!inventarioUI.estaAbierto()) {
-
-            boolean interactuoConEstructura =
-                    comprobarInteraccionEstructura();
-
-            if (!interactuoConEstructura) {
-
-                jugadorControl.actualizar(
-                        delta,
-                        mapa
-                );
-            }
-
-            // ==========================================
-            // ATAQUE DEL JUGADOR
-            // ==========================================
-
-            jugadorControl.actualizarAtaque(
-                    sistemaCombate,
-                    guardian
-            );
-
-            // ==========================================
-            // GUARDIAN
-            // ==========================================
-
-            if (guardian != null && guardian.estaVivo()) {
-
-                guardian.actualizar(
-                        jugador,
-                        delta
-                );
-            }
-
-            comprobarMuerteGuardian();
-        }
-
-        // ==============================
-        // PRUEBA TEMPORAL
-        // ==============================
-
-        if (Gdx.input.isKeyJustPressed(Input.Keys.G)) {
-
-            if (guardian != null && guardian.estaVivo()) {
-
-                guardian.recibirDaño(250);
-
-                System.out.println(
-                    "PRUEBA: Guardian derrotado."
-                );
-            }
-        }
-
-        jugadorAnimacion.actualizar(delta);
-
-        // Cámara sigue al jugador
-        camara.position.set(
-            jugador.getPosicionX() + TAMANO_JUGADOR / 2f,
-            jugador.getPosicionY() + TAMANO_JUGADOR / 2f,
-            0
+        gemaAzul = new GemaMundo(
+            guardian.getPosicionX(),
+            guardian.getPosicionY()
         );
 
-        camara.update();
+        System.out.println(
+            "El Guardian dejo caer la Gema Azul."
+        );
+    }
+}
 
-        ScreenUtils.clear(0.15f, 0.15f, 0.2f, 1f);
+// ==========================================================
+// RENDER
+// ==========================================================
 
-        // =========================
-        // DIBUJAR EL MUNDO
-        // =========================
+@Override
+public void render() {
 
-        mapa.dibujar(camara);
+    float delta =
+            Gdx.graphics.getDeltaTime();
 
-        batch.setProjectionMatrix(camara.combined);
+    // =====================================================
+    // MENÚ
+    // =====================================================
 
-        batch.begin();
+    if (enMenu) {
 
-        // Orden de dibujo: lo que esta mas "arriba" en el mapa queda DETRAS
-        // del jugador, y lo que esta mas "abajo" queda DELANTE. Asi, si el
-        // jugador pasa por detras de un arbol, el arbol lo tapa.
-        float yPies = jugador.getHitbox().y
-                + jugador.getHitbox().height / 2f;
+        renderMenu(delta);
 
-        // 1) Arboles y rocas que quedan DETRAS del jugador
-        for (arbol arbol : mapa.getArboles()) {
+        return;
+    }
 
-            if (!arbol.estaTalado() && arbol.getYOrden() > yPies) {
-                arbol.dibujar(batch);
-            }
+    // =====================================================
+    // CARGA
+    // =====================================================
+
+    if (cargando) {
+
+        renderCarga(delta);
+
+        return;
+    }
+
+    // =====================================================
+    // DERROTA
+    // =====================================================
+
+    if (!derrota
+            && !victoria
+            && jugador.gameOver()) {
+
+        derrota = true;
+
+        pantallaDerrota.mostrar();
+    }
+
+    if (derrota) {
+
+        renderDerrota(delta);
+
+        return;
+    }
+
+    // =====================================================
+    // VICTORIA
+    // =====================================================
+
+    if (!victoria
+            && mapa
+                .getEstructuraRescate()
+                .getEstructura()
+                .estaActiva()) {
+
+        tiempoRescateActivo += delta;
+
+        if (tiempoRescateActivo
+                >= TIEMPO_ANTES_VICTORIA) {
+
+            victoria = true;
+
+            pantallaVictoria.mostrar();
+        }
+    }
+
+    if (victoria) {
+
+        renderVictoria(delta);
+
+        return;
+    }
+
+    // =====================================================
+    // JUEGO NORMAL
+    // =====================================================
+
+    jugador.actualizarEnergia(delta);
+
+    inventarioUI.actualizar();
+
+    if (!inventarioUI.estaAbierto()) {
+
+        boolean interactuoConEstructura =
+                comprobarInteraccionEstructura();
+
+        if (!interactuoConEstructura) {
+
+            jugadorControl.actualizar(
+                delta,
+                mapa
+            );
         }
 
-        for (roca roca : mapa.getRocas()) {
+        // =================================================
+        // ATAQUE DEL JUGADOR
+        // =================================================
 
-            if (roca.getYOrden() > yPies) {
-                roca.dibujar(batch);
-            }
+        jugadorControl.actualizarAtaque(
+            sistemaCombate,
+            guardian
+        );
+
+        // =================================================
+        // GUARDIAN
+        // =================================================
+
+        if (guardian != null
+                && guardian.estaVivo()) {
+
+            guardian.actualizar(
+                jugador,
+                delta
+            );
         }
 
-     // 2) Estructura de rescate
-        mapa.getEstructuraRescate().dibujar(batch);
+        comprobarMuerteGuardian();
+    }
 
-        // 3) Jugador
-        TextureRegion frame = obtenerFrameActual();
+    // =====================================================
+    // ACTUALIZAR ANIMACIONES
+    // =====================================================
+
+    jugadorAnimacion.actualizar(delta);
+
+    if (guardianAnimacion != null) {
+
+        guardianAnimacion.actualizar(delta);
+    }
+
+    // =====================================================
+    // CÁMARA
+    // =====================================================
+
+    camara.position.set(
+        jugador.getPosicionX()
+            + TAMANO_JUGADOR / 2f,
+
+        jugador.getPosicionY()
+            + TAMANO_JUGADOR / 2f,
+
+        0
+    );
+
+    camara.update();
+
+    ScreenUtils.clear(
+        0.15f,
+        0.15f,
+        0.2f,
+        1f
+    );
+
+    // =====================================================
+    // MAPA
+    // =====================================================
+
+    mapa.dibujar(camara);
+
+    batch.setProjectionMatrix(
+        camara.combined
+    );
+
+    batch.begin();
+
+    // =====================================================
+    // ORDEN DE DIBUJO
+    // =====================================================
+
+    float yPies =
+            jugador.getHitbox().y
+            + jugador.getHitbox().height / 2f;
+
+    // =====================================================
+    // ÁRBOLES Y ROCAS DETRÁS
+    // =====================================================
+
+    for (arbol arbol : mapa.getArboles()) {
+
+        if (!arbol.estaTalado()
+                && arbol.getYOrden() > yPies) {
+
+            arbol.dibujar(batch);
+        }
+    }
+
+    for (roca roca : mapa.getRocas()) {
+
+        if (roca.getYOrden() > yPies) {
+
+            roca.dibujar(batch);
+        }
+    }
+
+    // =====================================================
+    // ESTRUCTURA
+    // =====================================================
+
+    mapa.getEstructuraRescate()
+            .dibujar(batch);
+
+    // =====================================================
+    // GUARDIAN
+    // =====================================================
+
+    if (guardian != null
+            && guardian.estaVivo()) {
+
+        TextureRegion frameGuardian =
+                obtenerFrameGuardian();
 
         batch.draw(
-            frame,
-            jugador.getPosicionX(),
-            jugador.getPosicionY(),
-            TAMANO_JUGADOR,
-            TAMANO_JUGADOR
+            frameGuardian,
+
+            guardian.getPosicionX()
+                - (TAMANO_GUARDIAN
+                    - TAMANO_JUGADOR) / 2f,
+
+            guardian.getPosicionY()
+                - (TAMANO_GUARDIAN
+                    - TAMANO_JUGADOR) / 2f,
+
+            TAMANO_GUARDIAN,
+            TAMANO_GUARDIAN
         );
-
-        // 4) Gema azul
-        if (gemaAzul != null) {
-            gemaAzul.dibujar(batch);
-        }
-
-        // 5) Arboles y rocas que quedan DELANTE del jugador
-        for (arbol arbol : mapa.getArboles()) {
-
-            if (!arbol.estaTalado() && arbol.getYOrden() <= yPies) {
-
-                arbol.dibujar(batch);
-            }
-        }
-
-        for (roca roca : mapa.getRocas()) {
-
-            if (roca.getYOrden() <= yPies) {
-
-                roca.dibujar(batch);
-            }
-        }
-        
-
-        batch.end();
-
-        barrasSupervivencia.dibujar();
-
-        barraRapidaUI.actualizar();
-
-        if (!inventarioUI.estaAbierto()) {
-
-            barraRapidaUI.dibujar();
-
-            comprobarRecogerGema();
-
-            panelEstructuraRescate.dibujar(jugador, mapa.getEstructuraRescate());
-        }
-
-        inventarioUI.dibujar();
     }
 
-    private void comprobarRecogerGema() {
+    // =====================================================
+    // JUGADOR
+    // =====================================================
 
-        if (gemaAzul == null) {
-            return;
+    TextureRegion frame =
+            obtenerFrameActual();
+
+    batch.draw(
+        frame,
+
+        jugador.getPosicionX(),
+        jugador.getPosicionY(),
+
+        TAMANO_JUGADOR,
+        TAMANO_JUGADOR
+    );
+
+    // =====================================================
+    // GEMA
+    // =====================================================
+
+    if (gemaAzul != null) {
+
+        gemaAzul.dibujar(batch);
+    }
+
+    // =====================================================
+    // ÁRBOLES Y ROCAS DELANTE
+    // =====================================================
+
+    for (arbol arbol : mapa.getArboles()) {
+
+        if (!arbol.estaTalado()
+                && arbol.getYOrden() <= yPies) {
+
+            arbol.dibujar(batch);
         }
+    }
 
-        if (gemaAzul.estaRecogida()) {
-            return;
+    for (roca roca : mapa.getRocas()) {
+
+        if (roca.getYOrden() <= yPies) {
+
+            roca.dibujar(batch);
         }
+    }
 
-        if (Gdx.input.isKeyJustPressed(Input.Keys.E)) {
+    batch.end();
 
-            if (gemaAzul.estaCerca(
-                    jugador.getPosicionX(),
-                    jugador.getPosicionY())) {
+    // =====================================================
+    // HUD
+    // =====================================================
 
-                jugador.recogerItem(new GemaAzul());
+    barrasSupervivencia.dibujar();
 
-                gemaAzul.recoger();
+    barraRapidaUI.actualizar();
 
-                System.out.println(
-                    "Recogiste la Gema Azul."
+    if (!inventarioUI.estaAbierto()) {
+
+        barraRapidaUI.dibujar();
+
+        comprobarRecogerGema();
+
+        panelEstructuraRescate.dibujar(
+            jugador,
+            mapa.getEstructuraRescate()
+        );
+    }
+
+    inventarioUI.dibujar();
+}
+
+// ==========================================================
+// FRAME DEL GUARDIAN
+// ==========================================================
+
+private TextureRegion obtenerFrameGuardian() {
+
+    Guardian.EstadoAtaque estado =
+            guardian.getEstadoAtaque();
+
+    Guardian.Direccion direccion =
+            guardian.getDireccion();
+
+    // =====================================================
+    // PREPARANDO
+    // =====================================================
+
+    if (estado ==
+            Guardian.EstadoAtaque.PREPARANDO) {
+
+        switch (direccion) {
+
+            case ARRIBA:
+
+                return guardianAnimacion.getFrame(
+                    guardianAnimacion.getPrepararUp()
                 );
-            }
+
+            case ABAJO:
+
+                return guardianAnimacion.getFrame(
+                    guardianAnimacion.getPrepararDown()
+                );
+
+            case IZQUIERDA:
+
+                return guardianAnimacion.getFrame(
+                    guardianAnimacion.getPrepararLeft()
+                );
+
+            case DERECHA:
+
+                return guardianAnimacion.getFrame(
+                    guardianAnimacion.getPrepararRight()
+                );
         }
     }
 
-    private boolean comprobarInteraccionEstructura() {
+    // =====================================================
+    // ATACANDO
+    // =====================================================
 
-        if (!Gdx.input.isKeyJustPressed(Input.Keys.E)) {
-            return false;
+    if (estado ==
+            Guardian.EstadoAtaque.ATACANDO) {
+
+        switch (direccion) {
+
+            case ARRIBA:
+
+                return guardianAnimacion.getFrame(
+                    guardianAnimacion.getAtacarUp()
+                );
+
+            case ABAJO:
+
+                return guardianAnimacion.getFrame(
+                    guardianAnimacion.getAtacarDown()
+                );
+
+            case IZQUIERDA:
+
+                return guardianAnimacion.getFrame(
+                    guardianAnimacion.getAtacarLeft()
+                );
+
+            case DERECHA:
+
+                return guardianAnimacion.getFrame(
+                    guardianAnimacion.getAtacarRight()
+                );
         }
+    }
 
-        EstructuraRescateMundo estructura =
-                mapa.getEstructuraRescate();
+    // =====================================================
+    // NORMAL
+    // =====================================================
 
-        if (estructura == null) {
-            return false;
+    /*
+     * Si está persiguiendo al jugador,
+     * usamos caminar.
+     *
+     * Si no está atacando y está cerca,
+     * usamos idle.
+     */
+
+    float diferenciaX =
+            jugador.getPosicionX()
+            - guardian.getPosicionX();
+
+    float diferenciaY =
+            jugador.getPosicionY()
+            - guardian.getPosicionY();
+
+    float distancia =
+            (float) Math.sqrt(
+                diferenciaX * diferenciaX +
+                diferenciaY * diferenciaY
+            );
+
+    boolean estaCaminando =
+            distancia > guardian.getDistanciaAtaque()
+            && distancia <= guardian.getDistanciaDeteccion();
+
+    if (estaCaminando) {
+
+        switch (direccion) {
+
+            case ARRIBA:
+
+                return guardianAnimacion.getFrame(
+                    guardianAnimacion.getWalkUp()
+                );
+
+            case ABAJO:
+
+                return guardianAnimacion.getFrame(
+                    guardianAnimacion.getWalkDown()
+                );
+
+            case IZQUIERDA:
+
+                return guardianAnimacion.getFrame(
+                    guardianAnimacion.getWalkLeft()
+                );
+
+            case DERECHA:
+
+                return guardianAnimacion.getFrame(
+                    guardianAnimacion.getWalkRight()
+                );
         }
+    }
 
-        if (estructura.estaCerca(
+    // =====================================================
+    // IDLE
+    // =====================================================
+
+    switch (direccion) {
+
+        case ARRIBA:
+
+            return guardianAnimacion.getFrame(
+                guardianAnimacion.getIdleUp()
+            );
+
+        case ABAJO:
+
+            return guardianAnimacion.getFrame(
+                guardianAnimacion.getIdleDown()
+            );
+
+        case IZQUIERDA:
+
+            return guardianAnimacion.getFrame(
+                guardianAnimacion.getIdleLeft()
+            );
+
+        case DERECHA:
+
+            return guardianAnimacion.getFrame(
+                guardianAnimacion.getIdleRight()
+            );
+    }
+
+    return guardianAnimacion.getFrame(
+        guardianAnimacion.getIdleDown()
+    );
+}
+
+// ==========================================================
+// GEMA
+// ==========================================================
+
+private void comprobarRecogerGema() {
+
+    if (gemaAzul == null) {
+        return;
+    }
+
+    if (gemaAzul.estaRecogida()) {
+        return;
+    }
+
+    if (Gdx.input.isKeyJustPressed(
+            Input.Keys.E)) {
+
+        if (gemaAzul.estaCerca(
                 jugador.getPosicionX(),
                 jugador.getPosicionY())) {
 
-            estructura.interactuar(jugador);
+            jugador.recogerItem(
+                new GemaAzul()
+            );
 
-            return true;
+            gemaAzul.recoger();
+
+            System.out.println(
+                "Recogiste la Gema Azul."
+            );
         }
+    }
+}
+
+// ==========================================================
+// INTERACCIÓN ESTRUCTURA
+// ==========================================================
+
+private boolean comprobarInteraccionEstructura() {
+
+    if (!Gdx.input.isKeyJustPressed(
+            Input.Keys.E)) {
 
         return false;
     }
 
-    // ==========================================================
-    // RENDER DE LA PANTALLA DE DERROTA
-    // ==========================================================
+    EstructuraRescateMundo estructura =
+            mapa.getEstructuraRescate();
 
-    private void renderDerrota(float delta) {
-
-        ScreenUtils.clear(0f, 0f, 0f, 1f);
-
-        PantallaDerrota.Accion accion = pantallaDerrota.actualizar(delta);
-
-        pantallaDerrota.dibujar();
-
-        switch (accion) {
-
-            case JUGAR_DE_NUEVO:
-
-                comenzarCarga();
-
-                break;
-
-            case VOLVER_AL_MENU:
-
-                volverAlMenu();
-
-                break;
-
-            default:
-
-                break;
-        }
+    if (estructura == null) {
+        return false;
     }
 
-    // ==========================================================
-    // RENDER DE LA PANTALLA DE VICTORIA
-    // ==========================================================
+    if (estructura.estaCerca(
+            jugador.getPosicionX(),
+            jugador.getPosicionY())) {
 
-    private void renderVictoria(float delta) {
+        estructura.interactuar(jugador);
 
-        ScreenUtils.clear(0f, 0f, 0f, 1f);
-
-        PantallaVictoria.Accion accion = pantallaVictoria.actualizar(delta);
-
-        pantallaVictoria.dibujar();
-
-        switch (accion) {
-
-            case JUGAR_DE_NUEVO:
-
-                comenzarCarga();
-
-                break;
-
-            case VOLVER_AL_MENU:
-
-                volverAlMenu();
-
-                break;
-
-            default:
-
-                break;
-        }
+        return true;
     }
 
-    // ==========================================================
-    // OBTENER FRAME ACTUAL
-    // ==========================================================
+    return false;
+}
 
-    private TextureRegion obtenerFrameActual() {
+// ==========================================================
+// DERROTA
+// ==========================================================
 
-        JugadorControl.Estado estado =
+private void renderDerrota(float delta) {
+
+    ScreenUtils.clear(
+        0f,
+        0f,
+        0f,
+        1f
+    );
+
+    PantallaDerrota.Accion accion =
+            pantallaDerrota.actualizar(delta);
+
+    pantallaDerrota.dibujar();
+
+    switch (accion) {
+
+        case JUGAR_DE_NUEVO:
+
+            comenzarCarga();
+
+            break;
+
+        case VOLVER_AL_MENU:
+
+            volverAlMenu();
+
+            break;
+
+        default:
+
+            break;
+    }
+}
+
+// ==========================================================
+// VICTORIA
+// ==========================================================
+
+private void renderVictoria(float delta) {
+
+    ScreenUtils.clear(
+        0f,
+        0f,
+        0f,
+        1f
+    );
+
+    PantallaVictoria.Accion accion =
+            pantallaVictoria.actualizar(delta);
+
+    pantallaVictoria.dibujar();
+
+    switch (accion) {
+
+        case JUGAR_DE_NUEVO:
+
+            comenzarCarga();
+
+            break;
+
+        case VOLVER_AL_MENU:
+
+            volverAlMenu();
+
+            break;
+
+        default:
+
+            break;
+    }
+}
+
+// ==========================================================
+// FRAME DEL JUGADOR
+// ==========================================================
+
+private TextureRegion obtenerFrameActual() {
+
+    JugadorControl.Estado estado =
             jugadorControl.getEstado();
 
-        JugadorControl.Direccion direccion =
+    JugadorControl.Direccion direccion =
             jugadorControl.getDireccion();
 
-        // ==============================
-        // IDLE
-        // ==============================
+    // =====================================================
+    // IDLE
+    // =====================================================
 
-        if (estado == JugadorControl.Estado.IDLE) {
+    if (estado ==
+            JugadorControl.Estado.IDLE) {
 
-            switch (direccion) {
+        switch (direccion) {
 
-                case ARRIBA:
+            case ARRIBA:
 
-                    return jugadorAnimacion.getFrame(
-                        jugadorAnimacion.getIdleUp()
-                    );
+                return jugadorAnimacion.getFrame(
+                    jugadorAnimacion.getIdleUp()
+                );
 
-                case ABAJO:
+            case ABAJO:
 
-                    return jugadorAnimacion.getFrame(
-                        jugadorAnimacion.getIdleDown()
-                    );
+                return jugadorAnimacion.getFrame(
+                    jugadorAnimacion.getIdleDown()
+                );
 
-                case IZQUIERDA:
+            case IZQUIERDA:
 
-                    return jugadorAnimacion.getFrame(
-                        jugadorAnimacion.getIdleLeft()
-                    );
+                return jugadorAnimacion.getFrame(
+                    jugadorAnimacion.getIdleLeft()
+                );
 
-                case DERECHA:
+            case DERECHA:
 
-                    return jugadorAnimacion.getFrame(
-                        jugadorAnimacion.getIdleRight()
-                    );
-            }
-        }
-
-        // ==============================
-        // CAMINAR
-        // ==============================
-
-        if (estado == JugadorControl.Estado.CAMINAR) {
-
-            switch (direccion) {
-
-                case ARRIBA:
-
-                    return jugadorAnimacion.getFrame(
-                        jugadorAnimacion.getWalkUp()
-                    );
-
-                case ABAJO:
-
-                    return jugadorAnimacion.getFrame(
-                        jugadorAnimacion.getWalkDown()
-                    );
-
-                case IZQUIERDA:
-
-                    return jugadorAnimacion.getFrame(
-                        jugadorAnimacion.getWalkLeft()
-                    );
-
-                case DERECHA:
-
-                    return jugadorAnimacion.getFrame(
-                        jugadorAnimacion.getWalkRight()
-                    );
-            }
-        }
-
-        // ==============================
-        // CORRER
-        // ==============================
-
-        if (estado == JugadorControl.Estado.CORRER) {
-
-            switch (direccion) {
-
-                case ARRIBA:
-
-                    return jugadorAnimacion.getFrame(
-                        jugadorAnimacion.getRunUp()
-                    );
-
-                case ABAJO:
-
-                    return jugadorAnimacion.getFrame(
-                        jugadorAnimacion.getRunDown()
-                    );
-
-                case IZQUIERDA:
-
-                    return jugadorAnimacion.getFrame(
-                        jugadorAnimacion.getRunLeft()
-                    );
-
-                case DERECHA:
-
-                    return jugadorAnimacion.getFrame(
-                        jugadorAnimacion.getRunRight()
-                    );
-            }
-        }
-
-        // ==============================
-        // DEFAULT
-        // ==============================
-
-        return jugadorAnimacion.getFrame(
-            jugadorAnimacion.getIdleDown()
-        );
-    }
-
-    // ==========================================================
-    // DISPOSE
-    // ==========================================================
-
-    @Override
-    public void dispose() {
-
-        batch.dispose();
-        pantallaDerrota.dispose();
-        pantallaVictoria.dispose();
-        pantallaCarga.dispose();
-        menuInicio.dispose();
-
-        // Si se sale desde el menú, la partida nunca se creó
-        if (jugadorAnimacion != null) {
-            jugadorAnimacion.dispose();
-        }
-
-        if (mapa != null) {
-            mapa.dispose();
-        }
-
-        if (inventarioUI != null) {
-            inventarioUI.dispose();
-        }
-
-        if (barrasSupervivencia != null) {
-            barrasSupervivencia.dispose();
-        }
-
-        if (barraRapidaUI != null) {
-            barraRapidaUI.dispose();
-        }
-
-        if (gemaAzul != null) {
-            gemaAzul.dispose();
-        }
-
-        if (panelEstructuraRescate != null) {
-            panelEstructuraRescate.dispose();
+                return jugadorAnimacion.getFrame(
+                    jugadorAnimacion.getIdleRight()
+                );
         }
     }
+
+    // =====================================================
+    // CAMINAR
+    // =====================================================
+
+    if (estado ==
+            JugadorControl.Estado.CAMINAR) {
+
+        switch (direccion) {
+
+            case ARRIBA:
+
+                return jugadorAnimacion.getFrame(
+                    jugadorAnimacion.getWalkUp()
+                );
+
+            case ABAJO:
+
+                return jugadorAnimacion.getFrame(
+                    jugadorAnimacion.getWalkDown()
+                );
+
+            case IZQUIERDA:
+
+                return jugadorAnimacion.getFrame(
+                    jugadorAnimacion.getWalkLeft()
+                );
+
+            case DERECHA:
+
+                return jugadorAnimacion.getFrame(
+                    jugadorAnimacion.getWalkRight()
+                );
+        }
+    }
+
+    // =====================================================
+    // CORRER
+    // =====================================================
+
+    if (estado ==
+            JugadorControl.Estado.CORRER) {
+
+        switch (direccion) {
+
+            case ARRIBA:
+
+                return jugadorAnimacion.getFrame(
+                    jugadorAnimacion.getRunUp()
+                );
+
+            case ABAJO:
+
+                return jugadorAnimacion.getFrame(
+                    jugadorAnimacion.getRunDown()
+                );
+
+            case IZQUIERDA:
+
+                return jugadorAnimacion.getFrame(
+                    jugadorAnimacion.getRunLeft()
+                );
+
+            case DERECHA:
+
+                return jugadorAnimacion.getFrame(
+                    jugadorAnimacion.getRunRight()
+                );
+        }
+    }
+
+    return jugadorAnimacion.getFrame(
+        jugadorAnimacion.getIdleDown()
+    );
+}
+
+// ==========================================================
+// DISPOSE
+// ==========================================================
+
+@Override
+public void dispose() {
+
+    batch.dispose();
+
+    pantallaDerrota.dispose();
+
+    pantallaVictoria.dispose();
+
+    pantallaCarga.dispose();
+
+    menuInicio.dispose();
+
+    if (jugadorAnimacion != null) {
+
+        jugadorAnimacion.dispose();
+    }
+
+    if (guardianAnimacion != null) {
+
+        guardianAnimacion.dispose();
+    }
+
+    if (mapa != null) {
+
+        mapa.dispose();
+    }
+
+    if (inventarioUI != null) {
+
+        inventarioUI.dispose();
+    }
+
+    if (barrasSupervivencia != null) {
+
+        barrasSupervivencia.dispose();
+    }
+
+    if (barraRapidaUI != null) {
+
+        barraRapidaUI.dispose();
+    }
+
+    if (gemaAzul != null) {
+
+        gemaAzul.dispose();
+    }
+
+    if (panelEstructuraRescate != null) {
+
+        panelEstructuraRescate.dispose();
+    }
+}
+
+
 }

@@ -1,6 +1,6 @@
 package Juego.facuAlex.recursos;
 
-import Juego.facuAlex.objetoMundo;
+
 import Juego.facuAlex.Herramientas.tipoHerramienta;
 
 public class planta extends objetoMundo {

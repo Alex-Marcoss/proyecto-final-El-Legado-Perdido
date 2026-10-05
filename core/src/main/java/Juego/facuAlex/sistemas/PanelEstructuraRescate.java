@@ -12,8 +12,8 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 
 import Juego.facuAlex.Fuentes;
-import Juego.facuAlex.Jugador;
-import Juego.facuAlex.inventario;
+import Juego.facuAlex.jugador.*;
+import Juego.facuAlex.inventario.*;
 import Juego.facuAlex.receta.Ingrediente;
 import Juego.facuAlex.recursos.Recursos;
 

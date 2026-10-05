@@ -1,4 +1,4 @@
-package Juego.facuAlex;
+package Juego.facuAlex.inventario;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
@@ -16,6 +16,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
 import Juego.facuAlex.Herramientas.Herramienta;
+import Juego.facuAlex.jugador.Jugador;
 import Juego.facuAlex.recursos.Item;
 import Juego.facuAlex.recursos.Recursos;
 

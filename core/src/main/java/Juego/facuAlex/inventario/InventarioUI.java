@@ -1,4 +1,4 @@
-package Juego.facuAlex;
+package Juego.facuAlex.inventario;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -12,6 +12,8 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+
+import Juego.facuAlex.jugador.Jugador;
 import Juego.facuAlex.recursos.Item;
 import Juego.facuAlex.recursos.Recursos;
 

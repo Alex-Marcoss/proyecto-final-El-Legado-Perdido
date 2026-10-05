@@ -1,6 +1,6 @@
 package Juego.facuAlex.sistemas;
 
-import Juego.facuAlex.inventario;
+import Juego.facuAlex.inventario.*;
 import Juego.facuAlex.receta.Ingrediente;
 
 public class EstructuraRescate {

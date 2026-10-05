@@ -1,10 +1,13 @@
-package Juego.facuAlex;
+package Juego.facuAlex.inventario;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+
+import Juego.facuAlex.jugador.Jugador;
+
 import com.badlogic.gdx.graphics.OrthographicCamera;
 
 public class BarrasSupervivencia {

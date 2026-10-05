@@ -1,4 +1,4 @@
-package Juego.facuAlex;
+package Juego.facuAlex.Pantallas;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
@@ -7,6 +7,8 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.Align;
+
+import Juego.facuAlex.Fuentes;
 
 public class PantallaCarga {
 
