@@ -528,8 +528,10 @@ public void render() {
 
     if (!inventarioUI.estaAbierto()) {
 
+        // (no se interactua con la estructura en medio de un golpe de pico)
         boolean interactuoConEstructura =
-                comprobarInteraccionEstructura();
+                !jugadorControl.estaMinando()
+                && comprobarInteraccionEstructura();
 
         if (!interactuoConEstructura) {
 
@@ -676,18 +678,25 @@ public void render() {
     // JUGADOR
     // =====================================================
 
-    TextureRegion frame =
-            obtenerFrameActual();
+    if (jugadorControl.estaMinando()) {
 
-    batch.draw(
-        frame,
+        dibujarJugadorMinando();
 
-        jugador.getPosicionX(),
-        jugador.getPosicionY(),
+    } else {
 
-        TAMANO_JUGADOR,
-        TAMANO_JUGADOR
-    );
+        TextureRegion frame =
+                obtenerFrameActual();
+
+        batch.draw(
+            frame,
+
+            jugador.getPosicionX(),
+            jugador.getPosicionY(),
+
+            TAMANO_JUGADOR,
+            TAMANO_JUGADOR
+        );
+    }
 
     // =====================================================
     // GEMA
@@ -1061,6 +1070,47 @@ private void renderVictoria(float delta) {
 
             break;
     }
+}
+
+// ==========================================================
+// JUGADOR MINANDO
+// ==========================================================
+
+// Los frames de caminar miden 102 x 144 px y se dibujan en
+// TAMANO_JUGADOR x TAMANO_JUGADOR. Los frames de minar son mas
+// grandes (entra el pico), asi que se dibujan con LA MISMA escala
+// para que el personaje se vea del mismo tamano que al caminar.
+private void dibujarJugadorMinando() {
+
+    boolean haciaLaIzquierda =
+            jugadorControl.getDireccion()
+                == JugadorControl.Direccion.IZQUIERDA;
+
+    TextureRegion frame =
+            jugadorAnimacion.getFrameMinar(
+                haciaLaIzquierda,
+                jugadorControl.getTiempoMinado()
+            );
+
+    float escalaX = TAMANO_JUGADOR / 102f;
+    float escalaY = TAMANO_JUGADOR / 144f;
+
+    // El factor corrige el tamano si la imagen tiene otra resolucion
+    float factor = jugadorAnimacion.getMinarFactor();
+
+    float ancho = frame.getRegionWidth() * factor * escalaX;
+    float alto = frame.getRegionHeight() * factor * escalaY;
+
+    // Donde estan los pies del jugador (en unidades del juego)
+    float piesX = (haciaLaIzquierda
+            ? JugadorAnimacion.MINAR_PIES_X_IZQUIERDA
+            : JugadorAnimacion.MINAR_PIES_X_DERECHA) * escalaX;
+
+    // Los pies estan en el centro horizontal de la celda de minar
+    float x = jugador.getPosicionX() + piesX - ancho / 2f;
+    float y = jugador.getPosicionY();
+
+    batch.draw(frame, x, y, ancho, alto);
 }
 
 // ==========================================================
