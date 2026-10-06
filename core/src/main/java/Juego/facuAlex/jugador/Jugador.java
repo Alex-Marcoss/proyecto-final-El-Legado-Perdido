@@ -544,6 +544,54 @@ public class Jugador {
         }
     }
     
+    // Comprueba SI se puede picar la roca, sin gastar nada.
+    // Se usa antes de empezar la animacion: si no se puede
+    // (no hay pico, no hay energia, pico roto), no se anima el golpe.
+    public boolean puedeMinar(roca roca) {
+
+        if (roca == null) {
+            return false;
+        }
+
+        if (herramientaEquipada == null) {
+
+            System.out.println(
+                "Necesitas equipar un pico para minar."
+            );
+
+            return false;
+        }
+
+        if (herramientaEquipada.getTipo() != tipoHerramienta.PICO) {
+
+            System.out.println(
+                "Necesitas tener un pico equipado."
+            );
+
+            return false;
+        }
+
+        if (energia < roca.getEnergiaNecesaria()) {
+
+            System.out.println(
+                "No tienes suficiente energia para minar."
+            );
+
+            return false;
+        }
+
+        if (herramientaEquipada.getDurabilidad() <= 0) {
+
+            System.out.println(
+                "El pico no tiene suficiente durabilidad."
+            );
+
+            return false;
+        }
+
+        return true;
+    }
+
     public void minarRoca(roca roca, Mapa mapa) {
 
         if (roca == null || mapa == null) {
