@@ -25,8 +25,22 @@ public class JugadorControl {
     public enum Estado {
         IDLE,
         CAMINAR,
-        CORRER
+        CORRER,
+        MINAR
     }
+
+    // =========================
+    // ESTADO DE MINADO
+    // =========================
+
+    // Roca que se esta picando (null si no esta minando)
+    private roca rocaObjetivo;
+
+    // Segundos que pasaron desde que empezo el golpe de pico
+    private float tiempoMinado;
+
+    // Para entregar la piedra una sola vez por golpe
+    private boolean golpeAplicado;
 
     public JugadorControl(Jugador jugador) {
         this.jugador = jugador;
@@ -35,6 +49,16 @@ public class JugadorControl {
     }
 
     public void actualizar(float delta, Mapa mapa) {
+
+        // =========================
+        // MINANDO: el jugador queda quieto hasta terminar el golpe
+        // =========================
+
+        if (estado == Estado.MINAR) {
+
+            actualizarMinado(delta, mapa);
+            return;
+        }
 
         // =========================
         // ENTRADA DEL JUGADOR
@@ -75,7 +99,16 @@ public class JugadorControl {
 
                 if (rocaCercana != null) {
 
-                    jugador.minarRoca(rocaCercana, mapa);
+                    // Si se puede minar, arranca la animacion.
+                    // La piedra se entrega en el momento del golpe.
+                    if (jugador.puedeMinar(rocaCercana)) {
+
+                        iniciarMinado(rocaCercana);
+
+                        // Importante: cortar aca, si no el codigo de abajo
+                        // ("si no se mueve") vuelve el estado a IDLE.
+                        return;
+                    }
 
                 } else {
 
@@ -194,6 +227,59 @@ public class JugadorControl {
     }
 
 
+    // ==========================================================
+    // MINADO
+    // ==========================================================
+
+    private void iniciarMinado(roca roca) {
+
+        rocaObjetivo = roca;
+        tiempoMinado = 0f;
+        golpeAplicado = false;
+
+        // El sprite de minar solo existe de costado, asi que el
+        // jugador mira hacia el lado donde esta la roca.
+        float centroJugadorX = jugador.getPosicionX() + 32f;
+
+        if (roca.getPosicionX() < centroJugadorX) {
+            direccion = Direccion.IZQUIERDA;
+        } else {
+            direccion = Direccion.DERECHA;
+        }
+
+        estado = Estado.MINAR;
+    }
+
+    private void actualizarMinado(float delta, Mapa mapa) {
+
+        tiempoMinado += delta;
+
+        // Momento del golpe: el pico toca la roca
+        if (!golpeAplicado
+                && tiempoMinado >= JugadorAnimacion.getTiempoImpactoMinar()) {
+
+            golpeAplicado = true;
+
+            jugador.minarRoca(rocaObjetivo, mapa);
+        }
+
+        // Fin de la animacion: vuelve a quedar quieto
+        if (tiempoMinado >= JugadorAnimacion.getDuracionMinar()) {
+
+            rocaObjetivo = null;
+            tiempoMinado = 0f;
+            estado = Estado.IDLE;
+        }
+    }
+
+    public boolean estaMinando() {
+        return estado == Estado.MINAR;
+    }
+
+    public float getTiempoMinado() {
+        return tiempoMinado;
+    }
+
     public Direccion getDireccion() {
         return direccion;
     }
@@ -215,6 +301,11 @@ public class JugadorControl {
         }
 
         if (!guardian.estaVivo()) {
+            return;
+        }
+
+        // No se puede atacar en medio de un golpe de pico
+        if (estado == Estado.MINAR) {
             return;
         }
 
