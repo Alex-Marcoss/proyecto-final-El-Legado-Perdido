@@ -114,5 +114,6 @@
 - Creacion de estructura de rescate creada por fases, que va cambiando con la cada construccion
 - Pantalla de victoria despues de armar la estructura y solicitar el rescate
   
-
-
+## [Nuevos avances y mejoras] 2026-10-05
+### Agregados:
+- Se agrego la animacion de minar.
