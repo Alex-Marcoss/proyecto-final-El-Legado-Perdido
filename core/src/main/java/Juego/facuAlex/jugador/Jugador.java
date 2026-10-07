@@ -478,6 +478,53 @@ public class Jugador {
 }
 // -------------------------------------------------
 
+    // Comprueba SI se puede talar el arbol, sin gastar nada.
+    // Se usa antes de empezar la animacion del hachazo.
+    public boolean puedeTalar(arbol arbol) {
+
+        if (arbol == null) {
+            return false;
+        }
+
+        if (herramientaEquipada == null) {
+
+            System.out.println(
+                "Necesitas equipar un hacha para talar."
+            );
+
+            return false;
+        }
+
+        if (herramientaEquipada.getTipo() != tipoHerramienta.HACHA) {
+
+            System.out.println(
+                "Necesitas tener un hacha equipada."
+            );
+
+            return false;
+        }
+
+        if (energia < arbol.getEnergiaNecesaria()) {
+
+            System.out.println(
+                "No tienes suficiente energia."
+            );
+
+            return false;
+        }
+
+        if (herramientaEquipada.getDurabilidad() <= 0) {
+
+            System.out.println(
+                "El hacha no tiene suficiente durabilidad."
+            );
+
+            return false;
+        }
+
+        return true;
+    }
+
     public void talarArbol(arbol arbol, Mapa mapa) {
 
         if (arbol == null || mapa == null) {
