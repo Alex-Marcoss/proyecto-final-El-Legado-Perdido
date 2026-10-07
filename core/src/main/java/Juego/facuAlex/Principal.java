@@ -533,6 +533,7 @@ public void render() {
                 !jugadorControl.estaMinando()
                 && !jugadorControl.estaTalando()
                 && !jugadorControl.estaGolpeando()
+                && !jugadorControl.estaHerido()
                 && comprobarInteraccionEstructura();
 
         if (!interactuoConEstructura) {
@@ -681,7 +682,11 @@ public void render() {
     // JUGADOR
     // =====================================================
 
-    if (jugadorControl.estaMinando()) {
+    if (jugadorControl.estaHerido()) {
+
+        dibujarJugadorHerido();
+
+    } else if (jugadorControl.estaMinando()) {
 
         dibujarJugadorMinando();
 
@@ -1191,6 +1196,39 @@ private void dibujarJugadorGolpeando() {
             JugadorAnimacion.getPiesXGolpear(direccion) * escalaX;
 
     // Los pies estan en el centro horizontal de la celda
+    float x = jugador.getPosicionX() + piesX - ancho / 2f;
+    float y = jugador.getPosicionY();
+
+    batch.draw(frame, x, y, ancho, alto);
+}
+
+// ==========================================================
+// JUGADOR HERIDO (recibe dano)
+// ==========================================================
+
+// Misma escala y mismos pies que el sprite de caminar.
+private void dibujarJugadorHerido() {
+
+    JugadorControl.Direccion direccion =
+            jugadorControl.getDireccion();
+
+    TextureRegion frame =
+            jugadorAnimacion.getFrameDano(
+                direccion,
+                jugadorControl.getTiempoHerido()
+            );
+
+    float escalaX = TAMANO_JUGADOR / 102f;
+    float escalaY = TAMANO_JUGADOR / 144f;
+
+    float factor = JugadorAnimacion.getGolpearFactor();
+
+    float ancho = frame.getRegionWidth() * factor * escalaX;
+    float alto = frame.getRegionHeight() * factor * escalaY;
+
+    float piesX =
+            JugadorAnimacion.getPiesXGolpear(direccion) * escalaX;
+
     float x = jugador.getPosicionX() + piesX - ancho / 2f;
     float y = jugador.getPosicionY();
 
