@@ -1,5 +1,7 @@
 package Juego.facuAlex.sistemas;
 
+
+import Juego.facuAlex.Proporcion;
 import java.util.ArrayList;
 
 import com.badlogic.gdx.Gdx;
@@ -84,8 +86,8 @@ public class PanelEstructuraRescate {
         layout = new GlyphLayout();
 
         camaraUI = new OrthographicCamera(
-                Gdx.graphics.getWidth(),
-                Gdx.graphics.getHeight()
+                Proporcion.ANCHO,
+                Proporcion.ALTO
         );
     }
 
@@ -127,14 +129,14 @@ public class PanelEstructuraRescate {
         float panelAlto = PADDING * 2f + lineas.size() * ALTURA_LINEA;
 
         // Arriba a la derecha
-        float x = Gdx.graphics.getWidth() - panelAncho - MARGEN_PANTALLA;
-        float y = Gdx.graphics.getHeight() - panelAlto - MARGEN_PANTALLA;
+        float x = Proporcion.ANCHO - panelAncho - MARGEN_PANTALLA;
+        float y = Proporcion.ALTO - panelAlto - MARGEN_PANTALLA;
 
         // ---------- 3) Cámara de UI (en píxeles de la ventana) ----------
         camaraUI.setToOrtho(
                 false,
-                Gdx.graphics.getWidth(),
-                Gdx.graphics.getHeight()
+                Proporcion.ANCHO,
+                Proporcion.ALTO
         );
 
         camaraUI.update();
