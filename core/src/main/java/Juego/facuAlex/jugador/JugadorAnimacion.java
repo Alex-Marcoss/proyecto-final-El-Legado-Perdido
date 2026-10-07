@@ -41,31 +41,53 @@ public class JugadorAnimacion {
     // =========================
     // MINAR (picar roca)
     // =========================
-
-
+    //
+    // La hoja minar_frames.png tiene 5 columnas x 2 filas:
+    //   fila 0 = mirando a la IZQUIERDA
+    //   fila 1 = mirando a la DERECHA
+    // Cada celda es de 154 x 171 px (mas grande que la de caminar
+    // porque tiene que entrar el pico levantado).
+    //
+    // La animacion NO se repite en loop: se reproduce una sola vez
+    // cada vez que se pica. Por eso se maneja con un tiempo propio
+    // (lo lleva JugadorControl) en vez del stateTime global.
 
     private Texture minarTexture;
     private TextureRegion[] minarIzquierda;
     private TextureRegion[] minarDerecha;
 
-
+    // Factor para pasar de pixeles reales de la imagen a pixeles
+    // "de diseno" (770 x 342). Vale 1 si la imagen mide justo eso.
+    // Si la imagen tiene otra resolucion (por ejemplo el doble),
+    // el codigo se adapta solo y el personaje se ve igual.
     private float minarFactor = 1f;
 
     private static final int MINAR_CELDA_ANCHO = 154;
     private static final int MINAR_CELDA_ALTO = 171;
 
-
+    // Cuanto dura cada uno de los 5 frames (en segundos).
+    // Los dos primeros levantan el pico, los otros bajan el golpe
+    // y el ultimo (el impacto) dura un poco mas para que se note.
     private static final float[] MINAR_DURACION_FRAMES = {
         0.09f, 0.09f, 0.07f, 0.07f, 0.16f
     };
 
-
+    // Posicion X de los pies dentro de la celda de CAMINAR (102 px de
+    // ancho). Sirve para que, al empezar a picar, el personaje no
+    // "salte" de lugar: se dibuja con los pies en el mismo punto.
     public static final float MINAR_PIES_X_IZQUIERDA = 57f;
     public static final float MINAR_PIES_X_DERECHA = 45f;
 
     // =========================
-    // TALAR 
+    // TALAR (cortar arbol con el hacha)
     // =========================
+    //
+    // La hoja talar.png tiene 5 columnas x 2 filas (igual que minar):
+    //   fila 0 = mirando a la IZQUIERDA
+    //   fila 1 = mirando a la DERECHA
+    // Se reproduce una sola vez por golpe de hacha.
+    // El alto de cada celda en "pixeles de diseno" es TALAR_CELDA_ALTO;
+    // el ancho se calcula solo a partir de la imagen real.
 
     private Texture talarTexture;
     private TextureRegion[] talarIzquierda;
@@ -75,35 +97,61 @@ public class JugadorAnimacion {
 
     private static final int TALAR_CELDA_ALTO = 171;
 
-
+    // Frames 0-3: el hacha se levanta y baja. Frame 4: impacto.
     private static final float[] TALAR_DURACION_FRAMES = {
         0.08f, 0.10f, 0.10f, 0.08f, 0.16f
     };
 
     // =========================
-    // GOLPEAR 
+    // GOLPEAR (pegar con el puno)
     // =========================
+    //
+    // La hoja golpear.png tiene 4 columnas (frames) x 4 filas:
+    //   fila 0 = mirando ABAJO (de frente)
+    //   fila 1 = mirando ARRIBA (de espaldas)
+    //   fila 2 = mirando a la DERECHA
+    //   fila 3 = mirando a la IZQUIERDA
+    // Frames: 0 = prepara el brazo, 1 = estira, 2 = IMPACTO (con
+    // chispa), 3 = vuelve. Se reproduce una sola vez por golpe.
 
     private Texture golpearTexture;
     private TextureRegion[][] golpear;
 
+    // Pixeles de diseno por pixel real: hace que el personaje de
+    // la hoja se vea del mismo tamano que al caminar.
     private static final float GOLPEAR_FACTOR = 0.796f;
 
     private static final float[] GOLPEAR_DURACION_FRAMES = {
         0.06f, 0.06f, 0.10f, 0.10f
     };
 
-
+    // Posicion X de los pies dentro de la celda de caminar (102 px)
     public static final float GOLPEAR_PIES_X_FRENTE = 50f;
+
+    // =========================
+    // HERIDO (recibir dano)
+    // =========================
+    //
+    // La hoja dano.png tiene 3 columnas (frames) x 4 filas:
+    //   fila 0 = ABAJO, 1 = ARRIBA, 2 = DERECHA, 3 = IZQUIERDA
+    // Frames: 0 = el golpe, 1 = el dolor (sangre), 2 = se recupera.
+    // Misma escala que golpear.png (GOLPEAR_FACTOR).
+
+    private Texture danoTexture;
+    private TextureRegion[][] dano;
+
+    private static final float[] DANO_DURACION_FRAMES = {
+        0.10f, 0.14f, 0.10f
+    };
 
     public JugadorAnimacion() {
 
-
+        // Cargar sprite sheet
         sheetTexture = new Texture(
             Gdx.files.internal("sprites/jugador.png")
         );
 
-
+        // Pixel art: sin suavizado
         sheetTexture.setFilter(
             Texture.TextureFilter.Nearest,
             Texture.TextureFilter.Nearest
@@ -113,6 +161,7 @@ public class JugadorAnimacion {
         cargarAnimacionMinar();
         cargarAnimacionTalar();
         cargarAnimacionGolpear();
+        cargarAnimacionDano();
 
         stateTime = 0f;
     }
@@ -123,13 +172,15 @@ public class JugadorAnimacion {
             Gdx.files.internal("sprites/minarr.png")
         );
 
-
+        // Pixel art: sin suavizado
         minarTexture.setFilter(
             Texture.TextureFilter.Nearest,
             Texture.TextureFilter.Nearest
         );
 
-
+        // La hoja tiene 5 columnas x 2 filas. En vez de suponer cuantos
+        // pixeles mide cada celda, se calcula con el tamano REAL de la
+        // imagen. Asi funciona aunque la imagen tenga otra resolucion.
         int anchoReal = minarTexture.getWidth();
         int altoReal = minarTexture.getHeight();
 
@@ -143,7 +194,7 @@ public class JugadorAnimacion {
             + " px (celda " + celdaAncho + " x " + celdaAlto + ")"
         );
 
-
+        // Aviso si la proporcion no es la esperada (2,25 : 1)
         float proporcion = (float) anchoReal / altoReal;
         float esperada = (MINAR_CELDA_ANCHO * 5f) / (MINAR_CELDA_ALTO * 2f);
 
@@ -154,7 +205,7 @@ public class JugadorAnimacion {
                 celdaAlto
             );
 
-
+        // Fila 0 = izquierda, fila 1 = derecha
         minarIzquierda = frames[0];
         minarDerecha = frames[1];
     }
@@ -165,7 +216,7 @@ public class JugadorAnimacion {
             Gdx.files.internal("sprites/talar.png")
         );
 
-
+        // Pixel art: sin suavizado
         talarTexture.setFilter(
             Texture.TextureFilter.Nearest,
             Texture.TextureFilter.Nearest
@@ -177,7 +228,7 @@ public class JugadorAnimacion {
         int celdaAncho = anchoReal / 5;
         int celdaAlto = altoReal / 2;
 
-
+        // Pasa de pixeles reales a pixeles de diseno
         talarFactor = (TALAR_CELDA_ALTO * 2f) / altoReal;
 
         TextureRegion[][] frames =
@@ -187,7 +238,7 @@ public class JugadorAnimacion {
                 celdaAlto
             );
 
-
+        // Fila 0 = izquierda, fila 1 = derecha
         talarIzquierda = frames[0];
         talarDerecha = frames[1];
     }
@@ -214,9 +265,42 @@ public class JugadorAnimacion {
         );
     }
 
+    private void cargarAnimacionDano() {
+
+        danoTexture = new Texture(
+            Gdx.files.internal("sprites/dano.png")
+        );
+
+        // Pixel art: sin suavizado
+        danoTexture.setFilter(
+            Texture.TextureFilter.Nearest,
+            Texture.TextureFilter.Nearest
+        );
+
+        int celdaAncho = danoTexture.getWidth() / 3;
+        int celdaAlto = danoTexture.getHeight() / 4;
+
+        dano = TextureRegion.split(
+            danoTexture,
+            celdaAncho,
+            celdaAlto
+        );
+    }
+
     private void cargarAnimaciones() {
 
-
+        /*
+         * Sprite sheet:
+         *
+         * 1020 x 576
+         *
+         * 10 columnas
+         * 4 filas
+         *
+         * Cada frame:
+         *
+         * 102 x 144
+         */
 
         int frameWidth = 102;
         int frameHeight = 144;
@@ -228,7 +312,19 @@ public class JugadorAnimacion {
                 frameHeight
             );
 
+        // =========================
+        // FILAS
+        // =========================
+        //
+        // Fila 0 = DOWN
+        // Fila 1 = UP
+        // Fila 2 = LEFT
+        // Fila 3 = RIGHT
+        //
 
+        // =========================
+        // IDLE
+        // =========================
 
         idleDown = new Animation<TextureRegion>(
             0.15f,
@@ -533,6 +629,51 @@ public class JugadorAnimacion {
         return frames[frames.length - 1];
     }
 
+    // =========================
+    // HERIDO
+    // =========================
+
+    public static float getDuracionDano() {
+
+        float total = 0f;
+
+        for (float duracion : DANO_DURACION_FRAMES) {
+            total += duracion;
+        }
+
+        return total;
+    }
+
+    public TextureRegion getFrameDano(
+        JugadorControl.Direccion direccion,
+        float tiempo
+    ) {
+
+        int fila;
+
+        switch (direccion) {
+            case ARRIBA:    fila = 1; break;
+            case DERECHA:   fila = 2; break;
+            case IZQUIERDA: fila = 3; break;
+            default:        fila = 0; break;
+        }
+
+        TextureRegion[] frames = dano[fila];
+
+        float acumulado = 0f;
+
+        for (int i = 0; i < DANO_DURACION_FRAMES.length; i++) {
+
+            acumulado += DANO_DURACION_FRAMES[i];
+
+            if (tiempo < acumulado) {
+                return frames[i];
+            }
+        }
+
+        return frames[frames.length - 1];
+    }
+
     public static float getGolpearFactor() {
         return GOLPEAR_FACTOR;
     }
@@ -580,6 +721,10 @@ public class JugadorAnimacion {
 
         if (golpearTexture != null) {
             golpearTexture.dispose();
+        }
+
+        if (danoTexture != null) {
+            danoTexture.dispose();
         }
     }
 }
