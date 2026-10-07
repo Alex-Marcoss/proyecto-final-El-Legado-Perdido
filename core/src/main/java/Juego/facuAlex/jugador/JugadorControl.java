@@ -26,21 +26,46 @@ public class JugadorControl {
         IDLE,
         CAMINAR,
         CORRER,
-        MINAR
+        MINAR,
+        TALAR,
+        GOLPEAR
     }
 
     // =========================
     // ESTADO DE MINADO
     // =========================
 
-    // Roca que se esta picando (null si no esta minando)
+
     private roca rocaObjetivo;
 
-    // Segundos que pasaron desde que empezo el golpe de pico
+
     private float tiempoMinado;
 
-    // Para entregar la piedra una sola vez por golpe
+
     private boolean golpeAplicado;
+
+    // =========================
+    // ESTADO DE TALADO
+    // =========================
+
+
+    private arbol arbolObjetivo;
+
+
+    private float tiempoTalado;
+
+
+    private boolean hachazoAplicado;
+
+    // =========================
+    // ESTADO DE GOLPE 
+    // =========================
+
+
+    private float tiempoGolpe;
+
+
+    private boolean punoAplicado;
 
     public JugadorControl(Jugador jugador) {
         this.jugador = jugador;
@@ -57,6 +82,24 @@ public class JugadorControl {
         if (estado == Estado.MINAR) {
 
             actualizarMinado(delta, mapa);
+            return;
+        }
+
+        // =========================
+        // GOLPEANDO: el jugador queda quieto hasta terminar el golpe
+        // =========================
+
+        if (estado == Estado.GOLPEAR) {
+            return;
+        }
+
+        // =========================
+        // TALANDO: el jugador queda quieto hasta terminar el golpe
+        // =========================
+
+        if (estado == Estado.TALAR) {
+
+            actualizarTalado(delta, mapa);
             return;
         }
 
@@ -87,7 +130,16 @@ public class JugadorControl {
 
             if (arbolCercano != null) {
 
-                jugador.talarArbol(arbolCercano, mapa);
+                // Si se puede talar, arranca la animacion.
+                // La madera se entrega en el momento del golpe.
+                if (jugador.puedeTalar(arbolCercano)) {
+
+                    iniciarTalado(arbolCercano);
+
+                    // Cortar aca: si no, el codigo de abajo
+                    // ("si no se mueve") vuelve el estado a IDLE.
+                    return;
+                }
 
             } else {
 
@@ -272,6 +324,67 @@ public class JugadorControl {
         }
     }
 
+    // ==========================================================
+    // TALADO
+    // ==========================================================
+
+    private void iniciarTalado(arbol arbol) {
+
+        arbolObjetivo = arbol;
+        tiempoTalado = 0f;
+        hachazoAplicado = false;
+
+        // El sprite de talar solo existe de costado, asi que el
+        // jugador mira hacia el lado donde esta el arbol.
+        float centroJugadorX = jugador.getPosicionX() + 32f;
+
+        if (arbol.getPosicionX() < centroJugadorX) {
+            direccion = Direccion.IZQUIERDA;
+        } else {
+            direccion = Direccion.DERECHA;
+        }
+
+        estado = Estado.TALAR;
+    }
+
+    private void actualizarTalado(float delta, Mapa mapa) {
+
+        tiempoTalado += delta;
+
+        // Momento del golpe: el hacha toca el tronco
+        if (!hachazoAplicado
+                && tiempoTalado >= JugadorAnimacion.getTiempoImpactoTalar()) {
+
+            hachazoAplicado = true;
+
+            jugador.talarArbol(arbolObjetivo, mapa);
+        }
+
+        // Fin de la animacion: vuelve a quedar quieto
+        if (tiempoTalado >= JugadorAnimacion.getDuracionTalar()) {
+
+            arbolObjetivo = null;
+            tiempoTalado = 0f;
+            estado = Estado.IDLE;
+        }
+    }
+
+    public boolean estaGolpeando() {
+        return estado == Estado.GOLPEAR;
+    }
+
+    public float getTiempoGolpe() {
+        return tiempoGolpe;
+    }
+
+    public boolean estaTalando() {
+        return estado == Estado.TALAR;
+    }
+
+    public float getTiempoTalado() {
+        return tiempoTalado;
+    }
+
     public boolean estaMinando() {
         return estado == Estado.MINAR;
     }
@@ -289,8 +402,21 @@ public class JugadorControl {
     }
     
     public void actualizarAtaque(
+            float delta,
             combate sistemaCombate,
             Guardian guardian) {
+
+        // =========================
+        // GOLPEANDO: avanza la animacion y pega en el impacto.
+        // Va antes de los chequeos de abajo para que la animacion
+        // termine siempre, aunque el guardian muera en el medio.
+        // =========================
+
+        if (estado == Estado.GOLPEAR) {
+
+            actualizarGolpe(delta, sistemaCombate, guardian);
+            return;
+        }
 
         if (sistemaCombate == null) {
             return;
@@ -304,18 +430,66 @@ public class JugadorControl {
             return;
         }
 
-        // No se puede atacar en medio de un golpe de pico
-        if (estado == Estado.MINAR) {
+        // No se puede atacar en medio de un golpe de pico o hacha
+        if (estado == Estado.MINAR || estado == Estado.TALAR) {
             return;
         }
 
         if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
 
-            sistemaCombate.atacar(
-                jugador,
-                guardian,
-                direccion
-            );
+            // Sin energia no hay golpe: solo avisa (atacar() lo imprime)
+            if (jugador.getEnergia() < sistemaCombate.getEnergiaAtaque()) {
+
+                sistemaCombate.atacar(
+                    jugador,
+                    guardian,
+                    direccion
+                );
+
+                return;
+            }
+
+            iniciarGolpe();
+        }
+    }
+
+    private void iniciarGolpe() {
+
+        tiempoGolpe = 0f;
+        punoAplicado = false;
+        estado = Estado.GOLPEAR;
+    }
+
+    private void actualizarGolpe(
+            float delta,
+            combate sistemaCombate,
+            Guardian guardian) {
+
+        tiempoGolpe += delta;
+
+        // Momento del impacto: el punio llega al frente
+        if (!punoAplicado
+                && tiempoGolpe >= JugadorAnimacion.getTiempoImpactoGolpear()) {
+
+            punoAplicado = true;
+
+            if (sistemaCombate != null
+                    && guardian != null
+                    && guardian.estaVivo()) {
+
+                sistemaCombate.atacar(
+                    jugador,
+                    guardian,
+                    direccion
+                );
+            }
+        }
+
+        // Fin de la animacion: vuelve a quedar quieto
+        if (tiempoGolpe >= JugadorAnimacion.getDuracionGolpear()) {
+
+            tiempoGolpe = 0f;
+            estado = Estado.IDLE;
         }
     }
     
