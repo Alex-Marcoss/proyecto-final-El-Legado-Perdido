@@ -531,6 +531,8 @@ public void render() {
         // (no se interactua con la estructura en medio de un golpe de pico)
         boolean interactuoConEstructura =
                 !jugadorControl.estaMinando()
+                && !jugadorControl.estaTalando()
+                && !jugadorControl.estaGolpeando()
                 && comprobarInteraccionEstructura();
 
         if (!interactuoConEstructura) {
@@ -546,6 +548,7 @@ public void render() {
         // =================================================
 
         jugadorControl.actualizarAtaque(
+            delta,
             sistemaCombate,
             guardian
         );
@@ -681,6 +684,14 @@ public void render() {
     if (jugadorControl.estaMinando()) {
 
         dibujarJugadorMinando();
+
+    } else if (jugadorControl.estaTalando()) {
+
+        dibujarJugadorTalando();
+
+    } else if (jugadorControl.estaGolpeando()) {
+
+        dibujarJugadorGolpeando();
 
     } else {
 
@@ -1107,6 +1118,79 @@ private void dibujarJugadorMinando() {
             : JugadorAnimacion.MINAR_PIES_X_DERECHA) * escalaX;
 
     // Los pies estan en el centro horizontal de la celda de minar
+    float x = jugador.getPosicionX() + piesX - ancho / 2f;
+    float y = jugador.getPosicionY();
+
+    batch.draw(frame, x, y, ancho, alto);
+}
+
+// ==========================================================
+// JUGADOR TALANDO
+// ==========================================================
+
+// Igual que minar: se dibuja con la misma escala que el sprite
+// de caminar, con los pies en el mismo punto, para que el
+// personaje no "salte" ni cambie de tamano al talar.
+private void dibujarJugadorTalando() {
+
+    boolean haciaLaIzquierda =
+            jugadorControl.getDireccion()
+                == JugadorControl.Direccion.IZQUIERDA;
+
+    TextureRegion frame =
+            jugadorAnimacion.getFrameTalar(
+                haciaLaIzquierda,
+                jugadorControl.getTiempoTalado()
+            );
+
+    float escalaX = TAMANO_JUGADOR / 102f;
+    float escalaY = TAMANO_JUGADOR / 144f;
+
+    float factor = jugadorAnimacion.getTalarFactor();
+
+    float ancho = frame.getRegionWidth() * factor * escalaX;
+    float alto = frame.getRegionHeight() * factor * escalaY;
+
+    float piesX = (haciaLaIzquierda
+            ? JugadorAnimacion.MINAR_PIES_X_IZQUIERDA
+            : JugadorAnimacion.MINAR_PIES_X_DERECHA) * escalaX;
+
+    // Los pies estan en el centro horizontal de la celda
+    float x = jugador.getPosicionX() + piesX - ancho / 2f;
+    float y = jugador.getPosicionY();
+
+    batch.draw(frame, x, y, ancho, alto);
+}
+
+// ==========================================================
+// JUGADOR GOLPEANDO (puno)
+// ==========================================================
+
+// Misma escala y mismos pies que el sprite de caminar, asi el
+// personaje no cambia de tamano ni salta de lugar al pegar.
+private void dibujarJugadorGolpeando() {
+
+    JugadorControl.Direccion direccion =
+            jugadorControl.getDireccion();
+
+    TextureRegion frame =
+            jugadorAnimacion.getFrameGolpear(
+                direccion,
+                jugadorControl.getTiempoGolpe()
+            );
+
+    float escalaX = TAMANO_JUGADOR / 102f;
+    float escalaY = TAMANO_JUGADOR / 144f;
+
+    float factor = JugadorAnimacion.getGolpearFactor();
+
+    float ancho = frame.getRegionWidth() * factor * escalaX;
+    float alto = frame.getRegionHeight() * factor * escalaY;
+
+    float piesX =
+            JugadorAnimacion.getPiesXGolpear(direccion) * escalaX;
+
+    // Los pies estan en el centro horizontal de la celda
     float x = jugador.getPosicionX() + piesX - ancho / 2f;
     float y = jugador.getPosicionY();
 
