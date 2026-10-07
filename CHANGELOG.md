@@ -123,3 +123,4 @@
 
 - Se agrego la animacion de talar, golpear y recibir daño.
 - Se creo la parte interior y exterior del templo.
+- Se arreglo la pantalla para que si se quiere cambiar el tamaño no se deforme.
