@@ -117,3 +117,9 @@
 ## [Nuevos avances y mejoras] 2026-10-05
 ### Agregados:
 - Se agrego la animacion de minar.
+
+## [Nuevos avances y mejoras] 2026-10-07
+### Agregados:
+
+- Se agrego la animacion de talar y golpear.
+- Se creo la parte interior y exterior del templo.
