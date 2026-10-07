@@ -111,6 +111,9 @@ public class Enemigo {
 
         jugador.recibirDanio(daño);
 
+        // Avisa para que el jugador muestre la animacion de dolor
+        jugador.marcarGolpeRecibido();
+
         System.out.println(
             getNombre() +
             " te atacó y causó " +
