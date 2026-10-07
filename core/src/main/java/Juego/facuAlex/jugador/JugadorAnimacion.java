@@ -41,51 +41,69 @@ public class JugadorAnimacion {
     // =========================
     // MINAR (picar roca)
     // =========================
-    //
-    // La hoja minar_frames.png tiene 5 columnas x 2 filas:
-    //   fila 0 = mirando a la IZQUIERDA
-    //   fila 1 = mirando a la DERECHA
-    // Cada celda es de 154 x 171 px (mas grande que la de caminar
-    // porque tiene que entrar el pico levantado).
-    //
-    // La animacion NO se repite en loop: se reproduce una sola vez
-    // cada vez que se pica. Por eso se maneja con un tiempo propio
-    // (lo lleva JugadorControl) en vez del stateTime global.
+
+
 
     private Texture minarTexture;
     private TextureRegion[] minarIzquierda;
     private TextureRegion[] minarDerecha;
 
-    // Factor para pasar de pixeles reales de la imagen a pixeles
-    // "de diseno" (770 x 342). Vale 1 si la imagen mide justo eso.
-    // Si la imagen tiene otra resolucion (por ejemplo el doble),
-    // el codigo se adapta solo y el personaje se ve igual.
+
     private float minarFactor = 1f;
 
     private static final int MINAR_CELDA_ANCHO = 154;
     private static final int MINAR_CELDA_ALTO = 171;
 
-    // Cuanto dura cada uno de los 5 frames (en segundos).
-    // Los dos primeros levantan el pico, los otros bajan el golpe
-    // y el ultimo (el impacto) dura un poco mas para que se note.
+
     private static final float[] MINAR_DURACION_FRAMES = {
         0.09f, 0.09f, 0.07f, 0.07f, 0.16f
     };
 
-    // Posicion X de los pies dentro de la celda de CAMINAR (102 px de
-    // ancho). Sirve para que, al empezar a picar, el personaje no
-    // "salte" de lugar: se dibuja con los pies en el mismo punto.
+
     public static final float MINAR_PIES_X_IZQUIERDA = 57f;
     public static final float MINAR_PIES_X_DERECHA = 45f;
 
+    // =========================
+    // TALAR 
+    // =========================
+
+    private Texture talarTexture;
+    private TextureRegion[] talarIzquierda;
+    private TextureRegion[] talarDerecha;
+
+    private float talarFactor = 1f;
+
+    private static final int TALAR_CELDA_ALTO = 171;
+
+
+    private static final float[] TALAR_DURACION_FRAMES = {
+        0.08f, 0.10f, 0.10f, 0.08f, 0.16f
+    };
+
+    // =========================
+    // GOLPEAR 
+    // =========================
+
+    private Texture golpearTexture;
+    private TextureRegion[][] golpear;
+
+    private static final float GOLPEAR_FACTOR = 0.796f;
+
+    private static final float[] GOLPEAR_DURACION_FRAMES = {
+        0.06f, 0.06f, 0.10f, 0.10f
+    };
+
+
+    public static final float GOLPEAR_PIES_X_FRENTE = 50f;
+
     public JugadorAnimacion() {
 
-        // Cargar sprite sheet
+
         sheetTexture = new Texture(
             Gdx.files.internal("sprites/jugador.png")
         );
 
-        // Pixel art: sin suavizado
+
         sheetTexture.setFilter(
             Texture.TextureFilter.Nearest,
             Texture.TextureFilter.Nearest
@@ -93,6 +111,8 @@ public class JugadorAnimacion {
 
         cargarAnimaciones();
         cargarAnimacionMinar();
+        cargarAnimacionTalar();
+        cargarAnimacionGolpear();
 
         stateTime = 0f;
     }
@@ -103,15 +123,13 @@ public class JugadorAnimacion {
             Gdx.files.internal("sprites/minarr.png")
         );
 
-        // Pixel art: sin suavizado
+
         minarTexture.setFilter(
             Texture.TextureFilter.Nearest,
             Texture.TextureFilter.Nearest
         );
 
-        // La hoja tiene 5 columnas x 2 filas. En vez de suponer cuantos
-        // pixeles mide cada celda, se calcula con el tamano REAL de la
-        // imagen. Asi funciona aunque la imagen tenga otra resolucion.
+
         int anchoReal = minarTexture.getWidth();
         int altoReal = minarTexture.getHeight();
 
@@ -125,7 +143,7 @@ public class JugadorAnimacion {
             + " px (celda " + celdaAncho + " x " + celdaAlto + ")"
         );
 
-        // Aviso si la proporcion no es la esperada (2,25 : 1)
+
         float proporcion = (float) anchoReal / altoReal;
         float esperada = (MINAR_CELDA_ANCHO * 5f) / (MINAR_CELDA_ALTO * 2f);
 
@@ -136,25 +154,69 @@ public class JugadorAnimacion {
                 celdaAlto
             );
 
-        // Fila 0 = izquierda, fila 1 = derecha
+
         minarIzquierda = frames[0];
         minarDerecha = frames[1];
     }
 
+    private void cargarAnimacionTalar() {
+
+        talarTexture = new Texture(
+            Gdx.files.internal("sprites/talar.png")
+        );
+
+
+        talarTexture.setFilter(
+            Texture.TextureFilter.Nearest,
+            Texture.TextureFilter.Nearest
+        );
+
+        int anchoReal = talarTexture.getWidth();
+        int altoReal = talarTexture.getHeight();
+
+        int celdaAncho = anchoReal / 5;
+        int celdaAlto = altoReal / 2;
+
+
+        talarFactor = (TALAR_CELDA_ALTO * 2f) / altoReal;
+
+        TextureRegion[][] frames =
+            TextureRegion.split(
+                talarTexture,
+                celdaAncho,
+                celdaAlto
+            );
+
+
+        talarIzquierda = frames[0];
+        talarDerecha = frames[1];
+    }
+
+    private void cargarAnimacionGolpear() {
+
+        golpearTexture = new Texture(
+            Gdx.files.internal("sprites/golpear.png")
+        );
+
+        // Pixel art: sin suavizado
+        golpearTexture.setFilter(
+            Texture.TextureFilter.Nearest,
+            Texture.TextureFilter.Nearest
+        );
+
+        int celdaAncho = golpearTexture.getWidth() / 4;
+        int celdaAlto = golpearTexture.getHeight() / 4;
+
+        golpear = TextureRegion.split(
+            golpearTexture,
+            celdaAncho,
+            celdaAlto
+        );
+    }
+
     private void cargarAnimaciones() {
 
-        /*
-         * Sprite sheet:
-         *
-         * 1020 x 576
-         *
-         * 10 columnas
-         * 4 filas
-         *
-         * Cada frame:
-         *
-         * 102 x 144
-         */
+
 
         int frameWidth = 102;
         int frameHeight = 144;
@@ -166,19 +228,7 @@ public class JugadorAnimacion {
                 frameHeight
             );
 
-        // =========================
-        // FILAS
-        // =========================
-        //
-        // Fila 0 = DOWN
-        // Fila 1 = UP
-        // Fila 2 = LEFT
-        // Fila 3 = RIGHT
-        //
 
-        // =========================
-        // IDLE
-        // =========================
 
         idleDown = new Animation<TextureRegion>(
             0.15f,
@@ -381,6 +431,124 @@ public class JugadorAnimacion {
         return frames[frames.length - 1];
     }
 
+    // =========================
+    // TALAR
+    // =========================
+
+    // Duracion total de un golpe de hacha
+    public static float getDuracionTalar() {
+
+        float total = 0f;
+
+        for (float duracion : TALAR_DURACION_FRAMES) {
+            total += duracion;
+        }
+
+        return total;
+    }
+
+    // Momento del golpe: cuando empieza el ultimo frame.
+    // Ahi se entrega la madera.
+    public static float getTiempoImpactoTalar() {
+
+        return getDuracionTalar()
+            - TALAR_DURACION_FRAMES[TALAR_DURACION_FRAMES.length - 1];
+    }
+
+    public TextureRegion getFrameTalar(
+        boolean haciaLaIzquierda,
+        float tiempo
+    ) {
+
+        TextureRegion[] frames =
+            haciaLaIzquierda ? talarIzquierda : talarDerecha;
+
+        float acumulado = 0f;
+
+        for (int i = 0; i < TALAR_DURACION_FRAMES.length; i++) {
+
+            acumulado += TALAR_DURACION_FRAMES[i];
+
+            if (tiempo < acumulado) {
+                return frames[i];
+            }
+        }
+
+        return frames[frames.length - 1];
+    }
+
+    public float getTalarFactor() {
+        return talarFactor;
+    }
+
+    // =========================
+    // GOLPEAR
+    // =========================
+
+    public static float getDuracionGolpear() {
+
+        float total = 0f;
+
+        for (float duracion : GOLPEAR_DURACION_FRAMES) {
+            total += duracion;
+        }
+
+        return total;
+    }
+
+    // Momento del golpe: cuando empieza el frame de impacto (el 3ro)
+    public static float getTiempoImpactoGolpear() {
+
+        return GOLPEAR_DURACION_FRAMES[0]
+            + GOLPEAR_DURACION_FRAMES[1];
+    }
+
+    public TextureRegion getFrameGolpear(
+        JugadorControl.Direccion direccion,
+        float tiempo
+    ) {
+
+        int fila;
+
+        switch (direccion) {
+            case ARRIBA:    fila = 1; break;
+            case DERECHA:   fila = 2; break;
+            case IZQUIERDA: fila = 3; break;
+            default:        fila = 0; break;
+        }
+
+        TextureRegion[] frames = golpear[fila];
+
+        float acumulado = 0f;
+
+        for (int i = 0; i < GOLPEAR_DURACION_FRAMES.length; i++) {
+
+            acumulado += GOLPEAR_DURACION_FRAMES[i];
+
+            if (tiempo < acumulado) {
+                return frames[i];
+            }
+        }
+
+        return frames[frames.length - 1];
+    }
+
+    public static float getGolpearFactor() {
+        return GOLPEAR_FACTOR;
+    }
+
+    // Donde estan los pies (en pixeles de la celda de caminar)
+    public static float getPiesXGolpear(
+        JugadorControl.Direccion direccion
+    ) {
+
+        switch (direccion) {
+            case DERECHA:   return MINAR_PIES_X_DERECHA;
+            case IZQUIERDA: return MINAR_PIES_X_IZQUIERDA;
+            default:        return GOLPEAR_PIES_X_FRENTE;
+        }
+    }
+
     // Convierte pixeles reales de un frame de minar a pixeles de
     // diseno (los mismos que usa el sprite de caminar).
     public float getMinarFactor() {
@@ -404,6 +572,14 @@ public class JugadorAnimacion {
 
         if (minarTexture != null) {
             minarTexture.dispose();
+        }
+
+        if (talarTexture != null) {
+            talarTexture.dispose();
+        }
+
+        if (golpearTexture != null) {
+            golpearTexture.dispose();
         }
     }
 }
