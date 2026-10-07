@@ -1,5 +1,7 @@
 package Juego.facuAlex.inventario;
 
+
+import Juego.facuAlex.Proporcion;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -204,12 +206,11 @@ public class InventarioUI {
     // =====================================================
 
     private float convertirMouseX() {
-        return Gdx.input.getX() * ANCHO_VIRTUAL / Gdx.graphics.getWidth();
+        return Proporcion.mouseX();
     }
 
     private float convertirMouseY() {
-        return (Gdx.graphics.getHeight() - Gdx.input.getY())
-                * ALTO_VIRTUAL / Gdx.graphics.getHeight();
+        return Proporcion.mouseY();
     }
 
     // =====================================================
