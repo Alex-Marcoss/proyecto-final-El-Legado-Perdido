@@ -193,6 +193,26 @@ public class Jugador {
 	    }
 	}
 	
+	// Se activa cuando un enemigo le pega al jugador, para que
+	// JugadorControl muestre la animacion de recibir dano.
+	// (el dano por hambre NO lo activa, asi no lo frena cada tick)
+	private boolean golpeRecibido = false;
+
+	public void marcarGolpeRecibido() {
+
+	    if (vida > 0) {
+	        golpeRecibido = true;
+	    }
+	}
+
+	// Devuelve true una sola vez por cada golpe recibido
+	public boolean consumirGolpeRecibido() {
+
+	    boolean resultado = golpeRecibido;
+	    golpeRecibido = false;
+	    return resultado;
+	}
+
 	public void curar(int cantidad) {
 		
 		vida = vida + cantidad;
