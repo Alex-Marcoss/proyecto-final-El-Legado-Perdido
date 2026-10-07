@@ -28,44 +28,52 @@ public class JugadorControl {
         CORRER,
         MINAR,
         TALAR,
-        GOLPEAR
+        GOLPEAR,
+        HERIDO
     }
 
     // =========================
     // ESTADO DE MINADO
     // =========================
 
-
+    // Roca que se esta picando (null si no esta minando)
     private roca rocaObjetivo;
 
-
+    // Segundos que pasaron desde que empezo el golpe de pico
     private float tiempoMinado;
 
-
+    // Para entregar la piedra una sola vez por golpe
     private boolean golpeAplicado;
 
     // =========================
     // ESTADO DE TALADO
     // =========================
 
-
+    // Arbol que se esta talando (null si no esta talando)
     private arbol arbolObjetivo;
 
-
+    // Segundos que pasaron desde que empezo el hachazo
     private float tiempoTalado;
 
-
+    // Para entregar la madera una sola vez por golpe
     private boolean hachazoAplicado;
 
     // =========================
-    // ESTADO DE GOLPE 
+    // ESTADO DE GOLPE (puno)
     // =========================
 
-
+    // Segundos que pasaron desde que empezo el golpe
     private float tiempoGolpe;
 
-
+    // Para pegar una sola vez por golpe
     private boolean punoAplicado;
+
+    // =========================
+    // ESTADO HERIDO (recibir dano)
+    // =========================
+
+    // Segundos que pasaron desde que lo lastimaron
+    private float tiempoHerido;
 
     public JugadorControl(Jugador jugador) {
         this.jugador = jugador;
@@ -74,6 +82,29 @@ public class JugadorControl {
     }
 
     public void actualizar(float delta, Mapa mapa) {
+
+        // =========================
+        // RECIBIO UN GOLPE: corta lo que estaba haciendo (minar,
+        // talar, pegar) y muestra la animacion de dolor
+        // =========================
+
+        if (jugador.consumirGolpeRecibido() && jugador.estaVivo()) {
+
+            iniciarHerido();
+        }
+
+        if (estado == Estado.HERIDO) {
+
+            tiempoHerido += delta;
+
+            if (tiempoHerido >= JugadorAnimacion.getDuracionDano()) {
+
+                tiempoHerido = 0f;
+                estado = Estado.IDLE;
+            }
+
+            return;
+        }
 
         // =========================
         // MINANDO: el jugador queda quieto hasta terminar el golpe
@@ -87,6 +118,7 @@ public class JugadorControl {
 
         // =========================
         // GOLPEANDO: el jugador queda quieto hasta terminar el golpe
+        // (el tiempo avanza en actualizarAtaque)
         // =========================
 
         if (estado == Estado.GOLPEAR) {
@@ -369,6 +401,27 @@ public class JugadorControl {
         }
     }
 
+    private void iniciarHerido() {
+
+        // Cancela cualquier accion en curso
+        rocaObjetivo = null;
+        arbolObjetivo = null;
+        tiempoMinado = 0f;
+        tiempoTalado = 0f;
+        tiempoGolpe = 0f;
+
+        tiempoHerido = 0f;
+        estado = Estado.HERIDO;
+    }
+
+    public boolean estaHerido() {
+        return estado == Estado.HERIDO;
+    }
+
+    public float getTiempoHerido() {
+        return tiempoHerido;
+    }
+
     public boolean estaGolpeando() {
         return estado == Estado.GOLPEAR;
     }
@@ -430,8 +483,10 @@ public class JugadorControl {
             return;
         }
 
-        // No se puede atacar en medio de un golpe de pico o hacha
-        if (estado == Estado.MINAR || estado == Estado.TALAR) {
+        // No se puede atacar en medio de un golpe de pico o hacha,
+        // ni mientras esta lastimado
+        if (estado == Estado.MINAR || estado == Estado.TALAR
+                || estado == Estado.HERIDO) {
             return;
         }
 
