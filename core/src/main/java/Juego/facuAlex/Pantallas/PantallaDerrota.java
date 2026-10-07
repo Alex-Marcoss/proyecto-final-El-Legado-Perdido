@@ -1,5 +1,7 @@
 package Juego.facuAlex.Pantallas;
 
+
+import Juego.facuAlex.Proporcion;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Pixmap;
@@ -196,17 +198,11 @@ public class PantallaDerrota {
     // =====================================================
 
     private float mouseX() {
-
-        return Gdx.input.getX()
-                * ANCHO_VIRTUAL
-                / Gdx.graphics.getWidth();
+        return Proporcion.mouseX();
     }
 
     private float mouseY() {
-
-        return (Gdx.graphics.getHeight() - Gdx.input.getY())
-                * ALTO_VIRTUAL
-                / Gdx.graphics.getHeight();
+        return Proporcion.mouseY();
     }
 
     // =====================================================
