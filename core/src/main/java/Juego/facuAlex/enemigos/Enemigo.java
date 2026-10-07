@@ -1,124 +1,86 @@
-package Juego.facuAlex.enemigos;
+package Juego.facuAlex;
 
-import Juego.facuAlex.jugador.*;
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.FreeTypeFontParameter;
 
-public class Enemigo {
+public class Fuentes {
 
-    private String nombre;
-    private int vida;
-    private int daño;
+    private static final String RUTA_TITULO =
+            "fuentes/CinzelDecorative-Bold.ttf";
 
-    private float posicionX;
-    private float posicionY;
+    private static final String RUTA_TEXTO =
+            "fuentes/Cinzel.ttf";
 
-    public Enemigo(String nombre, int vida, int daño) {
+    private static final String CARACTERES =
+            FreeTypeFontGenerator.DEFAULT_CHARS
+            + "\u00e1\u00e9\u00ed\u00f3\u00fa"
+            + "\u00c1\u00c9\u00cd\u00d3\u00da"
+            + "\u00f1\u00d1"
+            + "\u00fc\u00dc"
+            + "\u00bf\u00a1";
 
-        this.nombre = nombre;
-        this.vida = vida;
-        this.daño = daño;
-
-        posicionX = 0;
-        posicionY = 0;
+    // Fuente decorativa para títulos
+    public static BitmapFont titulo(int tamano) {
+        return crear(RUTA_TITULO, tamano);
     }
 
-    // =========================================================
-    // INFORMACIÓN
-    // =========================================================
-
-    public String getNombre() {
-        return nombre;
+    // Fuente normal para textos
+    public static BitmapFont texto(int tamano) {
+        return crear(RUTA_TEXTO, tamano);
     }
 
-    public int getVida() {
-        return vida;
-    }
+    // Crea una fuente y la reduce si el texto supera el ancho indicado
+    public static BitmapFont tituloAjustado(
+            String texto,
+            float anchoMaximo,
+            int tamanoInicial) {
 
-    public int getDaño() {
-        return daño;
-    }
+        GlyphLayout medida = new GlyphLayout();
 
-    // =========================================================
-    // POSICIÓN
-    // =========================================================
+        int tamano = tamanoInicial;
 
-    public float getPosicionX() {
-        return posicionX;
-    }
+        BitmapFont fuente = titulo(tamano);
 
-    public float getPosicionY() {
-        return posicionY;
-    }
+        medida.setText(fuente, texto);
 
-    public void setPosicion(float x, float y) {
+        while (medida.width > anchoMaximo && tamano > 16) {
 
-        posicionX = x;
-        posicionY = y;
-    }
+            fuente.dispose();
 
-    // =========================================================
-    // DAÑO
-    // =========================================================
+            tamano -= 4;
 
-    public void recibirDaño(int cantidad) {
+            fuente = titulo(tamano);
 
-        vida -= cantidad;
-
-        if (vida < 0) {
-            vida = 0;
-        }
-    }
-
-    // =========================================================
-    // ESTADO
-    // =========================================================
-
-    public boolean estaVivo() {
-        return vida > 0;
-    }
-
-    public void mostrarEstado() {
-
-        System.out.println(
-            "Enemigo: " + nombre
-        );
-
-        System.out.println(
-            "Vida: " + vida
-        );
-
-        System.out.println(
-            "Daño: " + daño
-        );
-    }
-
-    // =========================================================
-    // ATAQUE
-    // =========================================================
-
-    public void atacar(Jugador jugador) {
-
-        if (jugador == null) {
-            return;
+            medida.setText(fuente, texto);
         }
 
-        if (!estaVivo()) {
-            return;
-        }
+        medida = null;
 
-        if (!jugador.estaVivo()) {
-            return;
-        }
+        return fuente;
+    }
 
-        jugador.recibirDanio(daño);
+    private static BitmapFont crear(String ruta, int tamano) {
 
-        // Avisa para que el jugador muestre la animacion de dolor
-        jugador.marcarGolpeRecibido();
+        FreeTypeFontGenerator generador =
+                new FreeTypeFontGenerator(Gdx.files.internal(ruta));
 
-        System.out.println(
-            getNombre() +
-            " te atacó y causó " +
-            daño +
-            " de daño."
-        );
+        FreeTypeFontParameter parametros =
+                new FreeTypeFontParameter();
+
+        parametros.size = tamano;
+        parametros.characters = CARACTERES;
+
+        parametros.minFilter = Texture.TextureFilter.Linear;
+        parametros.magFilter = Texture.TextureFilter.Linear;
+
+        BitmapFont fuente = generador.generateFont(parametros);
+
+        generador.dispose();
+
+        return fuente;
     }
 }
