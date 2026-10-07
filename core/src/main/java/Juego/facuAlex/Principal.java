@@ -104,6 +104,12 @@ public void create() {
 
     batch = new SpriteBatch();
 
+    // Mantiene la proporcion 900 x 600 al agrandar la ventana
+    Proporcion.actualizar(
+        Gdx.graphics.getWidth(),
+        Gdx.graphics.getHeight()
+    );
+
     gemaAzul = null;
 
     camara = new OrthographicCamera();
@@ -443,7 +449,17 @@ private void comprobarMuerteGuardian() {
 // ==========================================================
 
 @Override
+public void resize(int width, int height) {
+
+    // Sin esto la imagen se estira al cambiar el tamano de la ventana
+    Proporcion.actualizar(width, height);
+}
+
+@Override
 public void render() {
+
+    // Barras negras + zona de dibujo con la proporcion correcta
+    Proporcion.aplicar();
 
     float delta =
             Gdx.graphics.getDeltaTime();
