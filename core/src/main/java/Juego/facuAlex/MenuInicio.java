@@ -204,12 +204,11 @@ public class MenuInicio {
     // =====================================================
 
     private float mouseX() {
-        return Gdx.input.getX() * ANCHO_VIRTUAL / Gdx.graphics.getWidth();
+        return Proporcion.mouseX();
     }
 
     private float mouseY() {
-        return (Gdx.graphics.getHeight() - Gdx.input.getY())
-                * ALTO_VIRTUAL / Gdx.graphics.getHeight();
+        return Proporcion.mouseY();
     }
 
     // =====================================================
