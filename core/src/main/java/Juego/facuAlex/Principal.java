@@ -619,6 +619,15 @@ public class Principal extends ApplicationAdapter {
         }
 
 
+        // No se puede recolectar si esta ocupado
+        // (minando, talando, golpeando, herido...)
+
+        if (!jugadorControl.puedeRecolectar()) {
+
+            return;
+        }
+
+
         planta plantaCercana = null;
 
         float distanciaMenor = 90f;
@@ -669,29 +678,40 @@ public class Principal extends ApplicationAdapter {
         }
 
 
-        Recursos fibra =
-                plantaCercana.recolectarRecurso();
+        // Se inicia la animacion de recolectar. La fibra se
+        // entrega en el momento en que la mano la agarra.
+
+        final planta objetivo = plantaCercana;
+
+        jugadorControl.iniciarRecoleccion(
+                objetivo.getPosicionX(),
+                () -> {
+
+                    Recursos fibra =
+                            objetivo.recolectarRecurso();
 
 
-        if (fibra == null) {
+                    if (fibra == null) {
 
-            return;
-        }
-
-
-        jugador.gastarEnergia(
-                plantaCercana.getEnergiaNecesaria()
-        );
+                        return;
+                    }
 
 
-        jugador.getInventario().agregarRecurso(
-                fibra,
-                fibra.getCantidad()
-        );
+                    jugador.gastarEnergia(
+                            objetivo.getEnergiaNecesaria()
+                    );
 
 
-        System.out.println(
-                "Recolectaste fibra."
+                    jugador.getInventario().agregarRecurso(
+                            fibra,
+                            fibra.getCantidad()
+                    );
+
+
+                    System.out.println(
+                            "Recolectaste fibra."
+                    );
+                }
         );
     }
 
@@ -704,6 +724,16 @@ public class Principal extends ApplicationAdapter {
 
         if (!Gdx.input.isKeyJustPressed(
                 Input.Keys.E)) {
+
+            return;
+        }
+
+
+        // No se puede recolectar si esta ocupado
+        // (minando, talando, golpeando, herido,
+        // o ya recolectando otra cosa)
+
+        if (!jugadorControl.puedeRecolectar()) {
 
             return;
         }
@@ -754,28 +784,39 @@ public class Principal extends ApplicationAdapter {
         }
 
 
-        if (arbustoCercano.recogerBayas()) {
+        // Se inicia la animacion de recolectar. Las bayas se
+        // entregan en el momento en que la mano las agarra.
 
-            Comida bayas =
-                    new Comida(
-                            "Bayas",
-                            1,
-                            10
-                    );
+        final arbustoBayas objetivo = arbustoCercano;
 
-            bayas.cargarIcono(
-                    "objetos/baya.png"
-            );
+        jugadorControl.iniciarRecoleccion(
+                objetivo.getPosicionX(),
+                () -> {
 
-            jugador.getInventario().agregarRecurso(
-                    bayas,
-                    bayas.getCantidad()
-            );
+                    if (objetivo.recogerBayas()) {
 
-            System.out.println(
-                    "Recolectaste bayas."
-            );
-        }
+                        Comida bayas =
+                                new Comida(
+                                        "Bayas",
+                                        1,
+                                        10
+                                );
+
+                        bayas.cargarIcono(
+                                "objetos/baya.png"
+                        );
+
+                        jugador.getInventario().agregarRecurso(
+                                bayas,
+                                bayas.getCantidad()
+                        );
+
+                        System.out.println(
+                                "Recolectaste bayas."
+                        );
+                    }
+                }
+        );
     }
 
 
@@ -1150,6 +1191,14 @@ public class Principal extends ApplicationAdapter {
 
             dibujarJugadorTalando();
 
+        } else if (jugadorControl.estaComiendo()) {
+
+            dibujarJugadorComiendo();
+
+        } else if (jugadorControl.estaRecolectando()) {
+
+            dibujarJugadorRecolectando();
+
         } else if (jugadorControl.estaGolpeando()) {
 
             dibujarJugadorGolpeando();
@@ -1352,6 +1401,122 @@ public class Principal extends ApplicationAdapter {
 
         float factor =
                 jugadorAnimacion.getTalarFactor();
+
+        float ancho =
+                frame.getRegionWidth()
+                        * factor
+                        * escalaX;
+
+        float alto =
+                frame.getRegionHeight()
+                        * factor
+                        * escalaY;
+
+        float piesX =
+                (haciaLaIzquierda
+                        ? JugadorAnimacion.MINAR_PIES_X_IZQUIERDA
+                        : JugadorAnimacion.MINAR_PIES_X_DERECHA)
+                        * escalaX;
+
+        float x =
+                jugador.getPosicionX()
+                        + piesX
+                        - ancho / 2f;
+
+        float y =
+                jugador.getPosicionY();
+
+        batch.draw(
+                frame,
+                x,
+                y,
+                ancho,
+                alto
+        );
+    }
+
+
+    // ==========================================================
+    // JUGADOR COMIENDO
+    // ==========================================================
+
+    private void dibujarJugadorComiendo() {
+
+        JugadorControl.Direccion direccion =
+                jugadorControl.getDireccion();
+
+        TextureRegion frame =
+                jugadorAnimacion.getFrameComer(
+                        direccion,
+                        jugadorControl.getTiempoComer()
+                );
+
+        float escalaX =
+                TAMANO_JUGADOR / 102f;
+
+        float escalaY =
+                TAMANO_JUGADOR / 144f;
+
+        float factor =
+                JugadorAnimacion.getComerFactor();
+
+        float ancho =
+                frame.getRegionWidth()
+                        * factor
+                        * escalaX;
+
+        float alto =
+                frame.getRegionHeight()
+                        * factor
+                        * escalaY;
+
+        float piesX =
+                JugadorAnimacion.getPiesXGolpear(
+                        direccion
+                ) * escalaX;
+
+        float x =
+                jugador.getPosicionX()
+                        + piesX
+                        - ancho / 2f;
+
+        float y =
+                jugador.getPosicionY();
+
+        batch.draw(
+                frame,
+                x,
+                y,
+                ancho,
+                alto
+        );
+    }
+
+
+    // ==========================================================
+    // JUGADOR RECOLECTANDO (bayas y fibra)
+    // ==========================================================
+
+    private void dibujarJugadorRecolectando() {
+
+        boolean haciaLaIzquierda =
+                jugadorControl.getDireccion()
+                        == JugadorControl.Direccion.IZQUIERDA;
+
+        TextureRegion frame =
+                jugadorAnimacion.getFrameRecolectar(
+                        haciaLaIzquierda,
+                        jugadorControl.getTiempoRecoleccion()
+                );
+
+        float escalaX =
+                TAMANO_JUGADOR / 102f;
+
+        float escalaY =
+                TAMANO_JUGADOR / 144f;
+
+        float factor =
+                JugadorAnimacion.getRecolectarFactor();
 
         float ancho =
                 frame.getRegionWidth()
