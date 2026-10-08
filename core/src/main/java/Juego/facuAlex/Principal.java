@@ -678,8 +678,8 @@ public class Principal extends ApplicationAdapter {
         }
 
 
-        // Se inicia la animacion de recolectar. La fibra se
-        // entrega en el momento en que la mano la agarra.
+        // Se inicia la animacion de recolectar.
+        // 
 
         final planta objetivo = plantaCercana;
 
@@ -730,8 +730,7 @@ public class Principal extends ApplicationAdapter {
 
 
         // No se puede recolectar si esta ocupado
-        // (minando, talando, golpeando, herido,
-        // o ya recolectando otra cosa)
+
 
         if (!jugadorControl.puedeRecolectar()) {
 
@@ -784,8 +783,7 @@ public class Principal extends ApplicationAdapter {
         }
 
 
-        // Se inicia la animacion de recolectar. Las bayas se
-        // entregan en el momento en que la mano las agarra.
+        // Se inicia la animacion de recolectar. 
 
         final arbustoBayas objetivo = arbustoCercano;
 
@@ -829,7 +827,6 @@ public class Principal extends ApplicationAdapter {
 
         /*
          * Mantiene la proporcion 900x600 y agrega
-         * barras negras si la ventana tiene otra proporcion.
          */
         Proporcion.aplicar();
 
