@@ -96,11 +96,11 @@
 ## [Nuevos avances y mejoras] 2026-09-30
 ### Agregados:
 
-- Creacion de barra rapida ya funcional que puede seleccionarse con numeros del 1 al 9 y con la rueda del mouse
-- Mejoras en el inventario permitiendo mover items y conectado con la barra rapida
-- Implementacion de recuperacion de energia y corregido el correr para no gastar energia tan agresivamente
-- Creacion de pantalla de inicio y de la pantalla de derrota al perder toda la vida
-- Primeras pruebas de combate con IA del guardian (jefe final del juego)
+- Creacion de barra rapida ya funcional que puede seleccionarse con numeros del 1 al 9 y con la rueda del mouse.
+- Mejoras en el inventario permitiendo mover items y conectado con la barra rapida.
+- Implementacion de recuperacion de energia y corregido el correr para no gastar energia tan agresivamente.
+- Creacion de pantalla de inicio y de la pantalla de derrota al perder toda la vida.
+- Primeras pruebas de combate con IA del guardian (jefe final del juego).
 
 ## [Nuevos avances y mejoras] 2026-10-03
 ### Agregados:
@@ -111,8 +111,8 @@
 ## [Nuevos avances y mejoras] 2026-10-04
 ### Agregados:
 
-- Creacion de estructura de rescate creada por fases, que va cambiando con la cada construccion
-- Pantalla de victoria despues de armar la estructura y solicitar el rescate
+- Creacion de estructura de rescate creada por fases, que va cambiando con la cada construccion.
+- Pantalla de victoria despues de armar la estructura y solicitar el rescate.
   
 ## [Nuevos avances y mejoras] 2026-10-05
 ### Agregados:
@@ -124,3 +124,13 @@
 - Se agrego la animacion de talar, golpear y recibir daño.
 - Se creo la parte interior y exterior del templo.
 - Se arreglo la pantalla para que si se quiere cambiar el tamaño no se deforme.
+
+## [Nuevos avances y mejoras] 2026-10-08
+### Agregados
+
+- Creacion del templo y guardian ya ubicado en el mismo.
+- Creacion de la funcion comer, arbusto de bayas y plantas de donde se obtienen fibras.
+- Creacion de recetas de herramientas y proximamente mas objetos.
+- El guardian ya tiene ataques propios animados y muerte animada.
+- El hambre se conecta con la vida permitiendo recuperarla si tiene suficiente y perderla si queda en 0.
+
