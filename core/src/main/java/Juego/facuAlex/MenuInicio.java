@@ -40,8 +40,11 @@ public class MenuInicio {
     private static final String[][] CONTROLES = {
             { "Moverse", "W  A  S  D" },
             { "Correr", "SHIFT" },
-            { "Interactuar (talar / minar)", "E" },
+            { "Interactuar (talar / minar / recolectar)", "E" },
+            { "Comer", "F" },
             { "Abrir / cerrar inventario", "I" },
+            { "Abrir / cerrar Recetas", "C" },
+            { "Atacar", "Espacio" },
             { "Elegir slot de la barra", "1 a 9 / RUEDA" },
             { "Mover objetos", "ARRASTRAR CON CLICK" },
             { "Equipar herramienta", "ELEGIRLA EN LA BARRA" }

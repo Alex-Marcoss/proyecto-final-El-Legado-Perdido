@@ -1,387 +1,718 @@
 package Juego.facuAlex.enemigos.guardian;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
+import com.badlogic.gdx.graphics.g2d.Animation;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
+
 import Juego.facuAlex.enemigos.Enemigo;
+import Juego.facuAlex.enemigos.guardian.RayoEfecto.TipoRayo;
 import Juego.facuAlex.jugador.Jugador;
 
 public class Guardian extends Enemigo {
 
-	
-private float velocidad;
+    private float velocidad;
 
-private float distanciaDeteccion;
+    private float distanciaDeteccion;
 
-private float distanciaAtaque;
+    private float distanciaAtaque;
 
-private float tiempoEntreAtaques;
+    private float tiempoEntreAtaques;
 
-private float tiempoAtaque;
+    private float tiempoAtaque;
 
-// =====================================================
-// DIRECCIÓN
-// =====================================================
+    // =====================================================
+    // DIRECCIÓN
+    // =====================================================
 
-public enum Direccion {
+    public enum Direccion {
 
-    ARRIBA,
-    ABAJO,
-    IZQUIERDA,
-    DERECHA
-}
-
-private Direccion direccion;
-
-// =====================================================
-// ESTADOS DEL ATAQUE
-// =====================================================
-
-public enum EstadoAtaque {
-
-    NORMAL,
-    PREPARANDO,
-    ATACANDO
-}
-
-private EstadoAtaque estadoAtaque;
-
-// =====================================================
-// TIEMPOS
-// =====================================================
-
-private static final float TIEMPO_PREPARACION = 0.8f;
-
-private static final float TIEMPO_IMPACTO = 0.2f;
-
-private float tiempoEstado;
-
-// =====================================================
-// CONSTRUCTOR
-// =====================================================
-
-public Guardian() {
-
-    super(
-        "Guardian del Templo",
-        250,
-        35
-    );
-
-    velocidad = 80f;
-
-    distanciaDeteccion = 400f;
-
-    distanciaAtaque = 90f;
-
-    tiempoEntreAtaques = 1.5f;
-
-    tiempoAtaque = 0f;
-
-    estadoAtaque = EstadoAtaque.NORMAL;
-
-    tiempoEstado = 0f;
-
-    direccion = Direccion.ABAJO;
-}
-
-// =====================================================
-// ACTUALIZAR
-// =====================================================
-
-public void actualizar(
-        Jugador jugador,
-        float delta) {
-
-    if (jugador == null) {
-        return;
+        ARRIBA,
+        ABAJO,
+        IZQUIERDA,
+        DERECHA
     }
 
-    if (!estaVivo()) {
-        return;
+    private Direccion direccion;
+
+    // =====================================================
+    // ESTADOS DEL ATAQUE
+    // =====================================================
+
+    public enum EstadoAtaque {
+
+        NORMAL,
+        PREPARANDO,
+        ATACANDO,
+        MUERTO          // <-- NUEVO: el Guardian ya no tiene vida
     }
 
-    // =================================================
-    // COOLDOWN
-    // =================================================
+    private EstadoAtaque estadoAtaque;
 
-    if (tiempoAtaque > 0) {
+    // =====================================================
+    // TIPOS DE ATAQUE
+    // =====================================================
 
-        tiempoAtaque -= delta;
+    public enum TipoAtaque {
+
+        RAYO_VERTICAL,
+        RAYO_HORIZONTAL
     }
 
-    // =================================================
-    // PREPARANDO ATAQUE
-    // =================================================
+    private TipoAtaque tipoAtaqueActual;
 
-    if (estadoAtaque == EstadoAtaque.PREPARANDO) {
+    // Para que el azar no sea injusto: nunca repite el mismo ataque
+    // más de MAX_REPETICIONES veces seguidas
+    private static final int MAX_REPETICIONES = 2;
 
-        tiempoEstado -= delta;
+    private TipoAtaque ultimoTipoAtaque;
 
-        // Durante la preparación no se mueve
+    private int repeticionesSeguidas;
 
-        if (tiempoEstado <= 0) {
+    private final Random azar = new Random();
 
-            estadoAtaque = EstadoAtaque.ATACANDO;
+    // =====================================================
+    // TIEMPOS
+    // =====================================================
 
-            tiempoEstado = TIEMPO_IMPACTO;
+    private static final float TIEMPO_PREPARACION = 0.8f;
 
-            ejecutarAtaque(jugador);
+    private static final float TIEMPO_IMPACTO = 0.2f;
+
+    // El rayo cae un instante antes de que termine la preparación
+    private static final float RETARDO_RAYO = TIEMPO_PREPARACION - 0.06f;
+
+    private static final float ESCALA_RAYO = 2f;
+
+    // El rayo horizontal solo se usa si el jugador está a su izquierda o derecha:
+    // la diferencia de altura (Y) tiene que ser menor que esto
+    private static final float TOLERANCIA_ALINEACION = 45f;
+
+    private float tiempoEstado;
+
+    // Segundos que pasaron desde que murió (sirve para la animación de muerte)
+    private float tiempoMuerte;
+
+    // =====================================================
+    // ANIMACIÓN Y RAYOS
+    // =====================================================
+
+    private GuardianAnimacion animacion;
+
+    private final List<RayoEfecto> rayos = new ArrayList<RayoEfecto>();
+
+    // Rayo del ataque que se está preparando / ejecutando
+    private RayoEfecto rayoActual;
+
+    private boolean moviendose;
+
+    // =====================================================
+    // CONSTRUCTOR
+    // =====================================================
+
+    public Guardian() {
+
+        super(
+            "Guardian del Templo",
+            250,
+            35
+        );
+
+        velocidad = 80f;
+
+        distanciaDeteccion = 400f;
+
+        distanciaAtaque = 90f;
+
+        tiempoEntreAtaques = 1.5f;
+
+        tiempoAtaque = 0f;
+
+        estadoAtaque = EstadoAtaque.NORMAL;
+
+        tipoAtaqueActual = TipoAtaque.RAYO_VERTICAL;
+
+        ultimoTipoAtaque = null;
+
+        repeticionesSeguidas = 0;
+
+        tiempoEstado = 0f;
+
+        tiempoMuerte = 0f;
+
+        direccion = Direccion.ABAJO;
+
+        animacion = new GuardianAnimacion();
+
+        moviendose = false;
+    }
+
+    // =====================================================
+    // ACTUALIZAR
+    // =====================================================
+
+    public void actualizar(
+            Jugador jugador,
+            float delta) {
+
+        // La animación siempre avanza
+        animacion.actualizar(delta);
+
+        // =================================================
+        // MUERTO: no persigue, no ataca, no se mueve
+        // =================================================
+
+        if (!estaVivo()) {
+
+            procesarMuerte(delta);
+
+            return;
         }
 
-        return;
-    }
+        // =================================================
+        // RAYOS EN PANTALLA
+        // =================================================
 
-    // =================================================
-    // ATACANDO
-    // =================================================
+        for (RayoEfecto r : rayos) {
 
-    if (estadoAtaque == EstadoAtaque.ATACANDO) {
-
-        tiempoEstado -= delta;
-
-        if (tiempoEstado <= 0) {
-
-            estadoAtaque = EstadoAtaque.NORMAL;
+            r.actualizar(delta);
         }
 
-        return;
-    }
+        rayos.removeIf(RayoEfecto::isTerminado);
 
-    // =================================================
-    // DISTANCIA AL JUGADOR
-    // =================================================
+        if (jugador == null) {
+            return;
+        }
 
-    float diferenciaX =
-            jugador.getPosicionX()
-            - getPosicionX();
+        // =================================================
+        // COOLDOWN
+        // =================================================
 
-    float diferenciaY =
-            jugador.getPosicionY()
-            - getPosicionY();
+        if (tiempoAtaque > 0) {
 
-    float distancia =
-            (float) Math.sqrt(
-                diferenciaX * diferenciaX +
-                diferenciaY * diferenciaY
-            );
+            tiempoAtaque -= delta;
+        }
 
-    // =================================================
-    // FUERA DEL RANGO DE DETECCIÓN
-    // =================================================
+        // =================================================
+        // PREPARANDO ATAQUE
+        // =================================================
 
-    if (distancia > distanciaDeteccion) {
+        if (estadoAtaque == EstadoAtaque.PREPARANDO) {
 
-        return;
-    }
+            moviendose = false;
 
-    // =================================================
-    // RANGO DE ATAQUE
-    // =================================================
+            tiempoEstado -= delta;
 
-    if (distancia <= distanciaAtaque) {
+            // Durante la preparación no se mueve
 
-        if (tiempoAtaque <= 0) {
+            if (tiempoEstado <= 0) {
 
-            comenzarAtaque(
+                estadoAtaque = EstadoAtaque.ATACANDO;
+
+                tiempoEstado = TIEMPO_IMPACTO;
+
+                animacion.reiniciar();
+
+                ejecutarAtaque(jugador);
+            }
+
+            return;
+        }
+
+        // =================================================
+        // ATACANDO
+        // =================================================
+
+        if (estadoAtaque == EstadoAtaque.ATACANDO) {
+
+            moviendose = false;
+
+            tiempoEstado -= delta;
+
+            if (tiempoEstado <= 0) {
+
+                estadoAtaque = EstadoAtaque.NORMAL;
+
+                animacion.reiniciar();
+            }
+
+            return;
+        }
+
+        // =================================================
+        // DISTANCIA AL JUGADOR
+        // =================================================
+
+        moviendose = false;
+
+        float diferenciaX =
+                jugador.getPosicionX()
+                - getPosicionX();
+
+        float diferenciaY =
+                jugador.getPosicionY()
+                - getPosicionY();
+
+        float distancia =
+                (float) Math.sqrt(
+                    diferenciaX * diferenciaX +
+                    diferenciaY * diferenciaY
+                );
+
+        // =================================================
+        // FUERA DEL RANGO DE DETECCIÓN
+        // =================================================
+
+        if (distancia > distanciaDeteccion) {
+
+            return;
+        }
+
+        // =================================================
+        // RANGO DE ATAQUE
+        // =================================================
+
+        if (distancia <= distanciaAtaque) {
+
+            if (tiempoAtaque <= 0) {
+
+                comenzarAtaque(
+                    diferenciaX,
+                    diferenciaY
+                );
+            }
+
+            return;
+        }
+
+        // =================================================
+        // PERSEGUIR AL JUGADOR
+        // =================================================
+
+        if (distancia > 0) {
+
+            float direccionX =
+                    diferenciaX / distancia;
+
+            float direccionY =
+                    diferenciaY / distancia;
+
+            // Actualizamos hacia dónde está mirando
+
+            actualizarDireccion(
                 diferenciaX,
                 diferenciaY
             );
-        }
 
-        return;
+            moviendose = true;
+
+            float movimiento =
+                    velocidad * delta;
+
+            setPosicion(
+                getPosicionX()
+                    + direccionX * movimiento,
+
+                getPosicionY()
+                    + direccionY * movimiento
+            );
+        }
     }
 
-    // =================================================
-    // PERSEGUIR AL JUGADOR
-    // =================================================
+    // =====================================================
+    // MUERTE
+    // =====================================================
 
-    if (distancia > 0) {
+    private void procesarMuerte(float delta) {
 
-        float direccionX =
-                diferenciaX / distancia;
+        // Solo la primera vez que se detecta la muerte
+        if (estadoAtaque != EstadoAtaque.MUERTO) {
 
-        float direccionY =
-                diferenciaY / distancia;
+            estadoAtaque = EstadoAtaque.MUERTO;
 
-        // Actualizamos hacia dónde está mirando
+            moviendose = false;
+
+            // Cancela cualquier ataque que estuviera en curso
+            rayos.clear();
+
+            rayoActual = null;
+
+            tiempoMuerte = 0f;
+
+            // La futura animación de muerte arranca desde su primer frame
+            animacion.reiniciar();
+
+            System.out.println(
+                "El Guardian ha sido derrotado."
+            );
+        }
+
+        tiempoMuerte += delta;
+    }
+
+    // =====================================================
+    // ACTUALIZAR DIRECCIÓN
+    // =====================================================
+
+    private void actualizarDireccion(
+            float diferenciaX,
+            float diferenciaY) {
+
+        /*
+         * Elegimos el eje en el que el jugador
+         * está más lejos.
+         *
+         * Esto evita que el Guardian cambie
+         * constantemente entre direcciones.
+         */
+
+        if (Math.abs(diferenciaX) >
+                Math.abs(diferenciaY)) {
+
+            if (diferenciaX > 0) {
+
+                direccion = Direccion.DERECHA;
+
+            } else {
+
+                direccion = Direccion.IZQUIERDA;
+            }
+
+        } else {
+
+            if (diferenciaY > 0) {
+
+                direccion = Direccion.ARRIBA;
+
+            } else {
+
+                direccion = Direccion.ABAJO;
+            }
+        }
+    }
+
+    // =====================================================
+    // ELEGIR TIPO DE ATAQUE
+    // =====================================================
+
+    private TipoAtaque elegirTipoAtaque(boolean puedeHorizontal) {
+
+        // 50% de probabilidad para cada uno
+        TipoAtaque elegido = azar.nextBoolean()
+                ? TipoAtaque.RAYO_VERTICAL
+                : TipoAtaque.RAYO_HORIZONTAL;
+
+        // Si ya repitió demasiadas veces el mismo, cambia al otro
+        if (elegido == ultimoTipoAtaque
+                && repeticionesSeguidas >= MAX_REPETICIONES) {
+
+            elegido = (elegido == TipoAtaque.RAYO_VERTICAL)
+                    ? TipoAtaque.RAYO_HORIZONTAL
+                    : TipoAtaque.RAYO_VERTICAL;
+        }
+
+        // Si el jugador no está a su costado, el horizontal no se puede usar
+        if (elegido == TipoAtaque.RAYO_HORIZONTAL && !puedeHorizontal) {
+
+            elegido = TipoAtaque.RAYO_VERTICAL;
+        }
+
+        if (elegido == ultimoTipoAtaque) {
+
+            repeticionesSeguidas++;
+
+        } else {
+
+            repeticionesSeguidas = 1;
+        }
+
+        ultimoTipoAtaque = elegido;
+
+        return elegido;
+    }
+
+    // =====================================================
+    // COMENZAR ATAQUE
+    // =====================================================
+
+    private void comenzarAtaque(
+            float diferenciaX,
+            float diferenciaY) {
+
+        // Primero fija la dirección del ataque
 
         actualizarDireccion(
             diferenciaX,
             diferenciaY
         );
 
-        float movimiento =
-                velocidad * delta;
+        // ¿El jugador está a la derecha o a la izquierda (casi a la misma altura)?
+        boolean alCostado =
+                Math.abs(diferenciaX) > Math.abs(diferenciaY)
+                && Math.abs(diferenciaY) <= TOLERANCIA_ALINEACION;
 
-        setPosicion(
-            getPosicionX()
-                + direccionX * movimiento,
+        tipoAtaqueActual = elegirTipoAtaque(alCostado);
 
-            getPosicionY()
-                + direccionY * movimiento
-        );
-    }
-}
+        estadoAtaque =
+                EstadoAtaque.PREPARANDO;
 
-// =====================================================
-// ACTUALIZAR DIRECCIÓN
-// =====================================================
+        tiempoEstado =
+                TIEMPO_PREPARACION;
 
-private void actualizarDireccion(
-        float diferenciaX,
-        float diferenciaY) {
+        animacion.reiniciar();
 
-    /*
-     * Elegimos el eje en el que el jugador
-     * está más lejos.
-     *
-     * Esto evita que el Guardian cambie
-     * constantemente entre direcciones.
-     */
+        // Posición del jugador en este momento
+        float objetivoX =
+                getPosicionX() + diferenciaX;
 
-    if (Math.abs(diferenciaX) >
-            Math.abs(diferenciaY)) {
+        float objetivoY =
+                getPosicionY() + diferenciaY;
 
-        if (diferenciaX > 0) {
+        if (tipoAtaqueActual == TipoAtaque.RAYO_HORIZONTAL) {
 
-            direccion = Direccion.DERECHA;
+            // El Guardian mira hacia el lado del jugador y dispara hacia allá
+            boolean haciaDerecha = diferenciaX >= 0;
 
-        } else {
+            direccion = haciaDerecha
+                    ? Direccion.DERECHA
+                    : Direccion.IZQUIERDA;
 
-            direccion = Direccion.IZQUIERDA;
-        }
-
-    } else {
-
-        if (diferenciaY > 0) {
-
-            direccion = Direccion.ARRIBA;
-
-        } else {
-
-            direccion = Direccion.ABAJO;
-        }
-    }
-}
-
-// =====================================================
-// COMENZAR ATAQUE
-// =====================================================
-
-private void comenzarAtaque(
-        float diferenciaX,
-        float diferenciaY) {
-
-    // Primero fija la dirección del ataque
-
-    actualizarDireccion(
-        diferenciaX,
-        diferenciaY
-    );
-
-    estadoAtaque =
-            EstadoAtaque.PREPARANDO;
-
-    tiempoEstado =
-            TIEMPO_PREPARACION;
-
-    System.out.println(
-        "¡El Guardian esta preparando un ataque!"
-    );
-}
-
-// =====================================================
-// EJECUTAR ATAQUE
-// =====================================================
-
-private void ejecutarAtaque(
-        Jugador jugador) {
-
-    if (jugador == null) {
-        return;
-    }
-
-    if (!jugador.estaVivo()) {
-        return;
-    }
-
-    float diferenciaX =
-            jugador.getPosicionX()
-            - getPosicionX();
-
-    float diferenciaY =
-            jugador.getPosicionY()
-            - getPosicionY();
-
-    float distancia =
-            (float) Math.sqrt(
-                diferenciaX * diferenciaX +
-                diferenciaY * diferenciaY
+            // El rayo sale del Guardian y recorre la altura (Y) del jugador.
+            // El jugador lo esquiva moviéndose hacia arriba o hacia abajo.
+            rayoActual = new RayoEfecto(
+                getPosicionX(),
+                objetivoY,
+                RETARDO_RAYO,
+                ESCALA_RAYO,
+                TipoRayo.HORIZONTAL,
+                haciaDerecha
             );
 
-    // =================================================
-    // EL JUGADOR ESCAPÓ
-    // =================================================
+        } else {
 
-    if (distancia > distanciaAtaque) {
+            // El rayo cae donde está el jugador AHORA.
+            // El círculo de aviso le da casi 0.8 s para salirse.
+            rayoActual = new RayoEfecto(
+                objetivoX,
+                objetivoY,
+                RETARDO_RAYO,
+                ESCALA_RAYO,
+                TipoRayo.VERTICAL
+            );
+        }
+
+        rayos.add(rayoActual);
 
         System.out.println(
-            "El ataque del Guardian fallo."
+            "¡El Guardian esta preparando un ataque! ("
+            + tipoAtaqueActual + ")"
         );
+    }
+
+    // =====================================================
+    // EJECUTAR ATAQUE
+    // =====================================================
+
+    private void ejecutarAtaque(
+            Jugador jugador) {
+
+        if (jugador == null) {
+            return;
+        }
+
+        if (!jugador.estaVivo()) {
+            return;
+        }
 
         tiempoAtaque =
                 tiempoEntreAtaques;
 
-        return;
+        // =================================================
+        // ¿EL JUGADOR SIGUE DENTRO DEL ÁREA DEL RAYO?
+        // (sirve igual para el vertical y el horizontal,
+        //  porque cada RayoEfecto sabe cuál es su área)
+        // =================================================
+
+        if (rayoActual != null
+                && rayoActual.getAreaImpacto().contains(
+                    jugador.getPosicionX(),
+                    jugador.getPosicionY())) {
+
+            // ATAQUE ACERTADO
+            atacar(jugador);
+
+        } else {
+
+            // EL JUGADOR ESCAPÓ
+            System.out.println(
+                "El ataque del Guardian fallo."
+            );
+        }
     }
 
-    // =================================================
-    // ATAQUE ACERTADO
-    // =================================================
+    // =====================================================
+    // DIBUJO
+    // =====================================================
 
-    atacar(jugador);
+    private Animation<TextureRegion> getIdleSegunDireccion() {
 
-    tiempoAtaque =
-            tiempoEntreAtaques;
-}
+        switch (direccion) {
+            case ARRIBA:    return animacion.getIdleUp();
+            case IZQUIERDA: return animacion.getIdleLeft();
+            case DERECHA:   return animacion.getIdleRight();
+            default:        return animacion.getIdleDown();
+        }
+    }
 
-// =====================================================
-// GETTERS
-// =====================================================
+    public TextureRegion getFrameActual() {
 
-public float getVelocidad() {
+        Animation<TextureRegion> anim;
 
-    return velocidad;
-}
+        switch (estadoAtaque) {
 
-public float getDistanciaDeteccion() {
+            case MUERTO:
 
-    return distanciaDeteccion;
-}
+                // Cuando exista el sprite de muerte se usa ese.
+                // Mientras tanto se muestra el idle como placeholder.
+                if (animacion.tieneAnimacionMuerte()) {
 
-public float getDistanciaAtaque() {
+                    return animacion.obtenerFrameMuerte(direccion);
+                }
 
-    return distanciaAtaque;
-}
+                anim = getIdleSegunDireccion();
+                break;
 
-public EstadoAtaque getEstadoAtaque() {
+            case PREPARANDO:
 
-    return estadoAtaque;
-}
+                switch (direccion) {
+                    case ARRIBA:    anim = animacion.getPrepararUp();    break;
+                    case IZQUIERDA: anim = animacion.getPrepararLeft();  break;
+                    case DERECHA:   anim = animacion.getPrepararRight(); break;
+                    default:        anim = animacion.getPrepararDown();  break;
+                }
+                break;
 
-public Direccion getDireccion() {
+            case ATACANDO:
 
-    return direccion;
-}
+                switch (direccion) {
+                    case ARRIBA:    anim = animacion.getAtacarUp();    break;
+                    case IZQUIERDA: anim = animacion.getAtacarLeft();  break;
+                    case DERECHA:   anim = animacion.getAtacarRight(); break;
+                    default:        anim = animacion.getAtacarDown();  break;
+                }
+                break;
 
-public boolean estaPreparandoAtaque() {
+            default:
 
-    return estadoAtaque ==
-            EstadoAtaque.PREPARANDO;
-}
+                if (moviendose) {
 
-public float getTiempoPreparacion() {
+                    switch (direccion) {
+                        case ARRIBA:    anim = animacion.getWalkUp();    break;
+                        case IZQUIERDA: anim = animacion.getWalkLeft();  break;
+                        case DERECHA:   anim = animacion.getWalkRight(); break;
+                        default:        anim = animacion.getWalkDown();  break;
+                    }
 
-    return tiempoEstado;
-}
+                } else {
 
+                    anim = getIdleSegunDireccion();
+                }
+        }
 
+        return animacion.getFrame(anim);
+    }
+
+    /*
+     * Todos los frames se dibujan con el MISMO tamaño y la
+     * MISMA posición (la celda del PNG es de 96 x 96).
+     *
+     * Se asume que getPosicionX() / getPosicionY() son los
+     * pies del Guardian. Si en tu juego son la esquina
+     * inferior izquierda, sacá el "- tam / 2f" de la x.
+     */
+    public void dibujar(SpriteBatch batch, float escala) {
+
+        float tam = GuardianAnimacion.CELDA * escala;
+
+        batch.draw(
+            getFrameActual(),
+            getPosicionX() - tam / 2f,
+            getPosicionY(),
+            tam,
+            tam
+        );
+    }
+
+    // Llamar DESPUÉS de dibujar al Guardian, así el brillo queda encima
+    public void dibujarRayos(SpriteBatch batch) {
+
+        for (RayoEfecto r : rayos) {
+
+            r.dibujar(batch);
+        }
+    }
+
+    public void dispose() {
+
+        animacion.dispose();
+    }
+
+    // =====================================================
+    // GETTERS
+    // =====================================================
+
+    public float getVelocidad() {
+
+        return velocidad;
+    }
+
+    public float getDistanciaDeteccion() {
+
+        return distanciaDeteccion;
+    }
+
+    public float getDistanciaAtaque() {
+
+        return distanciaAtaque;
+    }
+
+    public EstadoAtaque getEstadoAtaque() {
+
+        return estadoAtaque;
+    }
+
+    public TipoAtaque getTipoAtaque() {
+
+        return tipoAtaqueActual;
+    }
+
+    public Direccion getDireccion() {
+
+        return direccion;
+    }
+
+    public boolean estaPreparandoAtaque() {
+
+        return estadoAtaque ==
+                EstadoAtaque.PREPARANDO;
+    }
+
+    public boolean estaMuerto() {
+
+        return estadoAtaque ==
+                EstadoAtaque.MUERTO;
+    }
+
+    public float getTiempoMuerte() {
+
+        return tiempoMuerte;
+    }
+
+    public float getTiempoPreparacion() {
+
+        return tiempoEstado;
+    }
 }

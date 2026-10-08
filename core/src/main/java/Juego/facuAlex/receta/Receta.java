@@ -1,6 +1,6 @@
 package Juego.facuAlex.receta;
 
-import Juego.facuAlex.inventario.*;
+import Juego.facuAlex.inventario.inventario;
 import Juego.facuAlex.recursos.Item;
 
 public class Receta {

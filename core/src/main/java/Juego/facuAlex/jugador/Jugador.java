@@ -5,7 +5,9 @@ import com.badlogic.gdx.math.Rectangle;
 import Juego.facuAlex.recursos.*;
 import Juego.facuAlex.Herramientas.Herramienta;
 import Juego.facuAlex.Herramientas.tipoHerramienta;
+import Juego.facuAlex.Mapa.InteriorTemplo;
 import Juego.facuAlex.Mapa.Mapa;
+import Juego.facuAlex.Mapa.Templo;
 import Juego.facuAlex.enemigos.Animal;
 import Juego.facuAlex.enemigos.Enemigo;
 import Juego.facuAlex.receta.Receta;
@@ -16,6 +18,7 @@ import Juego.facuAlex.recursos.arbol;
 import Juego.facuAlex.recursos.roca;
 import Juego.facuAlex.sistemas.Construccion;
 import Juego.facuAlex.sistemas.Energia;
+import Juego.facuAlex.sistemas.Supervivencia;
 import Juego.facuAlex.inventario.*;
 
 public class Jugador {
@@ -28,7 +31,12 @@ public class Jugador {
 	private float posicionX;
 	private float posicionY;
 	private Energia sistemaEnergia;
-	
+	private Supervivencia sistemaSupervivencia;
+
+	// Colisiones extra: dentro del templo y la pared del templo en el mundo
+	private InteriorTemplo interior;
+	private Templo templo;
+
 	inventario inventario;
 	
 	// -------------------------------------
@@ -43,7 +51,8 @@ public class Jugador {
 	    this.inventario = new inventario();
 	    this.posicionX = 0;
 	    this.posicionY = 0;
-	    this.sistemaEnergia = new Energia(2.67f);
+	    this.sistemaEnergia = new Energia(3.67f);
+	    this.sistemaSupervivencia = new Supervivencia(10, 5);
 	}
 	
 	
@@ -64,6 +73,33 @@ public class Jugador {
 	    return new Rectangle(x + HITBOX_OFFSET_X, y, HITBOX_ANCHO, HITBOX_ALTO);
 	}
 
+	// -------------------------------------
+	// Colisiones del templo
+
+	public void setInterior(InteriorTemplo interior) {
+	    this.interior = interior;
+	}
+
+	public void setTemplo(Templo templo) {
+	    this.templo = templo;
+	}
+
+	// Decide con que se choca el jugador:
+	//  - dentro del templo: con las paredes del interior (Tiled)
+	//  - en el mundo: con la pared del templo y con el mapa normal
+	private boolean puedeCaminar(Rectangle hitbox, Mapa mapa) {
+
+	    if (interior != null) {
+	        return !interior.colisiona(hitbox);
+	    }
+
+	    if (templo != null && templo.colisiona(hitbox)) {
+	        return false;
+	    }
+
+	    return mapa.puedeCaminar(hitbox);
+	}
+
 	// Mueve en X y en Y por separado: si choca de costado, igual se desliza
 	// por la pared en vez de quedarse trabado.
 	// Devuelve true si se movio aunque sea un poco.
@@ -73,14 +109,14 @@ public class Jugador {
 
 	    float nuevaX = posicionX + x;
 
-	    if (mapa.puedeCaminar(crearHitbox(nuevaX, posicionY))) {
+	    if (puedeCaminar(crearHitbox(nuevaX, posicionY), mapa)) {   // CAMBIO
 	        posicionX = nuevaX;
 	        seMovio = true;
 	    }
 
 	    float nuevaY = posicionY + y;
 
-	    if (mapa.puedeCaminar(crearHitbox(posicionX, nuevaY))) {
+	    if (puedeCaminar(crearHitbox(posicionX, nuevaY), mapa)) {   // CAMBIO
 	        posicionY = nuevaY;
 	        seMovio = true;
 	    }
@@ -181,15 +217,30 @@ public class Jugador {
 	//  ----------------------------- vida -----------------------------
 	
 	public void recibirDanio(int cantidad) {
-	    vida = vida - cantidad;
+
+	    vida -= cantidad;
 
 	    if (vida < 0) {
 	        vida = 0;
 	    }
 
+	    // Informamos al sistema de supervivencia
+	    // que el jugador acaba de recibir daño.
+
+	    if (sistemaSupervivencia != null) {
+
+	        sistemaSupervivencia.registrarDanio();
+	    }
+
 	    if (vida == 0) {
-	        System.out.println("El jugador ha muerto.");
-	        System.out.println("GAME OVER");
+
+	        System.out.println(
+	            "El jugador ha muerto."
+	        );
+
+	        System.out.println(
+	            "GAME OVER"
+	        );
 	    }
 	}
 	
@@ -214,13 +265,16 @@ public class Jugador {
 	}
 
 	public void curar(int cantidad) {
-		
-		vida = vida + cantidad;
-		
-		if(vida > 100) {
-			vida = 100;
-		}
-		
+
+	    if (cantidad <= 0) {
+	        return;
+	    }
+
+	    vida += cantidad;
+
+	    if (vida > 100) {
+	        vida = 100;
+	    }
 	}
 	
 	public boolean estaVivo() {
@@ -262,47 +316,82 @@ public class Jugador {
 	}
 
 	
-	// ----------------------------- Hambre -----------------------------
-	
-	public void perderHambre(int cantidad) {
-		
-		hambre = hambre - cantidad;
-		
-		if (hambre < 0) {
-			hambre = 0;
-		}
-		
-	}
-	
-	public void comer(Comida comida) {
+    // ----------------------------- Hambre -----------------------------
 
-	    if (!inventario.tieneRecurso(
-	            comida.getNombre(), 1)) {
+    public void perderHambre(int cantidad) {
 
-	        System.out.println(
-	            "No tenes " + comida.getNombre() + "."
-	        );
+        hambre -= cantidad;
 
-	        return;
-	    }
+        if (hambre < 0) {
+            hambre = 0;
+        }
+    }
 
-	    hambre += comida.getHambreRecuperada();
+    public void recuperarHambre(int cantidad) {
 
-	    if (hambre > 100) {
-	        hambre = 100;
-	    }
+        hambre += cantidad;
 
-	    inventario.gastarRecurso(
-	        comida.getNombre(), 1
-	    );
+        if (hambre > 100) {
+            hambre = 100;
+        }
+    }
 
-	    System.out.println(
-	        "Comiste " + comida.getNombre() +
-	        " y recuperaste " +
-	        comida.getHambreRecuperada() +
-	        " de hambre."
-	    );
-	}
+    public void comer(Comida comida) {
+
+        if (comida == null) {
+            return;
+        }
+
+        if (!inventario.tieneRecurso(
+                comida.getNombre(),
+                1)) {
+
+            System.out.println(
+                "No tenes " +
+                comida.getNombre() +
+                "."
+            );
+
+            return;
+        }
+
+        int hambreAntes = hambre;
+
+        recuperarHambre(
+            comida.getHambreRecuperada()
+        );
+
+        inventario.gastarRecurso(
+            comida.getNombre(),
+            1
+        );
+
+        int hambreRecuperada =
+            hambre - hambreAntes;
+
+        System.out.println(
+            "Comiste " +
+            comida.getNombre() +
+            " y recuperaste " +
+            hambreRecuperada +
+            " de hambre."
+        );
+    }
+
+    public void actualizarSupervivencia(
+        float delta
+    ) {
+
+        sistemaSupervivencia.actualizar(
+            this,
+            delta
+        );
+    }
+
+    public Supervivencia getSistemaSupervivencia() {
+
+        return sistemaSupervivencia;
+    }
 	
 	// -----------------------------------------------------------------------
 	
@@ -762,10 +851,4 @@ public class Jugador {
         }
     }
 	
-	
-	
-	
-	
 }
-
-

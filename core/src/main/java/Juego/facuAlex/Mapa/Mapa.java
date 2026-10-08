@@ -12,623 +12,1096 @@ import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 import com.badlogic.gdx.math.Rectangle;
 
 import Juego.facuAlex.recursos.arbol;
+import Juego.facuAlex.recursos.arbustoBayas;
 import Juego.facuAlex.recursos.roca;
+import Juego.facuAlex.recursos.planta;
 import Juego.facuAlex.sistemas.EstructuraRescateMundo;
 
 public class Mapa {
 
-    private float ancho;
-    private float alto;
-    
-    private static final int CANTIDAD_ARBOLES = 50;
-    private static final float DISTANCIA_MINIMA_ARBOLES = 180f;
-    
-    private static final int CANTIDAD_ROCAS = 30;
-    private static final float DISTANCIA_MINIMA_ROCAS = 150f;
+private float ancho;
+private float alto;
 
-    private Zona[] zonas;
+// ==========================================================
+// CANTIDAD DE RECURSOS
+// ==========================================================
 
-    private LugarEspecial templo;
-    
-    private EstructuraRescateMundo estructuraRescate;
+private static final int CANTIDAD_ARBOLES = 50;
+private static final float DISTANCIA_MINIMA_ARBOLES = 180f;
 
-    private TiledMap tiledMap;
+private static final int CANTIDAD_ROCAS = 30;
+private static final float DISTANCIA_MINIMA_ROCAS = 150f;
 
-    private OrthogonalTiledMapRenderer mapRenderer;
+private static final int CANTIDAD_PLANTAS = 40;
+private static final float DISTANCIA_MINIMA_PLANTAS = 100f;
 
-    private List<arbol> arboles;
-    
-    private List<roca> rocas;
+private static final int CANTIDAD_ARBUSTOS_BAYAS = 20;
 
-    private Random random;
+// ==========================================================
+// ELEMENTOS DEL MAPA
+// ==========================================================
 
-    public Mapa(float anchoDefecto, float altoDefecto) {
+private Zona[] zonas;
+private LugarEspecial templo;
+private EstructuraRescateMundo estructuraRescate;
 
-        // ==============================
-        // CARGAR MAPA
-        // ==============================
+private TiledMap tiledMap;
+private OrthogonalTiledMapRenderer mapRenderer;
 
-        tiledMap = new TmxMapLoader().load("mapa pasto.tmx");
+private List<arbol> arboles;
+private List<roca> rocas;
+private List<planta> plantas;
+private List<arbustoBayas> arbustosBayas;
 
-        mapRenderer = new OrthogonalTiledMapRenderer(tiledMap);
+private Random random;
 
-        // ==============================
-        // DIMENSIONES DEL MAPA
-        // ==============================
+// ==========================================================
+// CONSTRUCTOR
+// ==========================================================
 
-        int tileWidth = tiledMap.getProperties()
-                .get("tilewidth", Integer.class);
+public Mapa(float anchoDefecto, float altoDefecto) {
 
-        int tileHeight = tiledMap.getProperties()
-                .get("tileheight", Integer.class);
+    tiledMap = new TmxMapLoader().load("mapa pasto.tmx");
 
-        int mapWidthTiles = tiledMap.getProperties()
-                .get("width", Integer.class);
+    mapRenderer = new OrthogonalTiledMapRenderer(tiledMap);
 
-        int mapHeightTiles = tiledMap.getProperties()
-                .get("height", Integer.class);
+    // ======================================================
+    // DIMENSIONES DEL MAPA
+    // ======================================================
 
-        this.ancho = mapWidthTiles * tileWidth;
-        this.alto = mapHeightTiles * tileHeight;
-
-        // ==============================
-        // ZONAS
-        // ==============================
-
-        zonas = new Zona[3];
-
-        zonas[0] = new Zona(
-                "Zona 1",
-                0,
-                0,
-                ancho / 3,
-                alto
+    int tileWidth =
+        tiledMap.getProperties().get(
+            "tilewidth",
+            Integer.class
         );
 
-        zonas[1] = new Zona(
-                "Zona 2",
-                ancho / 3,
-                0,
-                ancho / 3,
-                alto
+    int tileHeight =
+        tiledMap.getProperties().get(
+            "tileheight",
+            Integer.class
         );
 
-        zonas[2] = new Zona(
-                "Zona 3",
-                (ancho / 3) * 2,
-                0,
-                ancho / 3,
-                alto
+    int mapWidthTiles =
+        tiledMap.getProperties().get(
+            "width",
+            Integer.class
         );
 
-        // ==============================
-        // TEMPLO
-        // ==============================
-
-        templo = new LugarEspecial(
-                "Templo",
-                ancho * 0.75f,
-                alto * 0.65f,
-                100,
-                100
+    int mapHeightTiles =
+        tiledMap.getProperties().get(
+            "height",
+            Integer.class
         );
-        
-	     // ==============================
-	     // ESTRUCTURA DE RESCATE
-	     // ==============================
-	
-	     estructuraRescate = new EstructuraRescateMundo(
-	             ancho * 0.50f,
-	             alto * 0.50f
-	     );
 
-        // ==============================
-        // ÁRBOLES
-        // ==============================
+    this.ancho = mapWidthTiles * tileWidth;
+    this.alto = mapHeightTiles * tileHeight;
 
-        arboles = new ArrayList<>();
+    // ======================================================
+    // ZONAS
+    // ======================================================
 
-        rocas = new ArrayList<>();
+    zonas = new Zona[3];
 
-        random = new Random();
+    zonas[0] = new Zona(
+        "Zona 1",
+        0,
+        0,
+        ancho / 3,
+        alto
+    );
 
-        crearArboles();
-        crearRocas();
+    zonas[1] = new Zona(
+        "Zona 2",
+        ancho / 3,
+        0,
+        ancho / 3,
+        alto
+    );
 
-        crearArboles();
-    }
-    
-     // ==========================================================
- 	 // ESTRUCTURA DE RESCATE
- 	 // ==========================================================
- 	
- 	 public EstructuraRescateMundo getEstructuraRescate() {
- 	
- 	     return estructuraRescate;
- 	 }    
- 	 
-    // ==========================================================
-    // CREAR ÁRBOLES
-    // ==========================================================
+    zonas[2] = new Zona(
+        "Zona 3",
+        (ancho / 3) * 2,
+        0,
+        ancho / 3,
+        alto
+    );
 
-    private void crearArboles() {
+    // ======================================================
+    // TEMPLO
+    // ======================================================
 
-        int arbolesCreados = 0;
-        int intentos = 0;
+    templo = new LugarEspecial(
+        "Templo",
+        ancho * 0.75f,
+        alto * 0.65f,
+        100,
+        100
+    );
 
-        while (arbolesCreados < CANTIDAD_ARBOLES && intentos < 10000) {
+    // ======================================================
+    // ESTRUCTURA DE RESCATE
+    // ======================================================
 
-            intentos++;
+    estructuraRescate = new EstructuraRescateMundo(
+        ancho * 0.50f,
+        alto * 0.50f
+    );
 
-            float x = 100 + random.nextFloat() * (ancho - 200);
-            float y = 100 + random.nextFloat() * (alto - 200);
+    // ======================================================
+    // LISTAS
+    // ======================================================
 
-            // Primero comprobamos que sea tierra
-            if (!esTierra(x, y)) {
-                continue;
-            }
+    arboles = new ArrayList<>();
+    rocas = new ArrayList<>();
+    plantas = new ArrayList<>();
+    arbustosBayas = new ArrayList<>();
 
-            // Comprobamos que no esté demasiado cerca de otro árbol
-            if (estaMuyCercaDeOtroArbol(x, y)) {
-                continue;
-            }
+    random = new Random();
 
-            // Creamos el árbol
-            arboles.add(new arbol(x, y));
+    // ======================================================
+    // CREAR RECURSOS
+    // ======================================================
 
-            arbolesCreados++;
+    crearArboles();
+    crearRocas();
+    crearPlantas();
+    crearArbustosBayas();
+}
 
-            System.out.println(
-                "Árbol creado: X=" + x + " Y=" + y
-            );
+// ==========================================================
+// ESTRUCTURA DE RESCATE
+// ==========================================================
+
+public EstructuraRescateMundo getEstructuraRescate() {
+    return estructuraRescate;
+}
+
+// ==========================================================
+// CREAR ÁRBOLES
+// ==========================================================
+
+private void crearArboles() {
+
+    int arbolesCreados = 0;
+    int intentos = 0;
+
+    while (
+        arbolesCreados < CANTIDAD_ARBOLES &&
+        intentos < 10000
+    ) {
+
+        intentos++;
+
+        float x =
+            100 + random.nextFloat() * (ancho - 200);
+
+        float y =
+            100 + random.nextFloat() * (alto - 200);
+
+        if (!esTierra(x, y)) {
+            continue;
         }
+
+        if (estaMuyCercaDeOtroArbol(x, y)) {
+            continue;
+        }
+
+        arboles.add(new arbol(x, y));
+        arbolesCreados++;
 
         System.out.println(
-            "Total de árboles creados: " + arbolesCreados
+            "Arbol creado: X=" +
+            x +
+            " Y=" +
+            y
         );
     }
-    
-    private boolean estaMuyCercaDeOtroArbol(float x, float y) {
 
-        for (arbol arbolExistente : arboles) {
+    System.out.println(
+        "Total de arboles creados: " +
+        arbolesCreados
+    );
+}
 
-            float dx = x - arbolExistente.getPosicionX();
-            float dy = y - arbolExistente.getPosicionY();
+private boolean estaMuyCercaDeOtroArbol(
+    float x,
+    float y
+) {
 
-            float distancia = (float) Math.sqrt(
-                dx * dx + dy * dy
+    for (arbol arbolExistente : arboles) {
+
+        float dx =
+            x - arbolExistente.getPosicionX();
+
+        float dy =
+            y - arbolExistente.getPosicionY();
+
+        float distancia =
+            (float) Math.sqrt(
+                dx * dx +
+                dy * dy
             );
 
-            if (distancia < DISTANCIA_MINIMA_ARBOLES) {
-                return true;
-            }
+        if (
+            distancia <
+            DISTANCIA_MINIMA_ARBOLES
+        ) {
+            return true;
         }
+    }
+
+    return false;
+}
+
+// ==========================================================
+// CREAR ROCAS
+// ==========================================================
+
+private void crearRocas() {
+
+    int rocasCreadas = 0;
+    int intentos = 0;
+
+    while (
+        rocasCreadas < CANTIDAD_ROCAS &&
+        intentos < 10000
+    ) {
+
+        intentos++;
+
+        float x =
+            100 + random.nextFloat() * (ancho - 200);
+
+        float y =
+            100 + random.nextFloat() * (alto - 200);
+
+        if (!esTierra(x, y)) {
+            continue;
+        }
+
+        if (estaMuyCercaDeOtraRoca(x, y)) {
+            continue;
+        }
+
+        roca nuevaRoca =
+            new roca(x, y);
+
+        rocas.add(nuevaRoca);
+        rocasCreadas++;
+
+        System.out.println(
+            "Roca creada: X=" +
+            x +
+            " Y=" +
+            y
+        );
+    }
+
+    System.out.println(
+        "Total de rocas creadas: " +
+        rocasCreadas
+    );
+}
+
+private boolean estaMuyCercaDeOtraRoca(
+    float x,
+    float y
+) {
+
+    for (roca rocaExistente : rocas) {
+
+        float dx =
+            x - rocaExistente.getPosicionX();
+
+        float dy =
+            y - rocaExistente.getPosicionY();
+
+        float distancia =
+            (float) Math.sqrt(
+                dx * dx +
+                dy * dy
+            );
+
+        if (
+            distancia <
+            DISTANCIA_MINIMA_ROCAS
+        ) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+// ==========================================================
+// CREAR PLANTAS
+// ==========================================================
+
+private void crearPlantas() {
+
+    int plantasCreadas = 0;
+    int intentos = 0;
+
+    while (
+        plantasCreadas < CANTIDAD_PLANTAS &&
+        intentos < 10000
+    ) {
+
+        intentos++;
+
+        float x =
+            100 + random.nextFloat() * (ancho - 200);
+
+        float y =
+            100 + random.nextFloat() * (alto - 200);
+
+        if (!esTierra(x, y)) {
+            continue;
+        }
+
+        if (estaMuyCercaDeOtraPlanta(x, y)) {
+            continue;
+        }
+
+        planta nuevaPlanta =
+            new planta(x, y);
+
+        plantas.add(nuevaPlanta);
+        plantasCreadas++;
+
+        System.out.println(
+            "Planta creada: X=" +
+            x +
+            " Y=" +
+            y
+        );
+    }
+
+    System.out.println(
+        "Total de plantas creadas: " +
+        plantasCreadas
+    );
+}
+
+private boolean estaMuyCercaDeOtraPlanta(
+    float x,
+    float y
+) {
+
+    for (planta plantaExistente : plantas) {
+
+        float dx =
+            x - plantaExistente.getPosicionX();
+
+        float dy =
+            y - plantaExistente.getPosicionY();
+
+        float distancia =
+            (float) Math.sqrt(
+                dx * dx +
+                dy * dy
+            );
+
+        if (
+            distancia <
+            DISTANCIA_MINIMA_PLANTAS
+        ) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+// ==========================================================
+// CREAR ARBUSTOS DE BAYAS
+// ==========================================================
+
+private void crearArbustosBayas() {
+
+    int arbustosCreados = 0;
+    int intentos = 0;
+
+    while (
+        arbustosCreados < CANTIDAD_ARBUSTOS_BAYAS &&
+        intentos < 10000
+    ) {
+
+        intentos++;
+
+        float x =
+            100 + random.nextFloat() * (ancho - 200);
+
+        float y =
+            100 + random.nextFloat() * (alto - 200);
+
+        if (!esTierra(x, y)) {
+            continue;
+        }
+
+        arbustoBayas nuevoArbusto =
+            new arbustoBayas(x, y);
+
+        arbustosBayas.add(nuevoArbusto);
+        arbustosCreados++;
+    }
+
+    System.out.println(
+        "Total de arbustos de bayas creados: " +
+        arbustosCreados
+    );
+}
+
+// ==========================================================
+// COMPROBAR TIERRA
+// ==========================================================
+
+private boolean esTierra(
+    float x,
+    float y
+) {
+
+    TiledMapTileLayer capaPasto =
+        (TiledMapTileLayer)
+        tiledMap.getLayers().get("pasto");
+
+    TiledMapTileLayer capaPasto2 =
+        (TiledMapTileLayer)
+        tiledMap.getLayers().get("pasto 2");
+
+    if (
+        capaPasto == null &&
+        capaPasto2 == null
+    ) {
+
+        System.out.println(
+            "ERROR: No se encontraron las capas de pasto."
+        );
 
         return false;
     }
-    
- // ==========================================================
- // CREAR ROCAS
- // ==========================================================
 
-    private void crearRocas() {
+    int tileWidth =
+        tiledMap.getProperties()
+            .get("tilewidth", Integer.class);
 
-     int rocasCreadas = 0;
-     int intentos = 0;
+    int tileHeight =
+        tiledMap.getProperties()
+            .get("tileheight", Integer.class);
 
-     while (
-         rocasCreadas < CANTIDAD_ROCAS &&
-         intentos < 10000
-     ) {
+    int tileX =
+        (int) (x / tileWidth);
 
-         intentos++;
+    int tileY =
+        (int) (y / tileHeight);
 
-         float x =
-             100 + random.nextFloat() * (ancho - 200);
+    boolean hayPasto = false;
 
-         float y =
-             100 + random.nextFloat() * (alto - 200);
+    if (capaPasto != null) {
 
-         // Comprobar que sea tierra
-         if (!esTierra(x, y)) {
-             continue;
-         }
+        TiledMapTileLayer.Cell celda =
+            capaPasto.getCell(
+                tileX,
+                tileY
+            );
 
-         // Comprobar distancia con otras rocas
-         if (estaMuyCercaDeOtraRoca(x, y)) {
-             continue;
-         }
-
-         roca nuevaRoca =
-             new roca(x, y);
-
-         rocas.add(nuevaRoca);
-
-         rocasCreadas++;
-
-         System.out.println(
-             "Roca creada: X=" +
-             x +
-             " Y=" +
-             y
-         );
-     }
-
-     System.out.println(
-         "Total de rocas creadas: " +
-         rocasCreadas
-     );
-    }
-    
-    private boolean estaMuyCercaDeOtraRoca(
-    	    float x,
-    	    float y
-    	) {
-
-    	    for (roca rocaExistente : rocas) {
-
-    	        float dx =
-    	            x - rocaExistente.getPosicionX();
-
-    	        float dy =
-    	            y - rocaExistente.getPosicionY();
-
-    	        float distancia =
-    	            (float) Math.sqrt(
-    	                dx * dx + dy * dy
-    	            );
-
-    	        if (
-    	            distancia <
-    	            DISTANCIA_MINIMA_ROCAS
-    	        ) {
-
-    	            return true;
-    	        }
-    	    }
-
-    	    return false;
-    	}
-    
-    // ==========================================================
-    // COMPROBAR AGUA
-    // ==========================================================
-
-    private boolean esTierra(float x, float y) {
-
-        TiledMapTileLayer capaPasto =
-                (TiledMapTileLayer) tiledMap.getLayers().get("pasto");
-
-        TiledMapTileLayer capaPasto2 =
-                (TiledMapTileLayer) tiledMap.getLayers().get("pasto 2");
-
-        if (capaPasto == null && capaPasto2 == null) {
-            System.out.println("ERROR: No se encontraron las capas de pasto.");
-            return false;
+        if (
+            celda != null &&
+            celda.getTile() != null
+        ) {
+            hayPasto = true;
         }
-
-        int tileWidth = tiledMap.getProperties()
-                .get("tilewidth", Integer.class);
-
-        int tileHeight = tiledMap.getProperties()
-                .get("tileheight", Integer.class);
-
-        int tileX = (int) (x / tileWidth);
-        int tileY = (int) (y / tileHeight);
-
-        boolean hayPasto = false;
-
-        if (capaPasto != null) {
-
-            TiledMapTileLayer.Cell celda =
-                    capaPasto.getCell(tileX, tileY);
-
-            if (celda != null && celda.getTile() != null) {
-                hayPasto = true;
-            }
-        }
-
-        if (capaPasto2 != null) {
-
-            TiledMapTileLayer.Cell celda =
-                    capaPasto2.getCell(tileX, tileY);
-
-            if (celda != null && celda.getTile() != null) {
-                hayPasto = true;
-            }
-        }
-
-        return hayPasto;
-    }
-    
-	 
-
-    // ==========================================================
-    // COLISIONES
-    // ==========================================================
-
-    // Devuelve true si el rectangulo (los pies del jugador) puede estar
-    // en esa posicion
-    public boolean puedeCaminar(Rectangle hitbox) {
-
-        // 1) Limites del mapa
-        if (hitbox.x < 0 || hitbox.y < 0
-                || hitbox.x + hitbox.width > ancho
-                || hitbox.y + hitbox.height > alto) {
-            return false;
-        }
-
-        // 2) Agua: las 4 esquinas tienen que estar sobre tierra
-        //    (el hitbox es mas angosto que un tile, asi que alcanza)
-        if (!esTierra(hitbox.x, hitbox.y)
-                || !esTierra(hitbox.x + hitbox.width, hitbox.y)
-                || !esTierra(hitbox.x, hitbox.y + hitbox.height)
-                || !esTierra(hitbox.x + hitbox.width, hitbox.y + hitbox.height)) {
-            return false;
-        }
-
-        // 3) Arboles (los talados ya no estorban)
-        for (arbol a : arboles) {
-
-            if (!a.estaTalado() && hitbox.overlaps(a.getHitbox())) {
-                return false;
-            }
-        }
-
-        // 4) Rocas
-        for (roca r : rocas) {
-
-            if (hitbox.overlaps(r.getHitbox())) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
-    // Busca el punto libre mas cercano a (x, y) recorriendo en espiral.
-    // Lo usamos para el spawn, por si justo cae sobre un arbol/roca/agua.
-    // El jugador mide 64x64 y su hitbox va corrido 20px a la derecha.
-    public float[] buscarPosicionLibre(float x, float y) {
+    if (capaPasto2 != null) {
 
-        final float paso = 16f;
+        TiledMapTileLayer.Cell celda =
+            capaPasto2.getCell(
+                tileX,
+                tileY
+            );
 
-        for (int radio = 0; radio <= 40; radio++) {
+        if (
+            celda != null &&
+            celda.getTile() != null
+        ) {
+            hayPasto = true;
+        }
+    }
 
-            for (int dx = -radio; dx <= radio; dx++) {
+    return hayPasto;
+}
 
-                for (int dy = -radio; dy <= radio; dy++) {
+// ==========================================================
+// COLISIONES
+// ==========================================================
 
-                    // solo el borde del cuadrado de este radio
-                    if (Math.max(Math.abs(dx), Math.abs(dy)) != radio) {
-                        continue;
-                    }
+public boolean puedeCaminar(
+    Rectangle hitbox
+) {
 
-                    float px = x + dx * paso;
-                    float py = y + dy * paso;
+    if (
+        hitbox.x < 0 ||
+        hitbox.y < 0 ||
+        hitbox.x + hitbox.width > ancho ||
+        hitbox.y + hitbox.height > alto
+    ) {
+        return false;
+    }
 
-                    Rectangle pies = new Rectangle(px + 20f, py, 24f, 12f);
+    if (
+        !esTierra(
+            hitbox.x,
+            hitbox.y
+        )
+        ||
+        !esTierra(
+            hitbox.x + hitbox.width,
+            hitbox.y
+        )
+        ||
+        !esTierra(
+            hitbox.x,
+            hitbox.y + hitbox.height
+        )
+        ||
+        !esTierra(
+            hitbox.x + hitbox.width,
+            hitbox.y + hitbox.height
+        )
+    ) {
 
-                    if (puedeCaminar(pies)) {
-                        return new float[] { px, py };
-                    }
+        return false;
+    }
+
+    // Árboles
+
+    for (arbol a : arboles) {
+
+        if (
+            !a.estaTalado() &&
+            hitbox.overlaps(
+                a.getHitbox()
+            )
+        ) {
+            return false;
+        }
+    }
+
+    // Rocas
+
+    for (roca r : rocas) {
+
+        if (
+            hitbox.overlaps(
+                r.getHitbox()
+            )
+        ) {
+            return false;
+        }
+    }
+
+    // Las plantas y arbustos no bloquean al jugador
+
+    return true;
+}
+
+// ==========================================================
+// BUSCAR POSICIÓN LIBRE
+// ==========================================================
+
+public float[] buscarPosicionLibre(
+    float x,
+    float y
+) {
+
+    final float paso = 16f;
+
+    for (
+        int radio = 0;
+        radio <= 40;
+        radio++
+    ) {
+
+        for (
+            int dx = -radio;
+            dx <= radio;
+            dx++
+        ) {
+
+            for (
+                int dy = -radio;
+                dy <= radio;
+                dy++
+            ) {
+
+                if (
+                    Math.max(
+                        Math.abs(dx),
+                        Math.abs(dy)
+                    ) != radio
+                ) {
+                    continue;
+                }
+
+                float px =
+                    x + dx * paso;
+
+                float py =
+                    y + dy * paso;
+
+                Rectangle pies =
+                    new Rectangle(
+                        px + 20f,
+                        py,
+                        24f,
+                        12f
+                    );
+
+                if (puedeCaminar(pies)) {
+
+                    return new float[] {
+                        px,
+                        py
+                    };
                 }
             }
         }
-
-        // No deberia pasar, pero por las dudas
-        return new float[] { x, y };
     }
 
-    // ==========================================================
-    // DIBUJAR MAPA
-    // ==========================================================
+    return new float[] {
+        x,
+        y
+    };
+}
 
-    public void dibujar(OrthographicCamera camara) {
+// ==========================================================
+// DIBUJAR MAPA
+// ==========================================================
 
-        if (mapRenderer != null) {
+public void dibujar(
+    OrthographicCamera camara
+) {
 
-            mapRenderer.setView(camara);
+    if (mapRenderer != null) {
 
-            mapRenderer.render();
+        mapRenderer.setView(camara);
+        mapRenderer.render();
+    }
+}
+
+// ==========================================================
+// ACTUALIZAR ARBUSTOS
+// ==========================================================
+
+public void actualizarArbustosBayas(
+    float delta
+) {
+
+    for (
+        arbustoBayas arbusto :
+        arbustosBayas
+    ) {
+
+        arbusto.actualizar(delta);
+    }
+}
+
+// ==========================================================
+// COMPROBAR DENTRO DEL MAPA
+// ==========================================================
+
+public boolean estaDentro(
+    float x,
+    float y
+) {
+
+    return x >= 0 &&
+           x <= ancho &&
+           y >= 0 &&
+           y <= alto;
+}
+
+// ==========================================================
+// ZONA
+// ==========================================================
+
+public Zona obtenerZona(
+    float x,
+    float y
+) {
+
+    for (
+        int i = 0;
+        i < zonas.length;
+        i++
+    ) {
+
+        if (
+            zonas[i].contiene(
+                x,
+                y
+            )
+        ) {
+
+            return zonas[i];
         }
     }
 
-    // ==========================================================
-    // COMPROBAR DENTRO DEL MAPA
-    // ==========================================================
+    return null;
+}
 
-    public boolean estaDentro(float x, float y) {
+// ==========================================================
+// TEMPLO
+// ==========================================================
 
-        return x >= 0 &&
-               x <= ancho &&
-               y >= 0 &&
-               y <= alto;
+public boolean estaEnTemplo(
+    float x,
+    float y
+) {
+
+    return templo.contiene(
+        x,
+        y
+    );
+}
+
+public LugarEspecial getTemplo() {
+    return templo;
+}
+
+// ==========================================================
+// DIMENSIONES
+// ==========================================================
+
+public float getAncho() {
+    return ancho;
+}
+
+public float getAlto() {
+    return alto;
+}
+
+// ==========================================================
+// ÁRBOLES
+// ==========================================================
+
+public List<arbol> getArboles() {
+    return arboles;
+}
+
+public void eliminarArbol(
+    arbol arbol
+) {
+
+    if (arbol != null) {
+
+        arbol.dispose();
+        arboles.remove(arbol);
+    }
+}
+
+public arbol obtenerArbolCercano(
+    float jugadorX,
+    float jugadorY,
+    float distanciaMaxima
+) {
+
+    arbol arbolCercano = null;
+
+    float distanciaMenor =
+        distanciaMaxima;
+
+    for (
+        arbol arbolActual :
+        arboles
+    ) {
+
+        float dx =
+            jugadorX -
+            arbolActual.getPosicionX();
+
+        float dy =
+            jugadorY -
+            arbolActual.getPosicionY();
+
+        float distancia =
+            (float) Math.sqrt(
+                dx * dx +
+                dy * dy
+            );
+
+        if (
+            distancia <=
+            distanciaMenor
+        ) {
+
+            distanciaMenor =
+                distancia;
+
+            arbolCercano =
+                arbolActual;
+        }
     }
 
-    // ==========================================================
-    // OBTENER ZONA
-    // ==========================================================
+    return arbolCercano;
+}
 
-    public Zona obtenerZona(float x, float y) {
+// ==========================================================
+// ROCAS
+// ==========================================================
 
-        for (int i = 0; i < zonas.length; i++) {
+public List<roca> getRocas() {
+    return rocas;
+}
 
-            if (zonas[i].contiene(x, y)) {
+public void eliminarRoca(
+    roca roca
+) {
 
-                return zonas[i];
-            }
+    if (roca != null) {
+
+        roca.dispose();
+        rocas.remove(roca);
+    }
+}
+
+public roca obtenerRocaCercana(
+    float jugadorX,
+    float jugadorY,
+    float distanciaMaxima
+) {
+
+    roca rocaCercana = null;
+
+    float distanciaMenor =
+        distanciaMaxima;
+
+    for (
+        roca rocaActual :
+        rocas
+    ) {
+
+        float dx =
+            jugadorX -
+            rocaActual.getPosicionX();
+
+        float dy =
+            jugadorY -
+            rocaActual.getPosicionY();
+
+        float distancia =
+            (float) Math.sqrt(
+                dx * dx +
+                dy * dy
+            );
+
+        if (
+            distancia <=
+            distanciaMenor
+        ) {
+
+            distanciaMenor =
+                distancia;
+
+            rocaCercana =
+                rocaActual;
+        }
+    }
+
+    return rocaCercana;
+}
+
+// ==========================================================
+// PLANTAS
+// ==========================================================
+
+public List<planta> getPlantas() {
+    return plantas;
+}
+
+public void eliminarPlanta(
+    planta planta
+) {
+
+    if (planta != null) {
+
+        planta.dispose();
+        plantas.remove(planta);
+    }
+}
+
+public planta obtenerPlantaCercana(
+    float jugadorX,
+    float jugadorY,
+    float distanciaMaxima
+) {
+
+    planta plantaCercana = null;
+
+    float distanciaMenor =
+        distanciaMaxima;
+
+    for (
+        planta plantaActual :
+        plantas
+    ) {
+
+        if (
+            plantaActual.estaAgotada()
+        ) {
+            continue;
         }
 
-        return null;
+        float dx =
+            jugadorX -
+            plantaActual.getPosicionX();
+
+        float dy =
+            jugadorY -
+            plantaActual.getPosicionY();
+
+        float distancia =
+            (float) Math.sqrt(
+                dx * dx +
+                dy * dy
+            );
+
+        if (
+            distancia <=
+            distanciaMenor
+        ) {
+
+            distanciaMenor =
+                distancia;
+
+            plantaCercana =
+                plantaActual;
+        }
     }
 
-    // ==========================================================
-    // TEMPLO
-    // ==========================================================
+    return plantaCercana;
+}
 
-    public boolean estaEnTemplo(float x, float y) {
+// ==========================================================
+// ARBUSTOS DE BAYAS
+// ==========================================================
 
-        return templo.contiene(x, y);
+public List<arbustoBayas> getArbustosBayas() {
+    return arbustosBayas;
+}
+
+public arbustoBayas obtenerArbustoBayasCercano(
+    float jugadorX,
+    float jugadorY,
+    float distanciaMaxima
+) {
+
+    arbustoBayas arbustoCercano = null;
+
+    float distanciaMenor =
+        distanciaMaxima;
+
+    for (
+        arbustoBayas arbusto :
+        arbustosBayas
+    ) {
+
+        if (!arbusto.tieneBayas()) {
+            continue;
+        }
+
+        float dx =
+            jugadorX -
+            arbusto.getPosicionX();
+
+        float dy =
+            jugadorY -
+            arbusto.getPosicionY();
+
+        float distancia =
+            (float) Math.sqrt(
+                dx * dx +
+                dy * dy
+            );
+
+        if (
+            distancia <=
+            distanciaMenor
+        ) {
+
+            distanciaMenor =
+                distancia;
+
+            arbustoCercano =
+                arbusto;
+        }
     }
 
-    public LugarEspecial getTemplo() {
+    return arbustoCercano;
+}
 
-        return templo;
-    }
+// ==========================================================
+// DISPOSE
+// ==========================================================
 
-    // ==========================================================
-    // DIMENSIONES
-    // ==========================================================
+public void dispose() {
 
-    public float getAncho() {
+    if (arboles != null) {
 
-        return ancho;
-    }
+        for (
+            arbol arbol :
+            arboles
+        ) {
 
-    public float getAlto() {
-
-        return alto;
-    }
-
-    // ==========================================================
-    // ÁRBOLES
-    // ==========================================================
-
-    public List<arbol> getArboles() {
-
-        return arboles;
-    }
-    
-    public List<roca> getRocas() {
-
-        return rocas;
-    }
-    
-    public void eliminarArbol(arbol arbol) {
-
-        if (arbol != null) {
             arbol.dispose();
-            arboles.remove(arbol);
         }
     }
-    
-    public void eliminarRoca(roca roca) {
 
-        if (roca != null) {
+    if (rocas != null) {
+
+        for (
+            roca roca :
+            rocas
+        ) {
 
             roca.dispose();
-
-            rocas.remove(roca);
         }
     }
-    
-    public arbol obtenerArbolCercano(
-            float jugadorX,
-            float jugadorY,
-            float distanciaMaxima) {
 
-        arbol arbolCercano = null;
+    if (plantas != null) {
 
-        float distanciaMenor = distanciaMaxima;
+        for (
+            planta planta :
+            plantas
+        ) {
 
-        for (arbol arbolActual : arboles) {
-
-            float dx =
-                jugadorX - arbolActual.getPosicionX();
-
-            float dy =
-                jugadorY - arbolActual.getPosicionY();
-
-            float distancia =
-                (float) Math.sqrt(dx * dx + dy * dy);
-
-            if (distancia <= distanciaMenor) {
-
-                distanciaMenor = distancia;
-                arbolCercano = arbolActual;
-            }
+            planta.dispose();
         }
-
-        return arbolCercano;
     }
-    
-    public roca obtenerRocaCercana(
-    	    float jugadorX,
-    	    float jugadorY,
-    	    float distanciaMaxima
-    	) {
 
-    	    roca rocaCercana = null;
+    if (arbustosBayas != null) {
 
-    	    float distanciaMenor =
-    	        distanciaMaxima;
+        for (
+            arbustoBayas arbusto :
+            arbustosBayas
+        ) {
 
-    	    for (roca rocaActual : rocas) {
-
-    	        float dx =
-    	            jugadorX -
-    	            rocaActual.getPosicionX();
-
-    	        float dy =
-    	            jugadorY -
-    	            rocaActual.getPosicionY();
-
-    	        float distancia =
-    	            (float) Math.sqrt(
-    	                dx * dx +
-    	                dy * dy
-    	            );
-
-    	        if (
-    	            distancia <= distanciaMenor
-    	        ) {
-
-    	            distanciaMenor = distancia;
-
-    	            rocaCercana = rocaActual;
-    	        }
-    	    }
-
-    	    return rocaCercana;
-    	}
-
-    // ==========================================================
-    // DISPOSE
-    // ==========================================================
-
-    public void dispose() {
-
-        if (arboles != null) {
-
-            for (arbol arbol : arboles) {
-
-                arbol.dispose();
-            }
+            arbusto.dispose();
         }
-
-        if (tiledMap != null) {
-
-            tiledMap.dispose();
-        }
-
-        if (mapRenderer != null) {
-
-            mapRenderer.dispose();
-        }
-        
-        if (rocas != null) {
-
-            for (roca roca : rocas) {
-
-                roca.dispose();
-            }
-        }
-        
-        if (estructuraRescate != null) {
-
-            estructuraRescate.dispose();
-        }
-        
     }
+
+    if (tiledMap != null) {
+        tiledMap.dispose();
+    }
+
+    if (mapRenderer != null) {
+        mapRenderer.dispose();
+    }
+
+    if (estructuraRescate != null) {
+        estructuraRescate.dispose();
+    }
+}
+
 }

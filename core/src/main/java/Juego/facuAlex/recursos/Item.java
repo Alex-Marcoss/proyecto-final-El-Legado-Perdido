@@ -6,6 +6,7 @@ public class Item {
 
     protected String nombre;
     private Texture icono;
+    
 
     public Item(String nombre) {
         this.nombre = nombre;
@@ -51,4 +52,6 @@ public class Item {
             icono = null;
         }
     }
+    	
+    
 }
