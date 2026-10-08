@@ -144,6 +144,74 @@ public class JugadorAnimacion {
         0.10f, 0.14f, 0.10f
     };
 
+    // =========================
+    // RECOLECTAR (bayas y fibra)
+    // =========================
+    //
+    // La hoja recolectar.png tiene 8 columnas (frames) x 2 filas
+    // (igual que minar y talar):
+    //   fila 0 = mirando a la IZQUIERDA
+    //   fila 1 = mirando a la DERECHA
+    // Frames: 0 = de pie, 1 = empieza a agacharse, 2-3-4 = agachado
+    // estirando la mano, 5 = AGARRA y empieza a levantarse (ya tiene
+    // el objeto en la mano), 6-7 = vuelve a pararse.
+    // Se reproduce una sola vez por cada recoleccion.
+    //
+    // Los pies de cada frame estan centrados en la celda, asi que se
+    // usan los mismos MINAR_PIES_X_* para ubicarlo.
+
+    private Texture recolectarTexture;
+    private TextureRegion[] recolectarIzquierda;
+    private TextureRegion[] recolectarDerecha;
+
+    private static final int RECOLECTAR_COLUMNAS = 8;
+
+    // Pixeles de diseno por pixel real: hace que el personaje de la
+    // hoja se vea del mismo tamano que al caminar.
+    private static final float RECOLECTAR_FACTOR = 0.741f;
+
+    private static final float[] RECOLECTAR_DURACION_FRAMES = {
+        0.05f, 0.05f, 0.07f, 0.08f, 0.09f, 0.08f, 0.07f, 0.08f
+    };
+
+    // Frame en el que la mano agarra el objeto: ahi se entrega
+    // la baya o la fibra.
+    private static final int RECOLECTAR_FRAME_IMPACTO = 5;
+
+    // =========================
+    // COMER
+    // =========================
+    //
+    // La hoja comer.png tiene 10 columnas (frames) x 4 filas:
+    //   fila 0 = mirando ABAJO (de frente)
+    //   fila 1 = mirando ARRIBA (de espaldas)
+    //   fila 2 = mirando a la DERECHA
+    //   fila 3 = mirando a la IZQUIERDA
+    // (mismo orden que golpear.png y dano.png).
+    // La mano sube a la boca y mastica. Se reproduce una sola vez
+    // cada vez que se come.
+    //
+    // Los pies de cada frame estan centrados en la celda, asi que se
+    // ubica con getPiesXGolpear() igual que golpear y dano.
+
+    private Texture comerTexture;
+    private TextureRegion[][] comer;
+
+    private static final int COMER_COLUMNAS = 10;
+
+    // Pixeles de diseno por pixel real: hace que el personaje de
+    // la hoja se vea del mismo tamano que al caminar.
+    private static final float COMER_FACTOR = 0.729f;
+
+    private static final float[] COMER_DURACION_FRAMES = {
+        0.09f, 0.09f, 0.09f, 0.09f, 0.09f,
+        0.09f, 0.09f, 0.09f, 0.09f, 0.09f
+    };
+
+    // Frame en el que se da el mordisco: ahi se aplica el efecto
+    // (sube el hambre y se gasta la comida del inventario).
+    private static final int COMER_FRAME_IMPACTO = 4;
+
     public JugadorAnimacion() {
 
         // Cargar sprite sheet
@@ -162,6 +230,8 @@ public class JugadorAnimacion {
         cargarAnimacionTalar();
         cargarAnimacionGolpear();
         cargarAnimacionDano();
+        cargarAnimacionRecolectar();
+        cargarAnimacionComer();
 
         stateTime = 0f;
     }
@@ -282,6 +352,57 @@ public class JugadorAnimacion {
 
         dano = TextureRegion.split(
             danoTexture,
+            celdaAncho,
+            celdaAlto
+        );
+    }
+
+    private void cargarAnimacionRecolectar() {
+
+        recolectarTexture = new Texture(
+            Gdx.files.internal("sprites/recolectar.png")
+        );
+
+        // Pixel art: sin suavizado
+        recolectarTexture.setFilter(
+            Texture.TextureFilter.Nearest,
+            Texture.TextureFilter.Nearest
+        );
+
+        int celdaAncho =
+            recolectarTexture.getWidth() / RECOLECTAR_COLUMNAS;
+
+        int celdaAlto = recolectarTexture.getHeight() / 2;
+
+        TextureRegion[][] frames =
+            TextureRegion.split(
+                recolectarTexture,
+                celdaAncho,
+                celdaAlto
+            );
+
+        // Fila 0 = izquierda, fila 1 = derecha
+        recolectarIzquierda = frames[0];
+        recolectarDerecha = frames[1];
+    }
+
+    private void cargarAnimacionComer() {
+
+        comerTexture = new Texture(
+            Gdx.files.internal("sprites/comer.png")
+        );
+
+        // Pixel art: sin suavizado
+        comerTexture.setFilter(
+            Texture.TextureFilter.Nearest,
+            Texture.TextureFilter.Nearest
+        );
+
+        int celdaAncho = comerTexture.getWidth() / COMER_COLUMNAS;
+        int celdaAlto = comerTexture.getHeight() / 4;
+
+        comer = TextureRegion.split(
+            comerTexture,
             celdaAncho,
             celdaAlto
         );
@@ -578,6 +699,122 @@ public class JugadorAnimacion {
     }
 
     // =========================
+    // RECOLECTAR
+    // =========================
+
+    // Duracion total de la animacion de recolectar
+    public static float getDuracionRecolectar() {
+
+        float total = 0f;
+
+        for (float duracion : RECOLECTAR_DURACION_FRAMES) {
+            total += duracion;
+        }
+
+        return total;
+    }
+
+    // Momento en que la mano agarra el objeto: cuando empieza el
+    // frame RECOLECTAR_FRAME_IMPACTO. Ahi se entrega la baya o la fibra.
+    public static float getTiempoImpactoRecolectar() {
+
+        float total = 0f;
+
+        for (int i = 0; i < RECOLECTAR_FRAME_IMPACTO; i++) {
+            total += RECOLECTAR_DURACION_FRAMES[i];
+        }
+
+        return total;
+    }
+
+    public TextureRegion getFrameRecolectar(
+        boolean haciaLaIzquierda,
+        float tiempo
+    ) {
+
+        TextureRegion[] frames =
+            haciaLaIzquierda ? recolectarIzquierda : recolectarDerecha;
+
+        float acumulado = 0f;
+
+        for (int i = 0; i < RECOLECTAR_DURACION_FRAMES.length; i++) {
+
+            acumulado += RECOLECTAR_DURACION_FRAMES[i];
+
+            if (tiempo < acumulado) {
+                return frames[i];
+            }
+        }
+
+        return frames[frames.length - 1];
+    }
+
+    public static float getRecolectarFactor() {
+        return RECOLECTAR_FACTOR;
+    }
+
+    // =========================
+    // COMER
+    // =========================
+
+    public static float getDuracionComer() {
+
+        float total = 0f;
+
+        for (float duracion : COMER_DURACION_FRAMES) {
+            total += duracion;
+        }
+
+        return total;
+    }
+
+    // Momento del mordisco: cuando empieza el frame COMER_FRAME_IMPACTO
+    public static float getTiempoImpactoComer() {
+
+        float total = 0f;
+
+        for (int i = 0; i < COMER_FRAME_IMPACTO; i++) {
+            total += COMER_DURACION_FRAMES[i];
+        }
+
+        return total;
+    }
+
+    public TextureRegion getFrameComer(
+        JugadorControl.Direccion direccion,
+        float tiempo
+    ) {
+
+        int fila;
+
+        switch (direccion) {
+            case ARRIBA:    fila = 1; break;
+            case DERECHA:   fila = 2; break;
+            case IZQUIERDA: fila = 3; break;
+            default:        fila = 0; break;
+        }
+
+        TextureRegion[] frames = comer[fila];
+
+        float acumulado = 0f;
+
+        for (int i = 0; i < COMER_DURACION_FRAMES.length; i++) {
+
+            acumulado += COMER_DURACION_FRAMES[i];
+
+            if (tiempo < acumulado) {
+                return frames[i];
+            }
+        }
+
+        return frames[frames.length - 1];
+    }
+
+    public static float getComerFactor() {
+        return COMER_FACTOR;
+    }
+
+    // =========================
     // GOLPEAR
     // =========================
 
@@ -725,6 +962,14 @@ public class JugadorAnimacion {
 
         if (danoTexture != null) {
             danoTexture.dispose();
+        }
+
+        if (recolectarTexture != null) {
+            recolectarTexture.dispose();
+        }
+
+        if (comerTexture != null) {
+            comerTexture.dispose();
         }
     }
 }
