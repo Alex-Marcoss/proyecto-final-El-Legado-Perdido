@@ -34,6 +34,8 @@ public class JugadorControl {
         MINAR,
         TALAR,
         GOLPEAR,
+        RECOLECTAR,
+        COMER,
         HERIDO
     }
 
@@ -67,6 +69,30 @@ public class JugadorControl {
     private float tiempoGolpe;
 
     private boolean punoAplicado;
+
+
+    // ==========================================================
+    // ESTADO DE RECOLECCION (bayas y fibra)
+    // ==========================================================
+
+    private float tiempoRecoleccion;
+
+    private boolean recoleccionAplicada;
+
+
+    private Runnable accionRecoleccion;
+
+
+    // ==========================================================
+    // ESTADO DE COMER
+    // ==========================================================
+
+    private float tiempoComer;
+
+    private boolean comidaAplicada;
+
+
+    private Runnable accionComer;
 
 
     // ==========================================================
@@ -165,6 +191,30 @@ public class JugadorControl {
 
 
         // ======================================================
+        // RECOLECTANDO (bayas / fibra)
+        // ======================================================
+
+        if (estado == Estado.RECOLECTAR) {
+
+            actualizarRecoleccion(delta);
+
+            return;
+        }
+
+
+        // ======================================================
+        // COMIENDO
+        // ======================================================
+
+        if (estado == Estado.COMER) {
+
+            actualizarComer(delta);
+
+            return;
+        }
+
+
+        // ======================================================
         // ENTRADA DEL JUGADOR
         // ======================================================
 
@@ -205,7 +255,11 @@ public class JugadorControl {
         if (Gdx.input.isKeyJustPressed(
                 Input.Keys.F)) {
 
-            comerBayas();
+
+            if (comerBayas()) {
+
+                return;
+            }
         }
 
 
@@ -502,7 +556,7 @@ public class JugadorControl {
         tiempoMinado += delta;
 
 
-        // Momento en el que el pico golpea la roca
+
 
         if (
             !golpeAplicado
@@ -520,7 +574,6 @@ public class JugadorControl {
         }
 
 
-        // Fin de la animacion
 
         if (
             tiempoMinado >=
@@ -550,8 +603,7 @@ public class JugadorControl {
         hachazoAplicado = false;
 
 
-        // El sprite de talar es lateral.
-        // El jugador mira hacia el arbol.
+
 
         float centroJugadorX =
                 jugador.getPosicionX() + 32f;
@@ -581,7 +633,7 @@ public class JugadorControl {
         tiempoTalado += delta;
 
 
-        // Momento en el que el hacha golpea
+
 
         if (
             !hachazoAplicado
@@ -599,7 +651,7 @@ public class JugadorControl {
         }
 
 
-        // Fin de la animacion
+
 
         if (
             tiempoTalado >=
@@ -617,12 +669,158 @@ public class JugadorControl {
 
 
     // ==========================================================
+    // RECOLECCION 
+    // ==========================================================
+
+
+    public boolean puedeRecolectar() {
+
+        return estado == Estado.IDLE
+                || estado == Estado.CAMINAR
+                || estado == Estado.CORRER;
+    }
+
+
+
+
+    public void iniciarRecoleccion(
+            float xObjetivo,
+            Runnable alRecoger) {
+
+        accionRecoleccion = alRecoger;
+
+        tiempoRecoleccion = 0f;
+
+        recoleccionAplicada = false;
+
+
+
+
+        float centroJugadorX =
+                jugador.getPosicionX() + 32f;
+
+
+        if (xObjetivo < centroJugadorX) {
+
+            direccion =
+                    Direccion.IZQUIERDA;
+
+        } else {
+
+            direccion =
+                    Direccion.DERECHA;
+        }
+
+
+        estado =
+                Estado.RECOLECTAR;
+    }
+
+
+    private void actualizarRecoleccion(float delta) {
+
+        tiempoRecoleccion += delta;
+
+
+
+
+        if (
+            !recoleccionAplicada
+            &&
+            tiempoRecoleccion >=
+                JugadorAnimacion.getTiempoImpactoRecolectar()
+        ) {
+
+            recoleccionAplicada = true;
+
+            if (accionRecoleccion != null) {
+
+                accionRecoleccion.run();
+            }
+        }
+
+
+
+
+        if (
+            tiempoRecoleccion >=
+                JugadorAnimacion.getDuracionRecolectar()
+        ) {
+
+            accionRecoleccion = null;
+
+            tiempoRecoleccion = 0f;
+
+            estado =
+                    Estado.IDLE;
+        }
+    }
+
+
+    // ==========================================================
+    // COMER
+    // ==========================================================
+
+    private void iniciarComer(Runnable alMorder) {
+
+        accionComer = alMorder;
+
+        tiempoComer = 0f;
+
+        comidaAplicada = false;
+
+        estado =
+                Estado.COMER;
+    }
+
+
+    private void actualizarComer(float delta) {
+
+        tiempoComer += delta;
+
+
+
+
+        if (
+            !comidaAplicada
+            &&
+            tiempoComer >=
+                JugadorAnimacion.getTiempoImpactoComer()
+        ) {
+
+            comidaAplicada = true;
+
+            if (accionComer != null) {
+
+                accionComer.run();
+            }
+        }
+
+
+
+
+        if (
+            tiempoComer >=
+                JugadorAnimacion.getDuracionComer()
+        ) {
+
+            accionComer = null;
+
+            tiempoComer = 0f;
+
+            estado =
+                    Estado.IDLE;
+        }
+    }
+
+
+    // ==========================================================
     // HERIDO
     // ==========================================================
 
     private void iniciarHerido() {
 
-        // Cancela la accion actual
+
 
         rocaObjetivo = null;
 
@@ -633,6 +831,14 @@ public class JugadorControl {
         tiempoTalado = 0f;
 
         tiempoGolpe = 0f;
+
+        accionRecoleccion = null;
+
+        tiempoRecoleccion = 0f;
+
+        accionComer = null;
+
+        tiempoComer = 0f;
 
 
         tiempoHerido = 0f;
@@ -679,6 +885,30 @@ public class JugadorControl {
     public float getTiempoTalado() {
 
         return tiempoTalado;
+    }
+
+
+    public boolean estaComiendo() {
+
+        return estado == Estado.COMER;
+    }
+
+
+    public float getTiempoComer() {
+
+        return tiempoComer;
+    }
+
+
+    public boolean estaRecolectando() {
+
+        return estado == Estado.RECOLECTAR;
+    }
+
+
+    public float getTiempoRecoleccion() {
+
+        return tiempoRecoleccion;
     }
 
 
@@ -760,13 +990,16 @@ public class JugadorControl {
         }
 
 
-        // No puede comenzar otro ataque mientras
-        // esta minando, talando o herido.
+
 
         if (
             estado == Estado.MINAR
             ||
             estado == Estado.TALAR
+            ||
+            estado == Estado.RECOLECTAR
+            ||
+            estado == Estado.COMER
             ||
             estado == Estado.HERIDO
         ) {
@@ -786,8 +1019,7 @@ public class JugadorControl {
         ) {
 
 
-            // Si no tiene energia, se utiliza el sistema
-            // de combate para mostrar el mensaje correspondiente.
+
 
             if (
                 jugador.getEnergia()
@@ -889,7 +1121,9 @@ public class JugadorControl {
     // COMER BAYAS
     // ==========================================================
 
-    private void comerBayas() {
+
+
+    private boolean comerBayas() {
 
 
         // ======================================================
@@ -902,7 +1136,7 @@ public class JugadorControl {
                 "No tenes hambre."
             );
 
-            return;
+            return false;
         }
 
 
@@ -922,7 +1156,7 @@ public class JugadorControl {
                 "No tenes bayas."
             );
 
-            return;
+            return false;
         }
 
 
@@ -942,6 +1176,10 @@ public class JugadorControl {
         // COMER
         // ======================================================
 
-        jugador.comer(bayas);
+        iniciarComer(
+            () -> jugador.comer(bayas)
+        );
+
+        return true;
     }
 }
