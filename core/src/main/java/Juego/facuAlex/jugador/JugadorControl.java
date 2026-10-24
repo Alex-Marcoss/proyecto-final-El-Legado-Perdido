@@ -9,6 +9,7 @@ import Juego.facuAlex.recursos.Comida;
 import Juego.facuAlex.recursos.arbol;
 import Juego.facuAlex.recursos.roca;
 import Juego.facuAlex.sistemas.combate;
+import Juego.facuAlex.enemigos.*;
 
 public class JugadorControl {
 
@@ -100,7 +101,9 @@ public class JugadorControl {
     // ==========================================================
 
     private float tiempoHerido;
-
+    
+    private static final float ALCANCE_GOLPE = 80f;
+    private static final float ANCHO_GOLPE = 45f;
 
     // ==========================================================
     // CONSTRUCTOR
@@ -940,105 +943,134 @@ public class JugadorControl {
     // ATAQUE
     // ==========================================================
 
+    public void actualizarAtaque(combate sistemaCombate, Guardian guardian) {
+
+        actualizarAtaque(sistemaCombate, guardian, null);
+    }
+
     public void actualizarAtaque(
             combate sistemaCombate,
-            Guardian guardian) {
+            Guardian guardian,
+            GestorCriaturas criaturas) {
 
-
-        // Delta se obtiene aca porque Principal
-        // utiliza la version de 2 parametros.
-
-        float delta =
-                Gdx.graphics.getDeltaTime();
-
-
-        // ======================================================
-        // SI YA ESTA GOLPEANDO
-        // ======================================================
+        float delta = Gdx.graphics.getDeltaTime();
 
         if (estado == Estado.GOLPEAR) {
 
-            actualizarGolpe(
-                delta,
-                sistemaCombate,
-                guardian
-            );
+            actualizarGolpe(delta, sistemaCombate, guardian, criaturas);
 
             return;
         }
-
-
-        // ======================================================
-        // COMPROBACIONES
-        // ======================================================
 
         if (sistemaCombate == null) {
 
             return;
         }
 
+        boolean guardianAtacable =
+                guardian != null && guardian.estaVivo();
 
-        if (guardian == null) {
-
-            return;
-        }
-
-
-        if (!guardian.estaVivo()) {
+        // Nada para golpear
+        if (!guardianAtacable && criaturas == null) {
 
             return;
         }
 
-
-
-
-        if (
-            estado == Estado.MINAR
-            ||
-            estado == Estado.TALAR
-            ||
-            estado == Estado.RECOLECTAR
-            ||
-            estado == Estado.COMER
-            ||
-            estado == Estado.HERIDO
-        ) {
+        if (estado == Estado.MINAR
+                || estado == Estado.TALAR
+                || estado == Estado.RECOLECTAR
+                || estado == Estado.COMER
+                || estado == Estado.HERIDO) {
 
             return;
         }
 
+        if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
 
-        // ======================================================
-        // ATAQUE CON ESPACIO
-        // ======================================================
+            if (jugador.getEnergia() < sistemaCombate.getEnergiaAtaque()) {
 
-        if (
-            Gdx.input.isKeyJustPressed(
-                Input.Keys.SPACE
-            )
-        ) {
+                if (guardianAtacable) {
 
+                    // combate avisa que no hay energia
+                    sistemaCombate.atacar(jugador, guardian, direccion);
 
+                } else {
 
-
-            if (
-                jugador.getEnergia()
-                <
-                sistemaCombate.getEnergiaAtaque()
-            ) {
-
-                sistemaCombate.atacar(
-                    jugador,
-                    guardian,
-                    direccion
-                );
+                    System.out.println("No tenes suficiente energia para atacar.");
+                }
 
                 return;
             }
 
-
             iniciarGolpe();
         }
+    }
+
+    private void actualizarGolpe(
+            float delta,
+            combate sistemaCombate,
+            Guardian guardian,
+            GestorCriaturas criaturas) {
+
+        tiempoGolpe += delta;
+
+        if (!punoAplicado
+                && tiempoGolpe >= JugadorAnimacion.getTiempoImpactoGolpear()) {
+
+            punoAplicado = true;
+
+            if (sistemaCombate != null
+                    && guardian != null
+                    && guardian.estaVivo()) {
+
+                sistemaCombate.atacar(jugador, guardian, direccion);
+            }
+
+            if (criaturas != null) {
+
+                golpearCriatura(sistemaCombate, criaturas);
+            }
+        }
+
+        if (tiempoGolpe >= JugadorAnimacion.getDuracionGolpear()) {
+
+            tiempoGolpe = 0f;
+
+            estado = Estado.IDLE;
+        }
+    }
+
+    // Golpea a la criatura que tiene adelante, hacia donde mira el jugador
+    private void golpearCriatura(combate sistemaCombate, GestorCriaturas criaturas) {
+
+        float dirX = 0f;
+        float dirY = 0f;
+
+        switch (direccion) {
+
+            case ARRIBA:    dirY =  1f; break;
+            case ABAJO:     dirY = -1f; break;
+            case IZQUIERDA: dirX = -1f; break;
+            default:        dirX =  1f; break;
+        }
+
+        Criatura objetivo = criaturas.getCriaturaAlFrente(
+            jugador.getPosicionX() + 32f,
+            jugador.getPosicionY(),
+            dirX,
+            dirY,
+            ALCANCE_GOLPE,
+            ANCHO_GOLPE
+        );
+
+        if (objetivo == null) {
+
+            return;
+        }
+
+        jugador.gastarEnergia(sistemaCombate.getEnergiaAtaque());
+
+        jugador.atacar(objetivo);   // 20 de daño, como tu metodo de siempre
     }
 
 
@@ -1055,73 +1087,6 @@ public class JugadorControl {
         estado =
                 Estado.GOLPEAR;
     }
-
-
-    // ==========================================================
-    // ACTUALIZAR GOLPE
-    // ==========================================================
-
-    private void actualizarGolpe(
-            float delta,
-            combate sistemaCombate,
-            Guardian guardian) {
-
-        tiempoGolpe += delta;
-
-
-        // ======================================================
-        // IMPACTO
-        // ======================================================
-
-        if (
-            !punoAplicado
-            &&
-            tiempoGolpe >=
-                JugadorAnimacion.getTiempoImpactoGolpear()
-        ) {
-
-            punoAplicado = true;
-
-
-            if (
-                sistemaCombate != null
-                &&
-                guardian != null
-                &&
-                guardian.estaVivo()
-            ) {
-
-                sistemaCombate.atacar(
-                    jugador,
-                    guardian,
-                    direccion
-                );
-            }
-        }
-
-
-        // ======================================================
-        // FIN DEL GOLPE
-        // ======================================================
-
-        if (
-            tiempoGolpe >=
-                JugadorAnimacion.getDuracionGolpear()
-        ) {
-
-            tiempoGolpe = 0f;
-
-            estado =
-                    Estado.IDLE;
-        }
-    }
-
-
-    // ==========================================================
-    // COMER BAYAS
-    // ==========================================================
-
-
 
     private boolean comerBayas() {
 

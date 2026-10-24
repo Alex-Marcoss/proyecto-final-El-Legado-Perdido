@@ -1,3 +1,4 @@
+
 package Juego.facuAlex.jugador;
 
 import com.badlogic.gdx.math.Rectangle;
@@ -11,315 +12,308 @@ import Juego.facuAlex.Mapa.Templo;
 import Juego.facuAlex.enemigos.Animal;
 import Juego.facuAlex.enemigos.Enemigo;
 import Juego.facuAlex.receta.Receta;
-import Juego.facuAlex.recursos.Comida;
-import Juego.facuAlex.recursos.Item;
-import Juego.facuAlex.recursos.Recursos;
-import Juego.facuAlex.recursos.arbol;
-import Juego.facuAlex.recursos.roca;
 import Juego.facuAlex.sistemas.Construccion;
 import Juego.facuAlex.sistemas.Energia;
 import Juego.facuAlex.sistemas.Supervivencia;
-import Juego.facuAlex.inventario.*;
+import Juego.facuAlex.inventario.inventario;
 
 public class Jugador {
 
-	String nombre;
-	int vida;
-	int hambre;
-	float energia;
-	private Herramienta herramientaEquipada;
-	private float posicionX;
-	private float posicionY;
-	private Energia sistemaEnergia;
-	private Supervivencia sistemaSupervivencia;
+    private String nombre;
+    private int vida;
+    private int hambre;
+    private float energia;
 
-	// Colisiones extra: dentro del templo y la pared del templo en el mundo
-	private InteriorTemplo interior;
-	private Templo templo;
+    private Herramienta herramientaEquipada;
+    private float posicionX;
+    private float posicionY;
 
-	inventario inventario;
-	
-	// -------------------------------------
-	
+    private Energia sistemaEnergia;
+    private Supervivencia sistemaSupervivencia;
 
-	public Jugador(String nombre) { // constructor jugador
+    private InteriorTemplo interior;
+    private Templo templo;
 
-	    this.nombre = nombre;
-	    this.vida = 100;
-	    this.hambre = 100;
-	    this.energia = 100;
-	    this.inventario = new inventario();
-	    this.posicionX = 0;
-	    this.posicionY = 0;
-	    this.sistemaEnergia = new Energia(3.67f);
-	    this.sistemaSupervivencia = new Supervivencia(10, 5);
-	}
-	
-	
-	// ------------------------ Movimientos -------------------------------
-	
-	
-	// solo los pies (no todo).
-	// Asi puede pasar "por detras" de un arbol y la colision se siente natural.
-	private static final float HITBOX_ANCHO = 24f;
-	private static final float HITBOX_ALTO = 12f;
-	private static final float HITBOX_OFFSET_X = 20f; // (64 - 24) / 2 -> centrado
+    private inventario inventario;
 
-	public Rectangle getHitbox() {
-	    return crearHitbox(posicionX, posicionY);
-	}
+    private boolean golpeRecibido = false;
 
-	private Rectangle crearHitbox(float x, float y) {
-	    return new Rectangle(x + HITBOX_OFFSET_X, y, HITBOX_ANCHO, HITBOX_ALTO);
-	}
+    // Hitbox de los pies del jugador.
+    private static final float HITBOX_ANCHO = 24f;
+    private static final float HITBOX_ALTO = 12f;
+    private static final float HITBOX_OFFSET_X = 20f;
 
-	// -------------------------------------
-	// Colisiones del templo
+    public Jugador(String nombre) {
+        this.nombre = nombre;
+        this.vida = 100;
+        this.hambre = 100;
+        this.energia = 100;
 
-	public void setInterior(InteriorTemplo interior) {
-	    this.interior = interior;
-	}
+        this.inventario = new inventario();
+        this.posicionX = 0;
+        this.posicionY = 0;
 
-	public void setTemplo(Templo templo) {
-	    this.templo = templo;
-	}
+        this.sistemaEnergia = new Energia(3.67f);
+        this.sistemaSupervivencia = new Supervivencia(10, 5);
+    }
 
-	// Decide con que se choca el jugador:
-	//  - dentro del templo: con las paredes del interior (Tiled)
-	//  - en el mundo: con la pared del templo y con el mapa normal
-	private boolean puedeCaminar(Rectangle hitbox, Mapa mapa) {
+    // --------------------------------------------------
+    // MOVIMIENTO Y COLISIONES
+    // --------------------------------------------------
 
-	    if (interior != null) {
-	        return !interior.colisiona(hitbox);
-	    }
+    public Rectangle getHitbox() {
+        return crearHitbox(posicionX, posicionY);
+    }
 
-	    if (templo != null && templo.colisiona(hitbox)) {
-	        return false;
-	    }
+    private Rectangle crearHitbox(float x, float y) {
+        return new Rectangle(
+            x + HITBOX_OFFSET_X,
+            y,
+            HITBOX_ANCHO,
+            HITBOX_ALTO
+        );
+    }
 
-	    return mapa.puedeCaminar(hitbox);
-	}
+    public void setInterior(InteriorTemplo interior) {
+        this.interior = interior;
+    }
 
-	// Mueve en X y en Y por separado: si choca de costado, igual se desliza
-	// por la pared en vez de quedarse trabado.
-	// Devuelve true si se movio aunque sea un poco.
-	private boolean moverConColision(float x, float y, Mapa mapa) {
+    public void setTemplo(Templo templo) {
+        this.templo = templo;
+    }
 
-	    boolean seMovio = false;
+    private boolean puedeCaminar(Rectangle hitbox, Mapa mapa) {
+        if (interior != null) {
+            return !interior.colisiona(hitbox);
+        }
 
-	    float nuevaX = posicionX + x;
+        if (templo != null && templo.colisiona(hitbox)) {
+            return false;
+        }
 
-	    if (puedeCaminar(crearHitbox(nuevaX, posicionY), mapa)) {   // CAMBIO
-	        posicionX = nuevaX;
-	        seMovio = true;
-	    }
+        return mapa.puedeCaminar(hitbox);
+    }
 
-	    float nuevaY = posicionY + y;
+    private boolean moverConColision(float x, float y, Mapa mapa) {
+        boolean seMovio = false;
 
-	    if (puedeCaminar(crearHitbox(posicionX, nuevaY), mapa)) {   // CAMBIO
-	        posicionY = nuevaY;
-	        seMovio = true;
-	    }
+        float nuevaX = posicionX + x;
 
-	    return seMovio;
-	}
+        if (puedeCaminar(crearHitbox(nuevaX, posicionY), mapa)) {
+            posicionX = nuevaX;
+            seMovio = true;
+        }
 
-	// Coloca al jugador directamente (sin colisiones). Sirve para el spawn.
-	public void setPosicion(float x, float y) {
-	    posicionX = x;
-	    posicionY = y;
-	}
+        float nuevaY = posicionY + y;
 
-	public void mover(float x, float y, Mapa mapa) {
+        if (puedeCaminar(crearHitbox(posicionX, nuevaY), mapa)) {
+            posicionY = nuevaY;
+            seMovio = true;
+        }
 
-	    moverConColision(x, y, mapa);
-	}
+        return seMovio;
+    }
 
-	public boolean correr(float x, float y, Mapa mapa, float delta) {
+    public void setPosicion(float x, float y) {
+        posicionX = x;
+        posicionY = y;
+    }
 
-	    // Energia necesaria para correr durante este frame
-	    float energiaNecesaria = 10f * delta;
+    public void mover(float x, float y, Mapa mapa) {
+        moverConColision(x, y, mapa);
+    }
 
-	    // Si no hay energia suficiente, no puede correr
-	    if (energia <= 0) {
-	        return false;
-	    }
+    public boolean correr(float x, float y, Mapa mapa, float delta) {
+        float energiaNecesaria = 10f * delta;
 
-	    // Si esta pegado a un obstaculo no se mueve ni gasta energia
-	    if (!moverConColision(x, y, mapa)) {
-	        return false;
-	    }
+        if (energia <= 0) {
+            return false;
+        }
 
-	    // Gastar energia proporcionalmente al tiempo
-	    gastarEnergia(energiaNecesaria);
+        if (!moverConColision(x, y, mapa)) {
+            return false;
+        }
 
-	    return true;
-	}
+        gastarEnergia(energiaNecesaria);
+        return true;
+    }
 
-	public float getPosicionX() {
-		return posicionX;
-	}
-	
-	public float getPosicionY() {
-		return posicionY;
-	}
-	
-	
-	// -------------------------------------
-	// Recoleccion de items y mostrar de inventario
-	
-	public void recogerItem(Item item) {
-		inventario.agregarItem(item);	
-	}
-	
-	public void mostrarInventario() {
-		inventario.mostrarInventario();	
-	}
-	
-	public inventario getInventario() {
-	    return inventario;
-	}
-	
-	// --------------------------------------------
-	// Estados de jugador y supervivencia
-	
-	public void mostrarEstado() {
-	    System.out.println("Vida: " + vida);
-	    System.out.println("Hambre: " + hambre);
-	    System.out.println("Energia: " + energia);
-	}
-	
-	// -------------------------------------------------
-	
-	public void comprobarSupervivencia() {
+    public float getPosicionX() {
+        return posicionX;
+    }
 
-	    if (hambre == 0) {
-	        recibirDanio(10);
-	    }
-	}
-	
-	//-------------------------------------------------
-	
-	public int getVida() {
-	    return vida;
-	}
+    public float getPosicionY() {
+        return posicionY;
+    }
 
-	public int getHambre() {
-	    return hambre;
-	}
+    // --------------------------------------------------
+    // INVENTARIO
+    // --------------------------------------------------
 
-	public int getEnergia() {
-	    return (int)energia;
-	}
-	
-	// ---------------------------------------------------------------
-	
-	//  ----------------------------- vida -----------------------------
-	
-	public void recibirDanio(int cantidad) {
+    public void recogerItem(Item item) {
+        if (item != null) {
+            inventario.agregarItem(item);
+        }
+    }
 
-	    vida -= cantidad;
+    public void mostrarInventario() {
+        inventario.mostrarInventario();
+    }
 
-	    if (vida < 0) {
-	        vida = 0;
-	    }
+    public inventario getInventario() {
+        return inventario;
+    }
 
-	    // Informamos al sistema de supervivencia
-	    // que el jugador acaba de recibir daño.
+    // --------------------------------------------------
+    // CONSTRUCCIONES: COMPROBAR Y GASTAR MATERIALES
+    // --------------------------------------------------
 
-	    if (sistemaSupervivencia != null) {
+    public boolean tieneMateriales(String nombre, int cantidad) {
+        if (nombre == null || cantidad <= 0) {
+            return false;
+        }
 
-	        sistemaSupervivencia.registrarDanio();
-	    }
+        return inventario.tieneRecurso(nombre, cantidad);
+    }
 
-	    if (vida == 0) {
+    public boolean gastarMateriales(String nombre, int cantidad) {
+        if (!tieneMateriales(nombre, cantidad)) {
+            return false;
+        }
 
-	        System.out.println(
-	            "El jugador ha muerto."
-	        );
+        inventario.gastarRecurso(nombre, cantidad);
 
-	        System.out.println(
-	            "GAME OVER"
-	        );
-	    }
-	}
-	
-	// Se activa cuando un enemigo le pega al jugador, para que
-	// JugadorControl muestre la animacion de recibir dano.
-	// (el dano por hambre NO lo activa, asi no lo frena cada tick)
-	private boolean golpeRecibido = false;
+        return !inventario.tieneRecurso(nombre, cantidad);
+    }
 
-	public void marcarGolpeRecibido() {
+    // --------------------------------------------------
+    // ESTADO Y SUPERVIVENCIA
+    // --------------------------------------------------
 
-	    if (vida > 0) {
-	        golpeRecibido = true;
-	    }
-	}
+    public void mostrarEstado() {
+        System.out.println("Vida: " + vida);
+        System.out.println("Hambre: " + hambre);
+        System.out.println("Energia: " + energia);
+    }
 
-	// Devuelve true una sola vez por cada golpe recibido
-	public boolean consumirGolpeRecibido() {
+    public void comprobarSupervivencia() {
+        if (hambre == 0) {
+            recibirDanio(10);
+        }
+    }
 
-	    boolean resultado = golpeRecibido;
-	    golpeRecibido = false;
-	    return resultado;
-	}
+    public String getNombre() {
+        return nombre;
+    }
 
-	public void curar(int cantidad) {
+    public int getVida() {
+        return vida;
+    }
 
-	    if (cantidad <= 0) {
-	        return;
-	    }
+    public int getHambre() {
+        return hambre;
+    }
 
-	    vida += cantidad;
+    public int getEnergia() {
+        return (int) energia;
+    }
 
-	    if (vida > 100) {
-	        vida = 100;
-	    }
-	}
-	
-	public boolean estaVivo() {
-	    return vida > 0;
-	}
-	
-	public boolean gameOver() {
-	    return vida <= 0;
-	}
-	
-	// ----------------------------- Energia -----------------------------
-	
-	public void gastarEnergia(float cantidad) {
+    public void recibirDanio(int cantidad) {
+        if (cantidad <= 0 || vida <= 0) {
+            return;
+        }
 
-	    energia -= cantidad;
+        vida -= cantidad;
 
-	    if (energia < 0) {
-	        energia = 0;
-	    }
+        if (vida < 0) {
+            vida = 0;
+        }
 
-	    sistemaEnergia.registrarGasto();
-	}
-	
-	public void recuperarEnergia(float cantidad) {
+        if (sistemaSupervivencia != null) {
+            sistemaSupervivencia.registrarDanio();
+        }
 
-	    energia += cantidad;
+        if (vida == 0) {
+            System.out.println("El jugador ha muerto.");
+            System.out.println("GAME OVER");
+        }
+    }
 
-	    if (energia > 100) {
-	        energia = 100;
-	    }
-	}
-	
-	public void actualizarEnergia(float segundos) {
-	    sistemaEnergia.actualizar(this, segundos);
-	}
+    public void marcarGolpeRecibido() {
+        if (vida > 0) {
+            golpeRecibido = true;
+        }
+    }
 
-	public Energia getSistemaEnergia() {
-	    return sistemaEnergia;
-	}
+    public boolean consumirGolpeRecibido() {
+        boolean resultado = golpeRecibido;
+        golpeRecibido = false;
+        return resultado;
+    }
 
-	
-    // ----------------------------- Hambre -----------------------------
+    public void curar(int cantidad) {
+        if (cantidad <= 0) {
+            return;
+        }
+
+        vida += cantidad;
+
+        if (vida > 100) {
+            vida = 100;
+        }
+    }
+
+    public boolean estaVivo() {
+        return vida > 0;
+    }
+
+    public boolean gameOver() {
+        return vida <= 0;
+    }
+
+    // --------------------------------------------------
+    // ENERGÍA
+    // --------------------------------------------------
+
+    public void gastarEnergia(float cantidad) {
+        if (cantidad <= 0) {
+            return;
+        }
+
+        energia -= cantidad;
+
+        if (energia < 0) {
+            energia = 0;
+        }
+
+        sistemaEnergia.registrarGasto();
+    }
+
+    public void recuperarEnergia(float cantidad) {
+        if (cantidad <= 0) {
+            return;
+        }
+
+        energia += cantidad;
+
+        if (energia > 100) {
+            energia = 100;
+        }
+    }
+
+    public void actualizarEnergia(float segundos) {
+        sistemaEnergia.actualizar(this, segundos);
+    }
+
+    public Energia getSistemaEnergia() {
+        return sistemaEnergia;
+    }
+
+    // --------------------------------------------------
+    // HAMBRE Y COMIDA
+    // --------------------------------------------------
 
     public void perderHambre(int cantidad) {
-
         hambre -= cantidad;
 
         if (hambre < 0) {
@@ -328,7 +322,6 @@ public class Jugador {
     }
 
     public void recuperarHambre(int cantidad) {
-
         hambre += cantidad;
 
         if (hambre > 100) {
@@ -337,297 +330,224 @@ public class Jugador {
     }
 
     public void comer(Comida comida) {
-
         if (comida == null) {
             return;
         }
 
-        if (!inventario.tieneRecurso(
-                comida.getNombre(),
-                1)) {
-
-            System.out.println(
-                "No tenes " +
-                comida.getNombre() +
-                "."
-            );
-
+        if (!inventario.tieneRecurso(comida.getNombre(), 1)) {
+            System.out.println("No tenes " + comida.getNombre() + ".");
             return;
         }
 
         int hambreAntes = hambre;
 
-        recuperarHambre(
-            comida.getHambreRecuperada()
-        );
+        recuperarHambre(comida.getHambreRecuperada());
+        inventario.gastarRecurso(comida.getNombre(), 1);
 
-        inventario.gastarRecurso(
-            comida.getNombre(),
-            1
-        );
-
-        int hambreRecuperada =
-            hambre - hambreAntes;
+        int hambreRecuperada = hambre - hambreAntes;
 
         System.out.println(
-            "Comiste " +
-            comida.getNombre() +
-            " y recuperaste " +
-            hambreRecuperada +
-            " de hambre."
+            "Comiste " + comida.getNombre()
+            + " y recuperaste " + hambreRecuperada
+            + " de hambre."
         );
     }
 
-    public void actualizarSupervivencia(
-        float delta
-    ) {
-
-        sistemaSupervivencia.actualizar(
-            this,
-            delta
-        );
+    public void actualizarSupervivencia(float delta) {
+        sistemaSupervivencia.actualizar(this, delta);
     }
 
     public Supervivencia getSistemaSupervivencia() {
-
         return sistemaSupervivencia;
     }
-	
-	// -----------------------------------------------------------------------
-	
-	// Herramientas y equipacion
-	
-	public void equiparHerramienta(Herramienta herramienta) {
 
-	    herramientaEquipada = herramienta;
+    // --------------------------------------------------
+    // HERRAMIENTAS
+    // --------------------------------------------------
 
-	    if (herramienta != null) {
+    public void equiparHerramienta(Herramienta herramienta) {
+        herramientaEquipada = herramienta;
 
-	        System.out.println(
-	            "Equipaste: " +
-	            herramienta.getNombre()
-	        );
-
-	    } else {
-
-	        System.out.println(
-	            "No tenes ninguna herramienta equipada."
-	        );
-	    }
-	}
-	
-	public Herramienta getHerramientaEquipada() {
-
-	    return herramientaEquipada;
-	}
-	
-	// -------------------------------------------------------------------------
-	// Interacciones
-	
-	public void interactuar(objetoMundo objeto) {
-
-	    tipoHerramienta herramientaNecesaria = objeto.getHerramientaNecesaria();
-
-	    // Comprobar herramienta
-	    if (herramientaNecesaria != null) {
-
-	        if (herramientaEquipada == null) {
-	            System.out.println("No tenes una herramienta equipada.");
-	            return;
-	        }
-
-	        if (herramientaEquipada.getTipo() != herramientaNecesaria) {
-	            System.out.println("La herramienta no sirve para este objeto.");
-	            return;
-	        }
-	    }
-
-	    // Comprobar energía
-	    if (energia < objeto.getEnergiaNecesaria()) {
-	        System.out.println("No tenes suficiente energia.");
-	        return;
-	    }
-
-	    // Obtener recurso
-	    Recursos recurso = objeto.recolectarRecurso();
-
-	    if (recurso == null) {
-	        System.out.println("No queda ningun recurso.");
-	        return;
-	    }
-
-	    // Gastar herramienta
-	    if (herramientaEquipada != null) {
-	        herramientaEquipada.usar();
-	    }
-
-	    // Gastar energía
-	    gastarEnergia(objeto.getEnergiaNecesaria());
-
-	    // Agregar al inventario
-	    inventario.agregarRecurso(recurso, recurso.getCantidad());
-
-	    System.out.println("Conseguiste "
-	            + recurso.getCantidad()
-	            + " de "
-	            + recurso.getNombre()
-	            + ".");
-	}
-	
-	
-	// --------------------------------------------------------
-	// atacar
-	
-	public void atacar(Enemigo enemigo) {
-
-    if (enemigo == null) {
-        return;
+        if (herramienta != null) {
+            System.out.println("Equipaste: " + herramienta.getNombre());
+        } else {
+            System.out.println("No tenes ninguna herramienta equipada.");
+        }
     }
 
-    if (!enemigo.estaVivo()) {
-        return;
+    public Herramienta getHerramientaEquipada() {
+        return herramientaEquipada;
     }
 
-    int daño = 20;
+    // --------------------------------------------------
+    // RECOLECCIÓN GENERAL
+    // --------------------------------------------------
 
-    enemigo.recibirDaño(daño);
+    public void interactuar(objetoMundo objeto) {
+        if (objeto == null) {
+            return;
+        }
 
-    System.out.println(
-        "Atacaste a " +
-        enemigo.getNombre() +
-        " y causaste " +
-        daño +
-        " de daño."
-    );
+        tipoHerramienta herramientaNecesaria =
+            objeto.getHerramientaNecesaria();
 
-    if (!enemigo.estaVivo()) {
+        if (herramientaNecesaria != null) {
+            if (herramientaEquipada == null) {
+                System.out.println("No tenes una herramienta equipada.");
+                return;
+            }
+
+            if (herramientaEquipada.getTipo() != herramientaNecesaria) {
+                System.out.println("La herramienta no sirve para este objeto.");
+                return;
+            }
+        }
+
+        if (energia < objeto.getEnergiaNecesaria()) {
+            System.out.println("No tenes suficiente energia.");
+            return;
+        }
+
+        Recursos recurso = objeto.recolectarRecurso();
+
+        if (recurso == null) {
+            System.out.println("No queda ningun recurso.");
+            return;
+        }
+
+        if (herramientaEquipada != null
+                && !herramientaEquipada.usar()) {
+            return;
+        }
+
+        gastarEnergia(objeto.getEnergiaNecesaria());
+
+        inventario.agregarRecurso(
+            recurso,
+            recurso.getCantidad()
+        );
 
         System.out.println(
-            enemigo.getNombre() +
-            " fue derrotado."
+            "Conseguiste " + recurso.getCantidad()
+            + " de " + recurso.getNombre() + "."
         );
     }
-}
-	
-	// ----------------------------------------------------------
-	
-	// obtener comida
-	
-	public void recogerDropsAnimal(Animal animal) {
 
-	    Recursos[] drops = animal.obtenerDrops();
+    // --------------------------------------------------
+    // COMBATE
+    // --------------------------------------------------
 
-	    if (drops == null) {
+    public void atacar(Enemigo enemigo) {
+        if (enemigo == null || !enemigo.estaVivo()) {
+            return;
+        }
 
-	        System.out.println(
-	            "Este animal no tiene recursos para entregar."
-	        );
+        int danio = 20;
+        enemigo.recibirDaño(danio);
 
-	        return;
-	    }
+        System.out.println(
+            "Atacaste a " + enemigo.getNombre()
+            + " y causaste " + danio + " de daño."
+        );
 
-	    for (int i = 0; i < drops.length; i++) {
+        if (!enemigo.estaVivo()) {
+            System.out.println(enemigo.getNombre() + " fue derrotado.");
+        }
+    }
 
-	        inventario.agregarRecurso(
-	            drops[i],
-	            drops[i].getCantidad()
-	        );
+    // --------------------------------------------------
+    // RECOGER RECURSOS DE ANIMALES
+    // --------------------------------------------------
 
-	        System.out.println(
-	            "Conseguiste "
-	            + drops[i].getCantidad()
-	            + " de "
-	            + drops[i].getNombre()
-	            + "."
-	        );
-	    	}
-		}
+    public void recogerDropsAnimal(Animal animal) {
+        if (animal == null) {
+            return;
+        }
 
-	
-	
-	// ---------------------------------------------------------------------------------
-	// Fabricacion
-	
-	public void fabricar(Receta receta) {
+        Recursos[] drops = animal.obtenerDrops();
 
-	    if (!receta.puedeCrear(inventario)) {
-	        System.out.println("No tenes los recursos necesarios.");
-	        return;
-	    }
+        if (drops == null) {
+            System.out.println("Este animal no tiene recursos para entregar.");
+            return;
+        }
 
-	    receta.gastarIngredientes(inventario);
+        for (Recursos drop : drops) {
+            if (drop == null) {
+                continue;
+            }
 
-	    inventario.agregarItem(receta.getResultado());
+            inventario.agregarRecurso(drop, drop.getCantidad());
 
-	    System.out.println(
-	        "Fabricaste: " + receta.getResultado().getNombre()
-	    );
-	}
-	
-	// ---------------------------------------------------------------------------------
-    //Construir
+            System.out.println(
+                "Conseguiste " + drop.getCantidad()
+                + " de " + drop.getNombre() + "."
+            );
+        }
+    }
+
+    // --------------------------------------------------
+    // FABRICACIÓN
+    // --------------------------------------------------
+
+    public void fabricar(Receta receta) {
+        if (receta == null) {
+            return;
+        }
+
+        if (!receta.puedeCrear(inventario)) {
+            System.out.println("No tenes los recursos necesarios.");
+            return;
+        }
+
+        receta.gastarIngredientes(inventario);
+        inventario.agregarItem(receta.getResultado());
+
+        System.out.println(
+            "Fabricaste: " + receta.getResultado().getNombre()
+        );
+    }
+
+    // --------------------------------------------------
+    // CONSTRUCCIÓN MEDIANTE EL SISTEMA EXISTENTE
+    // --------------------------------------------------
 
     public void construir(Construccion construccion) {
+        if (construccion == null) {
+            return;
+        }
 
-    if (!construccion.puedeConstruir(inventario)) {
+        if (!construccion.puedeConstruir(inventario)) {
+            System.out.println("No tenes los materiales necesarios.");
+            return;
+        }
 
-        System.out.println(
-            "No tenes los materiales necesarios."
-        );
+        construccion.gastarMateriales(inventario);
 
-        return;
+        System.out.println("Construiste: " + construccion.getNombre());
     }
 
-    construccion.gastarMateriales(inventario);
+    // --------------------------------------------------
+    // TALADO DE ÁRBOLES
+    // --------------------------------------------------
 
-    System.out.println(
-        "Construiste: " +
-        construccion.getNombre()
-    );
-}
-// -------------------------------------------------
-
-    // Comprueba SI se puede talar el arbol, sin gastar nada.
-    // Se usa antes de empezar la animacion del hachazo.
     public boolean puedeTalar(arbol arbol) {
-
         if (arbol == null) {
             return false;
         }
 
-        if (herramientaEquipada == null) {
-
-            System.out.println(
-                "Necesitas equipar un hacha para talar."
-            );
-
-            return false;
-        }
-
-        if (herramientaEquipada.getTipo() != tipoHerramienta.HACHA) {
-
-            System.out.println(
-                "Necesitas tener un hacha equipada."
-            );
-
+        if (herramientaEquipada == null
+                || herramientaEquipada.getTipo() != tipoHerramienta.HACHA) {
+            System.out.println("Necesitas tener un hacha equipada.");
             return false;
         }
 
         if (energia < arbol.getEnergiaNecesaria()) {
-
-            System.out.println(
-                "No tienes suficiente energia."
-            );
-
+            System.out.println("No tienes suficiente energia.");
             return false;
         }
 
         if (herramientaEquipada.getDurabilidad() <= 0) {
-
-            System.out.println(
-                "El hacha no tiene suficiente durabilidad."
-            );
-
+            System.out.println("El hacha no tiene suficiente durabilidad.");
             return false;
         }
 
@@ -635,113 +555,67 @@ public class Jugador {
     }
 
     public void talarArbol(arbol arbol, Mapa mapa) {
-
         if (arbol == null || mapa == null) {
             return;
         }
 
-        // Comprobar herramienta equipada
-        if (herramientaEquipada == null) {
-            System.out.println(
-                "Necesitas equipar un hacha para talar."
-            );
+        if (herramientaEquipada == null
+                || herramientaEquipada.getTipo() != tipoHerramienta.HACHA) {
+            System.out.println("Necesitas tener un hacha equipada.");
             return;
         }
 
-        // Comprobar que sea un hacha
-        if (herramientaEquipada.getTipo() != tipoHerramienta.HACHA) {
-            System.out.println(
-                "Necesitas tener un hacha equipada."
-            );
-            return;
-        }
-
-        int energiaNecesaria =
-            arbol.getEnergiaNecesaria();
+        int energiaNecesaria = arbol.getEnergiaNecesaria();
 
         if (energia < energiaNecesaria) {
-            System.out.println(
-                "No tienes suficiente energia."
-            );
+            System.out.println("No tienes suficiente energia.");
             return;
         }
 
-        // Usar el hacha equipada
         if (!herramientaEquipada.usar()) {
             return;
         }
 
         gastarEnergia(energiaNecesaria);
 
-        Recursos madera =
-            arbol.recolectarRecurso();
+        Recursos madera = arbol.recolectarRecurso();
 
         if (madera != null) {
-
-            inventario.agregarRecurso(
-                madera,
-                madera.getCantidad()
-            );
+            inventario.agregarRecurso(madera, madera.getCantidad());
 
             System.out.println(
-                "Conseguiste " +
-                madera.getCantidad() +
-                " de madera."
+                "Conseguiste " + madera.getCantidad() + " de madera."
             );
         }
 
         if (arbol.estaTalado()) {
-
             mapa.eliminarArbol(arbol);
-
-            System.out.println(
-                "El arbol fue talado completamente."
-            );
+            System.out.println("El arbol fue talado completamente.");
         }
     }
-    
-    // Comprueba SI se puede picar la roca, sin gastar nada.
-    // Se usa antes de empezar la animacion: si no se puede
-    // (no hay pico, no hay energia, pico roto), no se anima el golpe.
-    public boolean puedeMinar(roca roca) {
 
+    // --------------------------------------------------
+    // MINADO DE ROCAS
+    // --------------------------------------------------
+
+    public boolean puedeMinar(roca roca) {
         if (roca == null) {
             return false;
         }
 
-        if (herramientaEquipada == null) {
-
-            System.out.println(
-                "Necesitas equipar un pico para minar."
-            );
-
-            return false;
-        }
-
-        if (herramientaEquipada.getTipo() != tipoHerramienta.PICO) {
-
-            System.out.println(
-                "Necesitas tener un pico equipado."
-            );
-
+        if (herramientaEquipada == null
+                || herramientaEquipada.getTipo() != tipoHerramienta.PICO) {
+            System.out.println("Necesitas tener un pico equipado.");
             return false;
         }
 
         if (energia < roca.getEnergiaNecesaria()) {
-
-            System.out.println(
-                "No tienes suficiente energia para minar."
-            );
-
+            System.out.println("No tienes suficiente energia para minar.");
             return false;
         }
 
         if (herramientaEquipada.getDurabilidad() <= 0) {
-
-            System.out.println(
-                "El pico no tiene suficiente durabilidad."
-            );
-
+            System.out.println("El pico no tiene suficiente durabilidad.");
             return false;
         }
 
@@ -749,106 +623,43 @@ public class Jugador {
     }
 
     public void minarRoca(roca roca, Mapa mapa) {
-
         if (roca == null || mapa == null) {
             return;
         }
 
-        // ==================================================
-        // COMPROBAR QUE EL PICO ESTÉ EQUIPADO
-        // ==================================================
-
-        if (herramientaEquipada == null) {
-
-            System.out.println(
-                "Necesitas equipar un pico para minar."
-            );
-
+        if (herramientaEquipada == null
+                || herramientaEquipada.getTipo() != tipoHerramienta.PICO) {
+            System.out.println("Necesitas tener un pico equipado.");
             return;
         }
 
-        if (herramientaEquipada.getTipo() != tipoHerramienta.PICO) {
-
-            System.out.println(
-                "Necesitas tener un pico equipado."
-            );
-
-            return;
-        }
-
-
-        // ==================================================
-        // COMPROBAR ENERGÍA
-        // ==================================================
-
-        int energiaNecesaria =
-            roca.getEnergiaNecesaria();
+        int energiaNecesaria = roca.getEnergiaNecesaria();
 
         if (energia < energiaNecesaria) {
-
-            System.out.println(
-                "No tienes suficiente energia para minar."
-            );
-
+            System.out.println("No tienes suficiente energia para minar.");
             return;
         }
-
-
-        // ==================================================
-        // USAR EL PICO
-        // ==================================================
 
         if (!herramientaEquipada.usar()) {
-
-            System.out.println(
-                "El pico no tiene suficiente durabilidad."
-            );
-
+            System.out.println("El pico no tiene suficiente durabilidad.");
             return;
         }
-
-
-        // ==================================================
-        // GASTAR ENERGÍA
-        // ==================================================
 
         gastarEnergia(energiaNecesaria);
 
-
-        // ==================================================
-        // OBTENER PIEDRA
-        // ==================================================
-
-        Recursos piedra =
-            roca.recolectarRecurso();
+        Recursos piedra = roca.recolectarRecurso();
 
         if (piedra != null) {
-
-            inventario.agregarRecurso(
-                piedra,
-                piedra.getCantidad()
-            );
+            inventario.agregarRecurso(piedra, piedra.getCantidad());
 
             System.out.println(
-                "Conseguiste " +
-                piedra.getCantidad() +
-                " de piedra."
+                "Conseguiste " + piedra.getCantidad() + " de piedra."
             );
         }
-
-
-        // ==================================================
-        // COMPROBAR SI LA ROCA SE AGOTÓ
-        // ==================================================
 
         if (roca.estaAgotada()) {
-
             mapa.eliminarRoca(roca);
-
-            System.out.println(
-                "La roca se agoto."
-            );
+            System.out.println("La roca se agoto.");
         }
     }
-	
 }

@@ -965,6 +965,16 @@ public class RecetarioUI {
     public boolean estaAbierto() {
         return abierto;
     }
+    
+	 // =====================================================
+	 // ABRIR RECETARIO DESDE OTRA CLASE
+	 // =====================================================
+	
+	 public void abrir() {
+	     abierto = true;
+	     recetaSeleccionada = -1;
+	     mousePresionadoAnteriormente = false;
+	 }
 
     // =====================================================
     // DISPOSE
@@ -981,5 +991,7 @@ public class RecetarioUI {
         slotSeleccionadoTexture.dispose();
 
         fuente.dispose();
+        
+        
     }
 }
