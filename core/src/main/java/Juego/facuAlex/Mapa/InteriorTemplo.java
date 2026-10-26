@@ -1,3 +1,4 @@
+
 package Juego.facuAlex.Mapa;
 
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -16,34 +17,28 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.utils.Array;
 
-/**
- * Interior del templo: el mapa hecho en Tiled (.tmx).
- *
- *  - Capas de tiles: todas se dibujan (menos "colision", que se oculta).
- *  - Capa de OBJETOS "colisiones": rectangulos o poligonos solidos.
- *  - Capa de TILES "colision" (opcional): cada tile dibujado es solido.
- *  - Capa de OBJETOS "objetos": spawn_jugador, spawn_guardian, salida.
- */
 public class InteriorTemplo {
 
-    private static final String CAPA_COLISIONES      = "colisiones";
-    private static final String CAPA_COLISION_TILES  = "colision";
-    private static final String CAPA_OBJETOS         = "objetos";
+    private static final String CAPA_COLISIONES = "colisiones";
+    private static final String CAPA_COLISION_TILES = "colision";
+    private static final String CAPA_PAREDES = "paredes";
+    private static final String CAPA_OBJETOS = "objetos";
+    private static final String CAPA_PISO = "piso"; // NUEVO
 
-    private static final String OBJ_SPAWN_JUGADOR  = "spawn_jugador";
+    private static final String OBJ_SPAWN_JUGADOR = "spawn_jugador";
     private static final String OBJ_SPAWN_GUARDIAN = "spawn_guardian";
-    private static final String OBJ_SALIDA         = "salida";
+    private static final String OBJ_SALIDA = "salida";
 
-	    // true  = el jugador SIEMPRE entra por el centro del mapa
-	    // false = usa "spawn_jugador" de Tiled y, si falta, el centro
-	    private static final boolean FORZAR_SPAWN_CENTRO = true;
-    
+    private static final boolean FORZAR_SPAWN_CENTRO = true;
+
     private final TiledMap mapa;
     private final OrthogonalTiledMapRenderer renderer;
     private final float escala;
 
     private final Array<Rectangle> colisiones = new Array<Rectangle>();
     private final Rectangle salida = new Rectangle();
+
+    private TiledMapTileLayer capaPiso; // NUEVO
 
     private float spawnJugadorX, spawnJugadorY;
     private float spawnGuardianX, spawnGuardianY;
@@ -69,24 +64,37 @@ public class InteriorTemplo {
         renderer = new OrthogonalTiledMapRenderer(mapa, escala);
 
         int tilesAncho = mapa.getProperties().get("width", Integer.class);
-        int tilesAlto  = mapa.getProperties().get("height", Integer.class);
+        int tilesAlto = mapa.getProperties().get("height", Integer.class);
+
         tileAncho = mapa.getProperties().get("tilewidth", Integer.class);
-        tileAlto  = mapa.getProperties().get("tileheight", Integer.class);
+        tileAlto = mapa.getProperties().get("tileheight", Integer.class);
 
         anchoMundo = tilesAncho * tileAncho * escala;
-        altoMundo  = tilesAlto * tileAlto * escala;
+        altoMundo = tilesAlto * tileAlto * escala;
 
+        cargarCapaPiso(); // NUEVO
         cargarColisionesObjetos();
         cargarColisionesTiles();
+        cargarColisionesCapaParedes();
         cargarObjetos();
         aplicarRespaldos();
-        
     }
 
-    // =====================================================
-    // CARGA DEL MAPA
-    // =====================================================
+    // NUEVO: carga la capa que indica dónde se puede caminar.
+    private void cargarCapaPiso() {
+        MapLayer capa = mapa.getLayers().get(CAPA_PISO);
 
+        if (capa instanceof TiledMapTileLayer) {
+            capaPiso = (TiledMapTileLayer) capa;
+        } else {
+            capaPiso = null;
+            System.out.println(
+                "Aviso: no se encontró la capa de tiles 'piso'."
+            );
+        }
+    }
+
+    // Carga las colisiones definidas como objetos en Tiled.
     private void cargarColisionesObjetos() {
 
         MapLayer capa = mapa.getLayers().get(CAPA_COLISIONES);
@@ -101,23 +109,23 @@ public class InteriorTemplo {
 
             if (objeto instanceof RectangleMapObject) {
 
-                Rectangle r = ((RectangleMapObject) objeto).getRectangle();
+                Rectangle r = ((RectangleMapObject) objeto)
+                        .getRectangle();
+
                 colisiones.add(escalar(r));
 
             } else if (objeto instanceof PolygonMapObject) {
 
-                // Se usa la caja envolvente del poligono
-                Rectangle r = ((PolygonMapObject) objeto).getPolygon()
+                Rectangle r = ((PolygonMapObject) objeto)
+                        .getPolygon()
                         .getBoundingRectangle();
+
                 colisiones.add(escalar(r));
-
-            } else {
-
-              
             }
         }
     }
 
+    // Carga las colisiones de una capa técnica de tiles.
     private void cargarColisionesTiles() {
 
         MapLayer capa = mapa.getLayers().get(CAPA_COLISION_TILES);
@@ -127,8 +135,6 @@ public class InteriorTemplo {
         }
 
         hayCapaColisiones = true;
-
-        // Es una capa tecnica: se usa para colisionar, no se dibuja
         capa.setVisible(false);
 
         TiledMapTileLayer tiles = (TiledMapTileLayer) capa;
@@ -137,17 +143,51 @@ public class InteriorTemplo {
         float th = tiles.getTileHeight() * escala;
 
         for (int cx = 0; cx < tiles.getWidth(); cx++) {
-
             for (int cy = 0; cy < tiles.getHeight(); cy++) {
 
                 if (tiles.getCell(cx, cy) != null) {
-
-                    colisiones.add(new Rectangle(cx * tw, cy * th, tw, th));
+                    colisiones.add(
+                        new Rectangle(cx * tw, cy * th, tw, th)
+                    );
                 }
             }
         }
     }
 
+    /*
+     * Si el mapa no tiene una capa técnica de colisiones,
+     * usamos los tiles ocupados de la capa "paredes".
+     */
+    private void cargarColisionesCapaParedes() {
+
+        if (hayCapaColisiones) {
+            return;
+        }
+
+        MapLayer capa = mapa.getLayers().get(CAPA_PAREDES);
+
+        if (!(capa instanceof TiledMapTileLayer)) {
+            return;
+        }
+
+        TiledMapTileLayer tiles = (TiledMapTileLayer) capa;
+
+        float tw = tiles.getTileWidth() * escala;
+        float th = tiles.getTileHeight() * escala;
+
+        for (int cx = 0; cx < tiles.getWidth(); cx++) {
+            for (int cy = 0; cy < tiles.getHeight(); cy++) {
+
+                if (tiles.getCell(cx, cy) != null) {
+                    colisiones.add(
+                        new Rectangle(cx * tw, cy * th, tw, th)
+                    );
+                }
+            }
+        }
+    }
+
+    // Carga la salida y las posiciones de aparición.
     private void cargarObjetos() {
 
         MapLayer capa = mapa.getLayers().get(CAPA_OBJETOS);
@@ -169,35 +209,43 @@ public class InteriorTemplo {
             if (nombre.equals(OBJ_SALIDA)) {
 
                 if (objeto instanceof RectangleMapObject) {
+                    salida.set(escalar(
+                        ((RectangleMapObject) objeto).getRectangle()
+                    ));
 
-                    salida.set(escalar(((RectangleMapObject) objeto).getRectangle()));
                     encontroSalida = true;
                 }
 
             } else if (nombre.equals(OBJ_SPAWN_JUGADOR)) {
 
                 float[] p = posicionDe(objeto);
+
                 spawnJugadorX = p[0];
                 spawnJugadorY = p[1];
+
                 encontroSpawnJugador = true;
 
             } else if (nombre.equals(OBJ_SPAWN_GUARDIAN)) {
 
                 float[] p = posicionDe(objeto);
+
                 spawnGuardianX = p[0];
                 spawnGuardianY = p[1];
+
                 encontroSpawnGuardian = true;
             }
         }
     }
 
     private Rectangle escalar(Rectangle r) {
-        return new Rectangle(r.x * escala, r.y * escala,
-                             r.width * escala, r.height * escala);
+        return new Rectangle(
+            r.x * escala,
+            r.y * escala,
+            r.width * escala,
+            r.height * escala
+        );
     }
 
-    // Posicion de un objeto (punto o rectangulo) ya escalada.
-    // En un rectangulo se usa el centro de su borde inferior (los "pies").
     private float[] posicionDe(MapObject objeto) {
 
         if (objeto instanceof RectangleMapObject) {
@@ -217,49 +265,40 @@ public class InteriorTemplo {
             return new float[] { 0f, 0f };
         }
 
-        return new float[] { px * escala, py * escala };
+        return new float[] {
+            px * escala,
+            py * escala
+        };
     }
 
     private void aplicarRespaldos() {
 
-        // El jugador entra por el centro del mapa
         if (FORZAR_SPAWN_CENTRO || !encontroSpawnJugador) {
-
-            
-
             spawnJugadorX = anchoMundo / 2f;
             spawnJugadorY = altoMundo / 2f;
         }
 
         if (!encontroSpawnGuardian) {
-
             spawnGuardianX = anchoMundo / 2f;
             spawnGuardianY = altoMundo * 0.75f;
-
-            
         }
 
         if (!encontroSalida) {
 
             float ancho = tileAncho * escala * 3f;
+            float alto = tileAlto * escala * 2f;
+            float y = tileAlto * escala * 3f;
 
-            salida.set(anchoMundo / 2f - ancho / 2f, 0f, ancho, altoMundo * 0.1f);
-
-            
+            salida.set(
+                anchoMundo / 2f - ancho / 2f,
+                y,
+                ancho,
+                alto
+            );
         }
     }
 
-   
-
-    // =====================================================
-    // SPAWN SEGURO
-    // =====================================================
-
-    /**
-     * Llamar UNA vez despues de crear el templo, pasando el tamano de la
-     * hitbox de los pies del jugador. Si el spawn cae dentro de una pared,
-     * lo mueve al punto libre mas cercano (busqueda en espiral).
-     */
+    // Busca una posición libre para el jugador al aparecer.
     public void ubicarSpawnLibre(float anchoPies, float altoPies) {
 
         Rectangle prueba = new Rectangle(0, 0, anchoPies, altoPies);
@@ -271,38 +310,34 @@ public class InteriorTemplo {
 
             for (float ang = 0; ang < 360f; ang += 15f) {
 
-                float x = spawnJugadorX + MathUtils.cosDeg(ang) * radio;
-                float y = spawnJugadorY + MathUtils.sinDeg(ang) * radio;
+                float x = spawnJugadorX
+                    + MathUtils.cosDeg(ang) * radio;
+
+                float y = spawnJugadorY
+                    + MathUtils.sinDeg(ang) * radio;
 
                 prueba.setPosition(x - anchoPies / 2f, y);
 
                 if (!colisiona(prueba)) {
-
-                    
-
                     spawnJugadorX = x;
                     spawnJugadorY = y;
                     return;
                 }
             }
         }
-
-        
     }
 
-    // =====================================================
-    // DIBUJO
-    // =====================================================
-
-    // Llamar ANTES de batch.begin() (el mapa usa su propio batch)
+    // Dibuja el mapa.
     public void dibujar(OrthographicCamera camara) {
-
         renderer.setView(camara);
         renderer.render();
     }
 
-    // Llamar SOLO cuando el jugador esta en la salida (dentro de batch.begin/end)
-    public void dibujarCartelSalida(SpriteBatch batch, BitmapFont font) {
+    // Dibuja el mensaje de salida.
+    public void dibujarCartelSalida(
+        SpriteBatch batch,
+        BitmapFont font
+    ) {
 
         String texto = "Presiona E para salir";
 
@@ -316,40 +351,62 @@ public class InteriorTemplo {
         );
     }
 
-    // Centra la camara en el jugador sin mostrar nada fuera del mapa
-    public void ajustarCamara(OrthographicCamera camara, float objetivoX, float objetivoY) {
+    // Mantiene la cámara dentro de los límites del mapa.
+    public void ajustarCamara(
+        OrthographicCamera camara,
+        float objetivoX,
+        float objetivoY
+    ) {
 
         float mitadAncho = camara.viewportWidth * camara.zoom / 2f;
-        float mitadAlto  = camara.viewportHeight * camara.zoom / 2f;
+        float mitadAlto = camara.viewportHeight * camara.zoom / 2f;
 
         float cx = (anchoMundo <= mitadAncho * 2f)
-                ? anchoMundo / 2f
-                : MathUtils.clamp(objetivoX, mitadAncho, anchoMundo - mitadAncho);
+            ? anchoMundo / 2f
+            : MathUtils.clamp(
+                objetivoX, mitadAncho, anchoMundo - mitadAncho
+            );
 
         float cy = (altoMundo <= mitadAlto * 2f)
-                ? altoMundo / 2f
-                : MathUtils.clamp(objetivoY, mitadAlto, altoMundo - mitadAlto);
+            ? altoMundo / 2f
+            : MathUtils.clamp(
+                objetivoY, mitadAlto, altoMundo - mitadAlto
+            );
 
         camara.position.set(cx, cy, 0f);
         camara.update();
     }
 
-    // =====================================================
-    // COLISION Y SALIDA
-    // =====================================================
-
+    // Comprueba si los pies del jugador chocan contra una pared
+    // o están fuera del suelo del templo.
     public boolean colisiona(Rectangle pies) {
 
-        // Fuera del mapa cuenta como pared
+        // Fuera de los límites del mapa.
         if (pies.x < 0 || pies.y < 0
-                || pies.x + pies.width > anchoMundo
-                || pies.y + pies.height > altoMundo) {
-
+            || pies.x + pies.width > anchoMundo
+            || pies.y + pies.height > altoMundo) {
             return true;
         }
 
-        for (Rectangle pared : colisiones) {
+        // NUEVO: comprobar que debajo de los pies haya suelo.
+        if (capaPiso != null) {
 
+            float centroX = pies.x + pies.width / 2f;
+            float centroY = pies.y + pies.height / 2f;
+
+            int tileX = (int) (centroX / (tileAncho * escala));
+            int tileY = (int) (centroY / (tileAlto * escala));
+
+            if (tileX < 0 || tileY < 0
+                || tileX >= capaPiso.getWidth()
+                || tileY >= capaPiso.getHeight()
+                || capaPiso.getCell(tileX, tileY) == null) {
+                return true;
+            }
+        }
+
+        // Mantener las colisiones existentes con las paredes.
+        for (Rectangle pared : colisiones) {
             if (pared.overlaps(pies)) {
                 return true;
             }
@@ -362,21 +419,29 @@ public class InteriorTemplo {
         return salida.overlaps(pies);
     }
 
-    // =====================================================
-    // GETTERS
-    // =====================================================
+    public float getSpawnJugadorX() {
+        return spawnJugadorX;
+    }
 
-    public float getSpawnJugadorX()  { return spawnJugadorX; }
+    public float getSpawnJugadorY() {
+        return spawnJugadorY;
+    }
 
-    public float getSpawnJugadorY()  { return spawnJugadorY; }
+    public float getSpawnGuardianX() {
+        return spawnGuardianX;
+    }
 
-    public float getSpawnGuardianX() { return spawnGuardianX; }
+    public float getSpawnGuardianY() {
+        return spawnGuardianY;
+    }
 
-    public float getSpawnGuardianY() { return spawnGuardianY; }
+    public float getAnchoMundo() {
+        return anchoMundo;
+    }
 
-    public float getAnchoMundo()     { return anchoMundo; }
-
-    public float getAltoMundo()      { return altoMundo; }
+    public float getAltoMundo() {
+        return altoMundo;
+    }
 
     public void dispose() {
         renderer.dispose();
