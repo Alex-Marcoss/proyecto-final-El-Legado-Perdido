@@ -134,3 +134,8 @@
 - El guardian ya tiene ataques propios animados y muerte animada.
 - El hambre se conecta con la vida permitiendo recuperarla si tiene suficiente y perderla si queda en 0.
 
+## [Nuevos avances y mejoras] 2026-10-025
+### Agregados
+- Se pusieron los limites del templo asi el jugador no podra atravesar las paredes ni salir de la estructura del templo.
+- se agregaron los sprites de golpear con respectivos objetos.
+
