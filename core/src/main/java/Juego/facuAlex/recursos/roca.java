@@ -1,5 +1,6 @@
 package Juego.facuAlex.recursos;
 
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Rectangle;
@@ -8,23 +9,17 @@ import Juego.facuAlex.Herramientas.tipoHerramienta;
 
 public class roca extends objetoMundo {
 
-    private int piedraDisponible;
+    // Veces que se puede minar
+    protected int usosRestantes;
 
     private Texture textura;
+    private final Color tinte;      // null = sin tinte
 
     private float posicionX;
     private float posicionY;
 
-    // ==========================================================
-    // TAMAÑO VISUAL
-    // ==========================================================
-
     private static final float ANCHO = 80f;
     private static final float ALTO = 80f;
-
-    // ==========================================================
-    // HITBOX
-    // ==========================================================
 
     // El sprite tiene ~9px transparentes abajo, por eso la hitbox
     // arranca un poco mas arriba de la posicion de la roca.
@@ -32,22 +27,22 @@ public class roca extends objetoMundo {
     private static final float HITBOX_ALTO = 26f;
     private static final float HITBOX_OFFSET_Y = 8f;
 
-    // ==========================================================
-    // CONSTRUCTOR
-    // ==========================================================
-
     public roca(float x, float y) {
+        this("Roca", x, y, "recursos/Roca.png", null);
+    }
 
-        super("Roca");
+    // Para las menas
+    protected roca(String nombre, float x, float y,
+                   String rutaTextura, Color tinte) {
+
+        super(nombre);
 
         posicionX = x;
         posicionY = y;
+        usosRestantes = 3;
+        this.tinte = tinte;
 
-        // Cantidad de veces que se puede minar
-        piedraDisponible = 3;
-
-        // Cargar textura
-        textura = new Texture("recursos/Roca.png");
+        textura = new Texture(rutaTextura);
 
         textura.setFilter(
             Texture.TextureFilter.Nearest,
@@ -55,11 +50,11 @@ public class roca extends objetoMundo {
         );
     }
 
-    // ==========================================================
-    // DIBUJAR
-    // ==========================================================
-
     public void dibujar(SpriteBatch batch) {
+
+        if (tinte != null) {
+            batch.setColor(tinte);
+        }
 
         batch.draw(
             textura,
@@ -68,11 +63,11 @@ public class roca extends objetoMundo {
             ANCHO,
             ALTO
         );
-    }
 
-    // ==========================================================
-    // HITBOX
-    // ==========================================================
+        if (tinte != null) {
+            batch.setColor(Color.WHITE);
+        }
+    }
 
     public Rectangle getHitbox() {
 
@@ -84,15 +79,9 @@ public class roca extends objetoMundo {
         );
     }
 
-    // Altura (Y) que se usa para decidir si la roca se dibuja
-    // detras o delante del jugador.
     public float getYOrden() {
         return posicionY + HITBOX_OFFSET_Y + HITBOX_ALTO / 2f;
     }
-
-    // ==========================================================
-    // POSICIÓN
-    // ==========================================================
 
     public float getPosicionX() {
         return posicionX;
@@ -102,89 +91,52 @@ public class roca extends objetoMundo {
         return posicionY;
     }
 
-    // ==========================================================
-    // HERRAMIENTA NECESARIA
-    // ==========================================================
-
     @Override
     public tipoHerramienta getHerramientaNecesaria() {
-
         return tipoHerramienta.PICO;
     }
 
-    // ==========================================================
-    // RECOLECTAR PIEDRA
-    // ==========================================================
+    // Nivel de pico que hace falta: 1 = cualquiera, 2 = pico de hierro
+    public int getNivelMinimo() {
+        return 1;
+    }
 
     @Override
     public Recursos recolectarRecurso() {
 
-        if (piedraDisponible <= 0) {
+        if (usosRestantes <= 0) {
             return null;
         }
 
         // Entrega entre 1 y 2 piedras
-        int cantidad =
-            (int) (Math.random() * 2) + 1;
+        int cantidad = (int) (Math.random() * 2) + 1;
 
-        piedraDisponible--;
+        usosRestantes--;
 
-        Recursos piedra =
-            new Recursos("Piedra", cantidad);
-
-        piedra.cargarIcono(
-            "objetos/piedra.png"
-        );
+        Recursos piedra = new Recursos("Piedra", cantidad);
+        piedra.cargarIcono("objetos/piedra.png");
 
         return piedra;
     }
 
-    // ==========================================================
-    // ENERGÍA NECESARIA
-    // ==========================================================
-
     @Override
     public int getEnergiaNecesaria() {
-
         return 5;
     }
 
-    // ==========================================================
-    // COMPROBAR SI SE AGOTÓ
-    // ==========================================================
-
     public boolean estaAgotada() {
-
-        return piedraDisponible <= 0;
+        return usosRestantes <= 0;
     }
 
-    // ==========================================================
-    // COMPROBAR DISTANCIA
-    // ==========================================================
+    public boolean estaCerca(float jugadorX, float jugadorY, float distancia) {
 
-    public boolean estaCerca(
-        float jugadorX,
-        float jugadorY,
-        float distancia
-    ) {
+        float dx = jugadorX - posicionX;
+        float dy = jugadorY - posicionY;
 
-        float dx =
-            jugadorX - posicionX;
-
-        float dy =
-            jugadorY - posicionY;
-
-        float distanciaReal =
-            (float) Math.sqrt(
-                dx * dx + dy * dy
-            );
+        float distanciaReal = (float) Math.sqrt(dx * dx + dy * dy);
 
         return distanciaReal <= distancia;
     }
-
-    // ==========================================================
-    // DISPOSE
-    // ==========================================================
 
     public void dispose() {
 

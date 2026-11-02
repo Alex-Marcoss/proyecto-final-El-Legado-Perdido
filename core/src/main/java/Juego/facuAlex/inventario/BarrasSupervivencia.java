@@ -46,7 +46,15 @@ public class BarrasSupervivencia {
     private static final float ALTO_TEXTURE = 464f;
 
    
+ // Franja azul de armadura, justo debajo de la barra de vida
+    private static final float Y_ARMADURA = 128f;     // desde arriba del PNG
+    private static final float ALTO_ARMADURA = 26f;
 
+    private static final Color COLOR_ARMADURA =
+            new Color(0.25f, 0.55f, 1f, 1f);
+
+    private static final Color COLOR_FONDO_ARMADURA =
+            new Color(0.05f, 0.06f, 0.10f, 0.85f);
    
 
     
@@ -213,7 +221,7 @@ public class BarrasSupervivencia {
                 Y_ENERGIA,
                 COLOR_ENERGIA
         );
-
+        dibujarArmadura();
 
         batch.setColor(Color.WHITE);
 
@@ -311,6 +319,34 @@ public class BarrasSupervivencia {
                 alto
         );
 
+
+        batch.setColor(Color.WHITE);
+    }
+    
+    private void dibujarArmadura() {
+
+        int maxima = jugador.getProteccionMaxima();
+
+        if (maxima <= 0) {
+            return;
+        }
+
+        float porcentaje = Math.max(0f, Math.min(1f,
+                jugador.getProteccion() / (float) maxima));
+
+        float x = POSICION_X + X_RELLENO * ESCALA;
+
+        float y = POSICION_Y
+                + (ALTO_TEXTURE - Y_ARMADURA - ALTO_ARMADURA) * ESCALA;
+
+        float ancho = ANCHO_RELLENO * ESCALA;
+        float alto = ALTO_ARMADURA * ESCALA;
+
+        batch.setColor(COLOR_FONDO_ARMADURA);
+        batch.draw(texturaPixel, x, y, ancho, alto);
+
+        batch.setColor(COLOR_ARMADURA);
+        batch.draw(texturaPixel, x, y, ancho * porcentaje, alto);
 
         batch.setColor(Color.WHITE);
     }

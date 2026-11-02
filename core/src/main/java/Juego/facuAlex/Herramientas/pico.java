@@ -12,6 +12,6 @@ public class pico extends Herramienta {
             tipoHerramienta.PICO
         );
 
-        cargarIcono("objetos/pico.png");
+        cargarIcono("objetos/pico_basico.png");
     }
 }

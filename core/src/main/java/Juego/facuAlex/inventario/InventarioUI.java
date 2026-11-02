@@ -181,6 +181,21 @@ public class InventarioUI {
             mouseArrastreX = mouseX;
             mouseArrastreY = mouseY;
         }
+        
+     // Click derecho: usar el item (equipar armadura, vendaje)
+        if (Gdx.input.isButtonJustPressed(Input.Buttons.RIGHT)) {
+
+            int slotUsado = obtenerSlotDesdeMouse(mouseX, mouseY);
+
+            if (slotUsado != -1) {
+
+                Item itemUsado = jugador.getInventario().getItem(slotUsado);
+
+                if (itemUsado != null) {
+                    jugador.usarItem(itemUsado);
+                }
+            }
+        }
 
         // ---------- SOLTAR ----------
         if (!mousePresionado && mousePresionadoAnteriormente && arrastrando) {
@@ -327,6 +342,17 @@ public class InventarioUI {
             if (item instanceof Recursos) {
                 dibujarCantidad((Recursos) item, x, y);
             }
+            
+         // La armadura puesta se marca en azul
+            Item enSlot = jugador.getInventario().getItem(i);
+
+            if (enSlot != null && enSlot == jugador.getArmaduraEquipada()) {
+
+                batchInventario.setColor(0.3f, 0.6f, 1f, 0.45f);
+                batchInventario.draw(slotTexture, x, y, anchoSlot(), altoSlot());
+                batchInventario.setColor(1f, 1f, 1f, 1f);
+            }
+            
         }
 
         // Objeto arrastrado (encima de todo)

@@ -28,7 +28,7 @@ public class GestorCriaturas {
 
 	// Solo se retiran criaturas que están más lejos que esto
 	private static final float DIST_FUERA_DE_VISTA = 750f;
-
+	private static final float DISTANCIA_PELIGRO = 100f;
 	private static final float INTERVALO_AJUSTE = 1f;
 
 	private float temporizador = 0f;
@@ -40,6 +40,28 @@ public class GestorCriaturas {
 	        colocar(new Vaca(), mapa, jugador, 0f);
 	    }
 	}
+	
+	public boolean hayEnemigosCerca(Jugador jugador) {
+
+	    for (Criatura c : criaturas) {
+
+	        if ((c instanceof Lobo || c instanceof Arana)
+	                && c.estaVivo()
+	                && distanciaAlJugador(c, jugador) <= DISTANCIA_PELIGRO) {
+
+	            return true;
+	        }
+	    }
+
+	    return false;
+	}
+
+	// Se usa con la pantalla en negro, así no hay "pop" visible
+	public void despejarEnemigos() {
+
+	    criaturas.removeIf(c -> c instanceof Lobo || c instanceof Arana);
+	}
+	
 
     private final List<Criatura> criaturas = new ArrayList<Criatura>();
 

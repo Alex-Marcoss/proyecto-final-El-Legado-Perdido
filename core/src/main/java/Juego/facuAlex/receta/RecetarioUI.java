@@ -1,6 +1,7 @@
 package Juego.facuAlex.receta;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.badlogic.gdx.Gdx;
@@ -15,6 +16,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
 import Juego.facuAlex.Proporcion;
 import Juego.facuAlex.jugador.Jugador;
+import Juego.facuAlex.recursos.Catalogo;
 import Juego.facuAlex.recursos.Item;
 import Juego.facuAlex.recursos.Recursos;
 
@@ -42,6 +44,18 @@ public class RecetarioUI {
     private final Map<Texture, TextureRegion> cacheIconos =
             new HashMap<>();
 
+    // Íconos de muestra para ingredientes que el jugador no tiene
+    // (se crean una sola vez)
+    private final Map<String, Item> itemsDeMuestra = new HashMap<>();
+
+    // Aviso de recetas nuevas
+    private static final float AVISO_Y = 40f;   // desde abajo; ajustalo al arte del panel
+    private String aviso;
+    private float tiempoAviso;
+
+    // Principal lo actualiza en cada frame: ¿hay una mesa de fabricación cerca?
+    private boolean mesaCerca;
+
     // =====================================================
     // RESOLUCIÓN
     // =====================================================
@@ -60,8 +74,7 @@ public class RecetarioUI {
     private static final float PANEL_ALTO = 600f;
 
     // =====================================================
-    // SLOTS DE RECETAS
-    // Coordenadas dadas por el JSON.
+    // SLOTS DE RECETAS (coordenadas dadas por el JSON)
     // =====================================================
 
     private static final float[] RECETAS_X = {
@@ -175,35 +188,93 @@ public class RecetarioUI {
     }
 
     // =====================================================
+    // ABRIR / CERRAR
+    // =====================================================
+
+    // Desde la mesa de fabricación: muestra TODAS las recetas
+    public void abrir() {
+        abrirModo(false);
+    }
+
+    // Con la tecla C: solo las recetas que no necesitan mesa
+    private void abrirComun() {
+        abrirModo(true);
+    }
+
+    private void abrirModo(boolean comun) {
+
+        recetario.setSoloSinMesa(comun);
+
+        abierto = true;
+        recetaSeleccionada = -1;
+        mousePresionadoAnteriormente = false;
+
+        revisarDesbloqueos();
+    }
+
+    private void cerrar() {
+
+        abierto = false;
+        recetaSeleccionada = -1;
+    }
+
+    public boolean estaAbierto() {
+        return abierto;
+    }
+
+    // Busca recetas que se hayan desbloqueado y avisa
+    private void revisarDesbloqueos() {
+
+        List<String> nuevas =
+                recetario.actualizarDesbloqueos(jugador.getInventario());
+
+        if (nuevas.isEmpty()) {
+            return;
+        }
+
+        aviso = nuevas.size() == 1
+                ? "Nueva receta: " + nuevas.get(0)
+                : "Nuevas recetas: " + String.join(", ", nuevas);
+
+        tiempoAviso = 4f;
+    }
+
+    // =====================================================
     // ACTUALIZAR
     // =====================================================
 
+    public void setMesaCerca(boolean mesaCerca) {
+        this.mesaCerca = mesaCerca;
+    }
+
     public void actualizar() {
-
-        // -----------------------------------------------
-        // ABRIR / CERRAR CON C
-        // -----------------------------------------------
-
-        if (Gdx.input.isKeyJustPressed(Input.Keys.C)) {
-
-            abierto = !abierto;
-
-            if (!abierto) {
-
-                recetaSeleccionada = -1;
-            }
-        }
 
         if (!abierto) {
 
             mousePresionadoAnteriormente = false;
 
+            // C abre el recetario común desde cualquier lado
+            // (solo las recetas que no necesitan mesa).
+            if (Gdx.input.isKeyJustPressed(Input.Keys.C)) {
+                abrirComun();
+            }
+
             return;
         }
 
-        // -----------------------------------------------
-        // MOUSE
-        // -----------------------------------------------
+        // Se cierra con C, E o ESC
+        if (Gdx.input.isKeyJustPressed(Input.Keys.C)
+                || Gdx.input.isKeyJustPressed(Input.Keys.E)
+                || Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+
+            cerrar();
+
+            return;
+        }
+
+        if (tiempoAviso > 0f) {
+            tiempoAviso -= Gdx.graphics.getDeltaTime();
+        }
 
         boolean mousePresionado =
                 Gdx.input.isButtonPressed(Input.Buttons.LEFT);
@@ -211,10 +282,6 @@ public class RecetarioUI {
         float mouseX = convertirMouseX();
 
         float mouseY = convertirMouseY();
-
-        // -----------------------------------------------
-        // CLICK
-        // -----------------------------------------------
 
         if (mousePresionado && !mousePresionadoAnteriormente) {
 
@@ -230,13 +297,8 @@ public class RecetarioUI {
                 }
             }
 
-            // -------------------------------------------
-            // BOTÓN CRAFTEAR
-            // -------------------------------------------
-
-            if (estaDentroBoton(
-                    mouseX,
-                    mouseY)) {
+            // Botón craftear
+            if (estaDentroBoton(mouseX, mouseY)) {
 
                 fabricarRecetaSeleccionada();
             }
@@ -258,10 +320,6 @@ public class RecetarioUI {
 
         return Proporcion.mouseY();
     }
-
-    // =====================================================
-    // OBTENER RECETA CON MOUSE
-    // =====================================================
 
     private int obtenerRecetaDesdeMouse(
             float mouseX,
@@ -287,10 +345,6 @@ public class RecetarioUI {
 
         return -1;
     }
-
-    // =====================================================
-    // BOTÓN
-    // =====================================================
 
     private boolean estaDentroBoton(
             float mouseX,
@@ -324,17 +378,23 @@ public class RecetarioUI {
             return;
         }
 
-        if (!receta.puedeCrear(
-                jugador.getInventario())) {
-
+        if (receta.requiereMesa() && !mesaCerca) {
             System.out.println(
-                    "No tenes los materiales necesarios."
+                    "Necesitas estar cerca de una mesa de fabricacion."
             );
-
             return;
         }
 
-        jugador.fabricar(receta);
+        if (!jugador.fabricar(receta)) {
+            return;
+        }
+
+        // Fabricar algo puede desbloquear otras recetas
+        recetario.registrarFabricado(receta);
+        revisarDesbloqueos();
+
+        // La lista pudo cambiar de orden: se vuelve a seleccionar la misma
+        recetaSeleccionada = recetario.indiceDe(receta);
     }
 
     // =====================================================
@@ -359,10 +419,6 @@ public class RecetarioUI {
 
         batch.setColor(1f, 1f, 1f, 1f);
 
-        // -----------------------------------------------
-        // PANEL
-        // -----------------------------------------------
-
         batch.draw(
                 panelTexture,
                 PANEL_X,
@@ -371,15 +427,7 @@ public class RecetarioUI {
                 PANEL_ALTO
         );
 
-        // -----------------------------------------------
-        // RECETAS
-        // -----------------------------------------------
-
         dibujarListaRecetas();
-
-        // -----------------------------------------------
-        // INFORMACIÓN RECETA
-        // -----------------------------------------------
 
         if (recetaSeleccionada != -1) {
 
@@ -390,6 +438,23 @@ public class RecetarioUI {
 
                 dibujarInformacionReceta(receta);
             }
+        }
+
+        // Aviso de recetas nuevas
+        if (aviso != null && tiempoAviso > 0f) {
+
+            float alpha = Math.min(1f, tiempoAviso / 0.5f);
+
+            layout.setText(fuente, aviso);
+
+            fuente.setColor(1f, 0.9f, 0.4f, alpha);
+            fuente.draw(
+                    batch,
+                    aviso,
+                    (ANCHO_VIRTUAL - layout.width) / 2f,
+                    AVISO_Y
+            );
+            fuente.setColor(1f, 1f, 1f, 1f);
         }
 
         batch.setColor(1f, 1f, 1f, 1f);
@@ -412,10 +477,6 @@ public class RecetarioUI {
                     TAMANO_SLOT_RECETA
             );
 
-            // -------------------------------------------
-            // SLOT
-            // -------------------------------------------
-
             if (i == recetaSeleccionada) {
 
                 batch.draw(
@@ -436,10 +497,6 @@ public class RecetarioUI {
                         TAMANO_SLOT_RECETA
                 );
             }
-
-            // -------------------------------------------
-            // RECETA EXISTENTE
-            // -------------------------------------------
 
             if (i < recetario.getCantidadRecetas()) {
 
@@ -468,34 +525,11 @@ public class RecetarioUI {
     private void dibujarInformacionReceta(
             Receta receta) {
 
-        // -----------------------------------------------
-        // TÍTULO
-        // -----------------------------------------------
+        // Título
+        String nombre = receta.getResultado().getNombre();
+        dibujarTextoCentrado(nombre, 374f, 116f, 456f, 32f);
 
-        String nombre =
-                receta.getResultado().getNombre();
-
-        layout.setText(fuente, nombre);
-
-        float tituloX =
-                374f
-                + (456f - layout.width) / 2f;
-
-        float tituloY =
-                convertirY(116f, 32f)
-                + 32f;
-
-        fuente.draw(
-                batch,
-                nombre,
-                tituloX,
-                tituloY
-        );
-
-        // -----------------------------------------------
-        // INGREDIENTES
-        // -----------------------------------------------
-
+        // Ingredientes
         Ingrediente[] ingredientes =
                 receta.getIngredientes();
 
@@ -513,7 +547,6 @@ public class RecetarioUI {
                     TAMANO_SLOT_INGREDIENTE
             );
 
-            // Slot
             batch.draw(
                     slotTexture,
                     x,
@@ -522,7 +555,6 @@ public class RecetarioUI {
                     TAMANO_SLOT_INGREDIENTE
             );
 
-            // Buscar el icono del recurso
             Item item =
                     obtenerItemParaMostrar(
                             ingrediente.getNombreRecurso()
@@ -540,7 +572,6 @@ public class RecetarioUI {
                 );
             }
 
-            // Cantidad
             dibujarCantidadIngrediente(
                     ingrediente,
                     x,
@@ -548,10 +579,7 @@ public class RecetarioUI {
             );
         }
 
-        // -----------------------------------------------
-        // RESULTADO
-        // -----------------------------------------------
-
+        // Resultado
         Item resultado =
                 receta.getResultado();
 
@@ -569,69 +597,55 @@ public class RecetarioUI {
                     RESULTADO_TAMANO
             );
 
-            // Nombre
-            layout.setText(
-                    fuente,
-                    resultado.getNombre()
-            );
-
-            float nombreX =
-                    646f
-                    + (174f - layout.width) / 2f;
-
-            float nombreY =
-                    convertirY(
-                            306f,
-                            30f
-                    ) + 30f;
-
-            fuente.draw(
-                    batch,
-                    resultado.getNombre(),
-                    nombreX,
-                    nombreY
-            );
+            dibujarTextoCentrado(
+                    resultado.getNombre(), 646f, 306f, 174f, 30f);
         }
 
-        // -----------------------------------------------
-        // BOTÓN
-        // -----------------------------------------------
-
+        // Botón
         boolean puedeCrear =
                 receta.puedeCrear(
                         jugador.getInventario()
                 );
 
         String textoBoton =
-                puedeCrear
-                ? "CRAFTEAR"
-                : "FALTAN MATERIALES";
+                (receta.requiereMesa() && !mesaCerca)
+                ? "NECESITAS UNA MESA"
+                : puedeCrear
+                    ? "FABRICAR"
+                    : "FALTAN MATERIALES";
 
-        layout.setText(
-                fuente,
-                textoBoton
-        );
+        dibujarTextoCentrado(
+                textoBoton, BOTON_X, BOTON_Y, BOTON_ANCHO, BOTON_ALTO);
+    }
 
-        float botonY =
-                convertirY(
-                        BOTON_Y,
-                        BOTON_ALTO
-                );
+    // =====================================================
+    // TEXTO CENTRADO EN UNA CAJA
+    // (si no entra, se achica solo)
+    // =====================================================
 
-        float textoX =
-                BOTON_X
-                + (BOTON_ANCHO - layout.width) / 2f;
+    private void dibujarTextoCentrado(String texto, float x,
+            float yDesdeArriba, float ancho, float alto) {
 
-        float textoY =
-                botonY
-                + (BOTON_ALTO + layout.height) / 2f;
+        float escalaOriginal = fuente.getData().scaleX;
+
+        layout.setText(fuente, texto);
+
+        if (layout.width > ancho - 8f) {
+            fuente.getData().setScale(
+                    escalaOriginal * (ancho - 8f) / layout.width);
+            layout.setText(fuente, texto);
+        }
+
+        float y = convertirY(yDesdeArriba, alto);
 
         fuente.draw(
                 batch,
-                textoBoton,
-                textoX,
-                textoY
+                texto,
+                x + (ancho - layout.width) / 2f,
+                y + (alto + layout.height) / 2f
         );
+
+        fuente.getData().setScale(escalaOriginal);
     }
 
     // =====================================================
@@ -705,50 +719,39 @@ public class RecetarioUI {
                 textoY
         );
     }
-    
- // =====================================================
- // OBTENER ITEM PARA MOSTRAR EN LA RECETA
- // =====================================================
 
- private Item obtenerItemParaMostrar(String nombre) {
+    // =====================================================
+    // ITEM PARA MOSTRAR EN LA RECETA
+    // =====================================================
 
-     // Primero buscamos si el jugador ya tiene el recurso.
-     Item item = buscarItemInventario(nombre);
+    private Item obtenerItemParaMostrar(String nombre) {
 
-     if (item != null) {
-         return item;
-     }
+        // Primero el que ya tiene el jugador
+        Item item = buscarItemInventario(nombre);
 
-     // Si no lo tiene, creamos un recurso temporal
-     // solamente para mostrar su icono.
+        if (item != null) {
+            return item;
+        }
 
-     Recursos recurso = new Recursos(nombre, 0);
+        // Si no, uno de muestra, creado una sola vez
+        if (itemsDeMuestra.containsKey(nombre)) {
+            return itemsDeMuestra.get(nombre);
+        }
 
-     if (nombre.equals("Madera")) {
+        Item muestra = null;
+        String ruta = Catalogo.rutaIcono(nombre);
 
-         recurso.cargarIcono(
-                 "objetos/madera.png"
-         );
+        if (ruta != null && Gdx.files.internal(ruta).exists()) {
 
-     } else if (nombre.equals("Piedra")) {
+            Recursos r = new Recursos(nombre, 0);
+            r.cargarIcono(ruta);
+            muestra = r;
+        }
 
-         recurso.cargarIcono(
-                 "objetos/piedra.png"
-         );
+        itemsDeMuestra.put(nombre, muestra);
 
-     } else if (nombre.equals("Fibra")) {
-
-         recurso.cargarIcono(
-                 "objetos/fibra.png"
-         );
-
-     } else {
-
-         return null;
-     }
-
-     return recurso;
- }
+        return muestra;
+    }
 
     // =====================================================
     // OBTENER CANTIDAD
@@ -959,24 +962,6 @@ public class RecetarioUI {
     }
 
     // =====================================================
-    // ESTADO
-    // =====================================================
-
-    public boolean estaAbierto() {
-        return abierto;
-    }
-    
-	 // =====================================================
-	 // ABRIR RECETARIO DESDE OTRA CLASE
-	 // =====================================================
-	
-	 public void abrir() {
-	     abierto = true;
-	     recetaSeleccionada = -1;
-	     mousePresionadoAnteriormente = false;
-	 }
-
-    // =====================================================
     // DISPOSE
     // =====================================================
 
@@ -991,7 +976,12 @@ public class RecetarioUI {
         slotSeleccionadoTexture.dispose();
 
         fuente.dispose();
-        
-        
+
+        for (Item muestra : itemsDeMuestra.values()) {
+
+            if (muestra != null) {
+                muestra.liberarIcono();
+            }
+        }
     }
 }

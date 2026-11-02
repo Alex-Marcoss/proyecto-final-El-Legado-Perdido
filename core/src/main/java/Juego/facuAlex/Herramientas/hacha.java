@@ -11,6 +11,6 @@ public class hacha extends Herramienta {
             tipoHerramienta.HACHA
         );
 
-        cargarIcono("objetos/hacha.png");
+        cargarIcono("objetos/hacha_basica.png");
     }
 }

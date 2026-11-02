@@ -4,6 +4,7 @@ package Juego.facuAlex.jugador;
 import com.badlogic.gdx.math.Rectangle;
 
 import Juego.facuAlex.recursos.*;
+import Juego.facuAlex.Herramientas.Armadura;
 import Juego.facuAlex.Herramientas.Herramienta;
 import Juego.facuAlex.Herramientas.tipoHerramienta;
 import Juego.facuAlex.Mapa.InteriorTemplo;
@@ -23,7 +24,7 @@ public class Jugador {
     private int vida;
     private int hambre;
     private float energia;
-
+    
     private Herramienta herramientaEquipada;
     private float posicionX;
     private float posicionY;
@@ -42,7 +43,12 @@ public class Jugador {
     private static final float HITBOX_ANCHO = 24f;
     private static final float HITBOX_ALTO = 12f;
     private static final float HITBOX_OFFSET_X = 20f;
+    
+    private Armadura armaduraEquipada;
 
+    private static final int DANIO_SIN_ARMA = 5;
+    private static final int CURACION_VENDAJE = 30;
+    
     public Jugador(String nombre) {
         this.nombre = nombre;
         this.vida = 100;
@@ -214,36 +220,44 @@ public class Jugador {
         return hambre;
     }
 
-    public int getEnergia() {
+	public int getEnergia() {
         return (int) energia;
     }
 
-    public void recibirDanio(int cantidad) {
-        if (cantidad <= 0 || vida <= 0) {
-            return;
-        }
+	public void recibirDanio(int cantidad) {
+	    if (cantidad <= 0 || vida <= 0) {
+	        return;
+	    }
 
-        vida -= cantidad;
+	    // La armadura equipada absorbe el daño primero
+	    if (armaduraEquipada != null) {
+	        cantidad = armaduraEquipada.absorber(cantidad);
 
-        if (vida < 0) {
-            vida = 0;
-        }
+	        if (armaduraEquipada.estaRota()) {
+	            romperArmadura();
+	        }
+	    }
 
-        if (sistemaSupervivencia != null) {
-            sistemaSupervivencia.registrarDanio();
-        }
+	    if (sistemaSupervivencia != null) {
+	        sistemaSupervivencia.registrarDanio();
+	    }
 
-        if (vida == 0) {
-            System.out.println("El jugador ha muerto.");
-            System.out.println("GAME OVER");
-        }
-    }
+	    // La armadura aguantó todo el golpe
+	    if (cantidad <= 0) {
+	        return;
+	    }
 
-    public void marcarGolpeRecibido() {
-        if (vida > 0) {
-            golpeRecibido = true;
-        }
-    }
+	    vida -= cantidad;
+
+	    if (vida < 0) {
+	        vida = 0;
+	    }
+
+	    if (vida == 0) {
+	        System.out.println("El jugador ha muerto.");
+	        System.out.println("GAME OVER");
+	    }
+	}
 
     public boolean consumirGolpeRecibido() {
         boolean resultado = golpeRecibido;
@@ -442,7 +456,7 @@ public class Jugador {
             return;
         }
 
-        int danio = 20;
+        int danio = getDanioAtaque();
         enemigo.recibirDaño(danio);
 
         System.out.println(
@@ -489,23 +503,148 @@ public class Jugador {
     // FABRICACIÓN
     // --------------------------------------------------
 
-    public void fabricar(Receta receta) {
+    public boolean fabricar(Receta receta) {
+
         if (receta == null) {
-            return;
+            return false;
         }
 
         if (!receta.puedeCrear(inventario)) {
             System.out.println("No tenes los recursos necesarios.");
-            return;
+            return false;
+        }
+
+        // Item nuevo en cada fabricación
+        Item nuevo = receta.crearResultado();
+
+        // Que haya lugar ANTES de gastar los materiales
+        boolean hayLugar = inventario.primerSlotLibre() != -1
+                || (nuevo instanceof Recursos
+                    && inventario.buscarRecurso(nuevo.getNombre()) != null);
+
+        if (!hayLugar) {
+            System.out.println("Inventario lleno.");
+            return false;
         }
 
         receta.gastarIngredientes(inventario);
-        inventario.agregarItem(receta.getResultado());
 
-        System.out.println(
-            "Fabricaste: " + receta.getResultado().getNombre()
-        );
+        if (nuevo instanceof Recursos) {
+            inventario.agregarRecurso(
+                    (Recursos) nuevo,
+                    ((Recursos) nuevo).getCantidad()
+            );
+        } else {
+            inventario.agregarItem(nuevo);
+        }
+
+        System.out.println("Fabricaste: " + nuevo.getNombre());
+
+        return true;
     }
+    
+ // --------------------------------------------------
+ // DAÑO DEL ATAQUE
+ // --------------------------------------------------
+
+ public int getDanioAtaque() {
+
+     if (herramientaEquipada != null
+             && herramientaEquipada.getDurabilidad() > 0) {
+
+         tipoHerramienta tipo = herramientaEquipada.getTipo();
+
+         if (tipo == tipoHerramienta.HACHA
+                 || tipo == tipoHerramienta.PICO
+                 || tipo == tipoHerramienta.ESPADA) {
+
+             return herramientaEquipada.getDanio();
+         }
+     }
+
+     return DANIO_SIN_ARMA;
+ }
+
+ // --------------------------------------------------
+ // ARMADURA
+ // --------------------------------------------------
+
+ public Armadura getArmaduraEquipada() {
+     return armaduraEquipada;
+ }
+
+ public int getProteccion() {
+     return armaduraEquipada == null ? 0 : armaduraEquipada.getProteccion();
+ }
+
+ public int getProteccionMaxima() {
+     return armaduraEquipada == null ? 0 : armaduraEquipada.getProteccionMaxima();
+ }
+
+ private void alternarArmadura(Armadura armadura) {
+
+     if (armaduraEquipada == armadura) {
+         armaduraEquipada = null;
+         System.out.println("Te sacaste: " + armadura.getNombre());
+         return;
+     }
+
+     // Si ya llevabas otra, queda en el inventario con lo que le quede
+     armaduraEquipada = armadura;
+     System.out.println("Te pusiste: " + armadura.getNombre());
+ }
+
+ private void romperArmadura() {
+
+     System.out.println("Tu " + armaduraEquipada.getNombre() + " se rompio.");
+
+     for (int i = 0; i < inventario.getCantidadSlots(); i++) {
+         if (inventario.getItem(i) == armaduraEquipada) {
+             inventario.quitarItem(i);
+             break;
+         }
+     }
+
+     armaduraEquipada = null;
+ }
+
+ // --------------------------------------------------
+ // USAR ITEMS DEL INVENTARIO (click derecho)
+ // --------------------------------------------------
+
+ public void usarItem(Item item) {
+
+     if (item instanceof Armadura) {
+
+         alternarArmadura((Armadura) item);
+
+     } else if (item instanceof Recursos
+             && item.getNombre().equals(Catalogo.VENDAJE)) {
+
+         usarVendaje();
+     }
+ }
+
+ public boolean usarVendaje() {
+
+     if (vida >= 100) {
+         System.out.println("Ya tenes la vida completa.");
+         return false;
+     }
+
+     if (!inventario.tieneRecurso(Catalogo.VENDAJE, 1)) {
+         System.out.println("No tenes vendajes.");
+         return false;
+     }
+
+     inventario.gastarRecurso(Catalogo.VENDAJE, 1);
+     curar(CURACION_VENDAJE);
+
+     System.out.println("Usaste un vendaje y curaste vida.");
+
+     return true;
+ }
+    
 
     // --------------------------------------------------
     // CONSTRUCCIÓN MEDIANTE EL SISTEMA EXISTENTE
@@ -609,6 +748,13 @@ public class Jugador {
             return false;
         }
 
+        if (herramientaEquipada.getNivel() < roca.getNivelMinimo()) {
+            System.out.println(
+                "Necesitas un pico de hierro para minar " + roca.getNombre() + "."
+            );
+            return false;
+        }
+
         if (energia < roca.getEnergiaNecesaria()) {
             System.out.println("No tienes suficiente energia para minar.");
             return false;
@@ -627,16 +773,8 @@ public class Jugador {
             return;
         }
 
-        if (herramientaEquipada == null
-                || herramientaEquipada.getTipo() != tipoHerramienta.PICO) {
-            System.out.println("Necesitas tener un pico equipado.");
-            return;
-        }
-
-        int energiaNecesaria = roca.getEnergiaNecesaria();
-
-        if (energia < energiaNecesaria) {
-            System.out.println("No tienes suficiente energia para minar.");
+        // Misma validación que arriba, por si se llama directo a minarRoca
+        if (!puedeMinar(roca)) {
             return;
         }
 
@@ -645,15 +783,16 @@ public class Jugador {
             return;
         }
 
-        gastarEnergia(energiaNecesaria);
+        gastarEnergia(roca.getEnergiaNecesaria());
 
-        Recursos piedra = roca.recolectarRecurso();
+        Recursos recurso = roca.recolectarRecurso();
 
-        if (piedra != null) {
-            inventario.agregarRecurso(piedra, piedra.getCantidad());
+        if (recurso != null) {
+            inventario.agregarRecurso(recurso, recurso.getCantidad());
 
             System.out.println(
-                "Conseguiste " + piedra.getCantidad() + " de piedra."
+                "Conseguiste " + recurso.getCantidad()
+                + " de " + recurso.getNombre().toLowerCase() + "."
             );
         }
 
@@ -662,4 +801,21 @@ public class Jugador {
             System.out.println("La roca se agoto.");
         }
     }
+    
+ // Si la armadura equipada ya no está en el inventario (la guardaste en un
+ // cofre, por ejemplo), se considera sacada
+    private void comprobarArmaduraEquipada() {
+
+     if (armaduraEquipada == null) {
+         return;
+     }
+
+     for (int i = 0; i < inventario.getCantidadSlots(); i++) {
+         if (inventario.getItem(i) == armaduraEquipada) {
+             return;
+         }
+     }
+
+     armaduraEquipada = null;
+ }
 }

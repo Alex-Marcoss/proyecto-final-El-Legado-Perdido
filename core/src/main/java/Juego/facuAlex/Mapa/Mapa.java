@@ -13,6 +13,7 @@ import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 import com.badlogic.gdx.math.Rectangle;
 
+import Juego.facuAlex.recursos.Mena;
 import Juego.facuAlex.recursos.arbol;
 import Juego.facuAlex.recursos.arbustoBayas;
 import Juego.facuAlex.recursos.roca;
@@ -26,16 +27,43 @@ public class Mapa {
     private float alto;
 
     private static final int CANTIDAD_ARBOLES = 50;
-    private static final float DISTANCIA_MINIMA_ARBOLES = 180f;
+   
 
     private static final int CANTIDAD_ROCAS = 30;
-    private static final float DISTANCIA_MINIMA_ROCAS = 150f;
+    
 
     private static final int CANTIDAD_PLANTAS = 40;
-    private static final float DISTANCIA_MINIMA_PLANTAS = 100f;
+   
 
     private static final int CANTIDAD_ARBUSTOS_BAYAS = 20;
+    
+ // Punto de aparición del jugador y ubicación del templo (Principal usa estas mismas)
+    public static final float SPAWN_X = 3072f;
+    public static final float SPAWN_Y = 3072f;
+    public static final float TEMPLO_DX = 300f;
+    public static final float TEMPLO_DY = 100f;
 
+    // Espacio libre mínimo entre los bordes de dos objetos
+    private static final float MARGEN_OBJETOS = 90f;
+
+    // "Tamaño" de cada cosa a efectos de separación
+    private static final float RADIO_ARBOL = 50f;
+    private static final float RADIO_ROCA = 40f;
+    private static final float RADIO_MENA = 40f;
+    private static final float RADIO_PLANTA = 20f;
+    private static final float RADIO_ARBUSTO = 30f;
+
+    // Zonas reservadas (radio físico de lo que ya está ahí)
+    private static final float RADIO_SPAWN = 60f;
+    private static final float RADIO_RESCATE = 90f;
+    private static final float RADIO_TEMPLO = 260f;     // ajustalo al tamaño real del templo
+    private static final float TEMPLO_CENTRO_DX = 450f; // centro aproximado del templo
+    private static final float TEMPLO_CENTRO_DY = 250f; // respecto a SPAWN
+
+    private static final int CANTIDAD_MENAS_HIERRO = 10;
+    private static final int CANTIDAD_MENAS_ORO = 5;
+    private static final int CANTIDAD_MENAS_CARBON = 8;
+    
     /*
      * Tamaños aproximados de las áreas de colisión.
      * Ajustarlos si los sprites tienen otras dimensiones.
@@ -112,8 +140,11 @@ public class Mapa {
 
         random = new Random();
 
+        reservarZonas();
+
         crearArboles();
         crearRocas();
+        crearMenas();
         crearPlantas();
         crearArbustosBayas();
     }
@@ -126,142 +157,134 @@ public class Mapa {
     // CREACIÓN DE RECURSOS
     // ==========================================================
 
-    private void crearArboles() {
+    
+
+    private static class Ocupado {
+
+        final float x, y, radio;
+
+        Ocupado(float x, float y, float radio) {
+            this.x = x;
+            this.y = y;
+            this.radio = radio;
+        }
+    }
+
+    private final List<Ocupado> ocupados = new ArrayList<>();
+
+ // Lugares que nada puede ocupar ni tener pegados
+    private void reservarZonas() {
+
+        // Estructura de rescate
+        ocupados.add(new Ocupado(
+                rescateX + ANCHO_RESCATE / 2f,
+                rescateY + ALTO_RESCATE / 2f,
+                RADIO_RESCATE));
+
+        // Donde aparece el jugador
+        ocupados.add(new Ocupado(SPAWN_X, SPAWN_Y, RADIO_SPAWN));
+
+        // Templo que dibuja Principal
+        ocupados.add(new Ocupado(
+                SPAWN_X + TEMPLO_CENTRO_DX,
+                SPAWN_Y + TEMPLO_CENTRO_DY,
+                RADIO_TEMPLO));
+
+        // Zona de templo propia del mapa (LugarEspecial)
+        ocupados.add(new Ocupado(
+                ancho * 0.75f + 50f,
+                alto * 0.65f + 50f,
+                70f));
+    }
+
+    private boolean hayEspacio(float x, float y, float radio) {
+
+        for (Ocupado o : ocupados) {
+
+            float dx = x - o.x;
+            float dy = y - o.y;
+            float minima = radio + o.radio + MARGEN_OBJETOS;
+
+            if (dx * dx + dy * dy < minima * minima) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    // Coloca "cantidad" objetos en tierra y con espacio libre alrededor
+    private int generar(int cantidad, float radio,
+                        java.util.function.BiConsumer<Float, Float> fabrica) {
 
         int creados = 0;
         int intentos = 0;
 
-        while (creados < CANTIDAD_ARBOLES && intentos < 10000) {
+        while (creados < cantidad && intentos < 10000) {
 
             intentos++;
 
             float x = 100 + random.nextFloat() * (ancho - 200);
             float y = 100 + random.nextFloat() * (alto - 200);
 
-            if (!esTierra(x, y) || estaMuyCercaDeOtroArbol(x, y)) {
+            if (!esTierra(x, y) || !hayEspacio(x, y, radio)) {
                 continue;
             }
 
-            arboles.add(new arbol(x, y));
+            fabrica.accept(x, y);
+            ocupados.add(new Ocupado(x, y, radio));
             creados++;
         }
 
-        System.out.println("Total de árboles creados: " + creados);
+        return creados;
     }
 
-    private boolean estaMuyCercaDeOtroArbol(float x, float y) {
+    private void crearArboles() {
 
-        for (arbol existente : arboles) {
-            float dx = x - existente.getPosicionX();
-            float dy = y - existente.getPosicionY();
+        int n = generar(CANTIDAD_ARBOLES, RADIO_ARBOL,
+                (x, y) -> arboles.add(new arbol(x, y)));
 
-            if (Math.sqrt(dx * dx + dy * dy)
-                    < DISTANCIA_MINIMA_ARBOLES) {
-                return true;
-            }
-        }
-
-        return false;
+        System.out.println("Total de árboles creados: " + n);
     }
 
     private void crearRocas() {
 
-        int creadas = 0;
-        int intentos = 0;
+        int n = generar(CANTIDAD_ROCAS, RADIO_ROCA,
+                (x, y) -> rocas.add(new roca(x, y)));
 
-        while (creadas < CANTIDAD_ROCAS && intentos < 10000) {
-
-            intentos++;
-
-            float x = 100 + random.nextFloat() * (ancho - 200);
-            float y = 100 + random.nextFloat() * (alto - 200);
-
-            if (!esTierra(x, y) || estaMuyCercaDeOtraRoca(x, y)) {
-                continue;
-            }
-
-            rocas.add(new roca(x, y));
-            creadas++;
-        }
-
-        System.out.println("Total de rocas creadas: " + creadas);
+        System.out.println("Total de rocas creadas: " + n);
     }
 
-    private boolean estaMuyCercaDeOtraRoca(float x, float y) {
+    // Las menas viven en la misma lista que las rocas (son rocas especiales)
+    private void crearMenas() {
 
-        for (roca existente : rocas) {
-            float dx = x - existente.getPosicionX();
-            float dy = y - existente.getPosicionY();
+        int hierro = generar(CANTIDAD_MENAS_HIERRO, RADIO_MENA,
+                (x, y) -> rocas.add(new Mena(Mena.Tipo.HIERRO, x, y)));
 
-            if (Math.sqrt(dx * dx + dy * dy)
-                    < DISTANCIA_MINIMA_ROCAS) {
-                return true;
-            }
-        }
+        int oro = generar(CANTIDAD_MENAS_ORO, RADIO_MENA,
+                (x, y) -> rocas.add(new Mena(Mena.Tipo.ORO, x, y)));
 
-        return false;
+        int carbon = generar(CANTIDAD_MENAS_CARBON, RADIO_MENA,
+                (x, y) -> rocas.add(new Mena(Mena.Tipo.CARBON, x, y)));
+
+        System.out.println("Menas creadas: " + hierro + " de hierro, "
+                + oro + " de oro, " + carbon + " de carbon");
     }
 
     private void crearPlantas() {
 
-        int creadas = 0;
-        int intentos = 0;
+        int n = generar(CANTIDAD_PLANTAS, RADIO_PLANTA,
+                (x, y) -> plantas.add(new planta(x, y)));
 
-        while (creadas < CANTIDAD_PLANTAS && intentos < 10000) {
-
-            intentos++;
-
-            float x = 100 + random.nextFloat() * (ancho - 200);
-            float y = 100 + random.nextFloat() * (alto - 200);
-
-            if (!esTierra(x, y) || estaMuyCercaDeOtraPlanta(x, y)) {
-                continue;
-            }
-
-            plantas.add(new planta(x, y));
-            creadas++;
-        }
-
-        System.out.println("Total de plantas creadas: " + creadas);
-    }
-
-    private boolean estaMuyCercaDeOtraPlanta(float x, float y) {
-
-        for (planta existente : plantas) {
-            float dx = x - existente.getPosicionX();
-            float dy = y - existente.getPosicionY();
-
-            if (Math.sqrt(dx * dx + dy * dy)
-                    < DISTANCIA_MINIMA_PLANTAS) {
-                return true;
-            }
-        }
-
-        return false;
+        System.out.println("Total de plantas creadas: " + n);
     }
 
     private void crearArbustosBayas() {
 
-        int creados = 0;
-        int intentos = 0;
+        int n = generar(CANTIDAD_ARBUSTOS_BAYAS, RADIO_ARBUSTO,
+                (x, y) -> arbustosBayas.add(new arbustoBayas(x, y)));
 
-        while (creados < CANTIDAD_ARBUSTOS_BAYAS
-                && intentos < 10000) {
-
-            intentos++;
-
-            float x = 100 + random.nextFloat() * (ancho - 200);
-            float y = 100 + random.nextFloat() * (alto - 200);
-
-            if (!esTierra(x, y)) {
-                continue;
-            }
-
-            arbustosBayas.add(new arbustoBayas(x, y));
-            creados++;
-        }
-
-        System.out.println("Total de arbustos de bayas creados: " + creados);
+        System.out.println("Total de arbustos de bayas creados: " + n);
     }
 
     // ==========================================================

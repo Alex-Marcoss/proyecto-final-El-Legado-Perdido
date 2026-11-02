@@ -3,7 +3,7 @@ package Juego.facuAlex.sistemas;
 public class CicloDia {
 
     // 24 h * 25 s = 10 minutos reales por día completo (ajustable)
-    public static final float SEGUNDOS_POR_HORA = 12f;
+    public static final float SEGUNDOS_POR_HORA = 18f;
 
     private int dia;
     private int hora;
@@ -58,4 +58,21 @@ public class CicloDia {
     public int getDia() {
         return dia;
     }
+    
+ // Se puede dormir cuando ya está bien oscuro
+    public boolean puedeDormir() {
+        return getOscuridad() >= 0.5f;
+    }
+
+    public void dormirHastaAmanecer() {
+
+        // Si todavía no pasó la medianoche, el amanecer es del día siguiente
+        if (hora >= 12) {
+            dia++;
+        }
+
+        hora = 7;
+        acumulador = 0f;
+    }
+    
 }

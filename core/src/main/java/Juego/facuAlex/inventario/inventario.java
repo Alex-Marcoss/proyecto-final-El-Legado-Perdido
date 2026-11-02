@@ -355,4 +355,69 @@ public class inventario {
 
         return false;
     }
+    
+    
+	 // ==========================================================
+	 // TRANSFERENCIAS ENTRE INVENTARIOS
+	 // ==========================================================
+	
+	 public Item quitarItem(int posicion) {
+	
+	     if (posicion < 0 || posicion >= items.length) {
+	         return null;
+	     }
+	
+	     Item item = items[posicion];
+	
+	     if (item != null) {
+	         items[posicion] = null;
+	         cantidad--;
+	     }
+	
+	     return item;
+	 }
+	
+	 // Solo coloca el item si el slot está vacío
+	 public boolean ponerItem(int posicion, Item item) {
+	
+	     if (item == null
+	             || posicion < 0
+	             || posicion >= items.length
+	             || items[posicion] != null) {
+	
+	         return false;
+	     }
+	
+	     items[posicion] = item;
+	     cantidad++;
+	
+	     return true;
+	 }
+	
+	 public Recursos buscarRecurso(String nombre) {
+	
+	     for (int i = 0; i < items.length; i++) {
+	
+	         if (items[i] instanceof Recursos
+	                 && items[i].getNombre().equals(nombre)) {
+	
+	             return (Recursos) items[i];
+	         }
+	     }
+	
+	     return null;
+	 }
+	
+	 public int primerSlotLibre() {
+	
+	     for (int i = 0; i < items.length; i++) {
+	
+	         if (items[i] == null) {
+	             return i;
+	         }
+	     }
+	
+	     return -1;
+	 }
+    
 }

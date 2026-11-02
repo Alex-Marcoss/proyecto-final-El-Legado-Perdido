@@ -14,8 +14,14 @@ public class Herramienta extends Item {
 	    this.durabilidad = durabilidad;
 	    this.daño = daño;
 	    this.tipo = tipo;
+	    
 	}
-
+	
+	
+	public int getDanio() {
+	    return daño;
+	}
+	
     // -----------------------------------------------------------------------------------------------
     
 	 public boolean usar() { // funcion para usar las herramientas
@@ -51,5 +57,8 @@ public class Herramienta extends Item {
 		    return tipo; // obtener tipo de herramienta
 		}
 	
-	
+	// 1 = herramienta común, 2 = de hierro
+	  public int getNivel() {
+	      return 1;
+	  }
 }

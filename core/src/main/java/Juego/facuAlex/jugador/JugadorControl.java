@@ -5,7 +5,9 @@ import com.badlogic.gdx.Input;
 
 import Juego.facuAlex.Mapa.Mapa;
 import Juego.facuAlex.enemigos.guardian.Guardian;
+import Juego.facuAlex.inventario.BarraRapidaUI;
 import Juego.facuAlex.recursos.Comida;
+import Juego.facuAlex.recursos.Item;
 import Juego.facuAlex.recursos.arbol;
 import Juego.facuAlex.recursos.roca;
 import Juego.facuAlex.sistemas.combate;
@@ -104,6 +106,14 @@ public class JugadorControl {
     
     private static final float ALCANCE_GOLPE = 80f;
     private static final float ANCHO_GOLPE = 45f;
+
+    // Barra rapida: de ahi sale lo que el jugador tiene seleccionado
+    private BarraRapidaUI barraRapida;
+
+    public void setBarraRapida(BarraRapidaUI barraRapida) {
+
+        this.barraRapida = barraRapida;
+    }
 
     // ==========================================================
     // CONSTRUCTOR
@@ -1088,8 +1098,37 @@ public class JugadorControl {
                 Estado.GOLPEAR;
     }
 
+    // ==========================================================
+    // COMIDAS QUE SE PUEDEN COMER (tecla F)
+    // ==========================================================
+
+    // Orden de prioridad: primero lo mas nutritivo.
+    // El nombre tiene que ser EXACTAMENTE el que usa el item en el inventario
+    // (el mismo con el que se crea el recurso: new Comida("Carne", ...)).
+    private static final String[] COMIDAS_NOMBRE = {
+        "Carne cocida",
+        "Carne",
+        "Bayas"
+    };
+
+    // Lo que alimenta cada una (mismo orden que COMIDAS_NOMBRE)
+    private static final int[] COMIDAS_VALOR = {
+        45,
+        15,
+        10
+    };
+
+    // La carne cruda alimenta poco y te hace dano (comerla cruda enferma)
+    private static final String CARNE_CRUDA = "Carne";
+
+    private static final int DANO_CARNE_CRUDA = 10;
+
     private boolean comerBayas() {
 
+        return comerAlgo();
+    }
+
+    private boolean comerAlgo() {
 
         // ======================================================
         // COMPROBAR HAMBRE
@@ -1105,44 +1144,111 @@ public class JugadorControl {
         }
 
 
+        // Sin barra rapida conectada: come lo primero que tenga
+        if (barraRapida == null) {
+
+            return comerPrimeraDisponible();
+        }
+
+
         // ======================================================
-        // COMPROBAR INVENTARIO
+        // COMER LO QUE ESTA SELECCIONADO
         // ======================================================
 
-        if (
-            !jugador.getInventario()
-                .tieneRecurso(
-                    "Bayas",
-                    1
-                )
-        ) {
+        Item seleccionado = barraRapida.getItemSeleccionado();
+
+        if (seleccionado == null) {
 
             System.out.println(
-                "No tenes bayas."
+                "No tenes nada seleccionado."
             );
 
             return false;
         }
 
+        int indice = indiceComida(seleccionado.getNombre());
 
-        // ======================================================
-        // CREAR COMIDA
-        // ======================================================
+        if (indice < 0) {
 
-        Comida bayas =
+            System.out.println(
+                "No podes comer: " + seleccionado.getNombre()
+            );
+
+            return false;
+        }
+
+        return empezarAComer(indice);
+    }
+
+    // Posicion de la comida en las listas, o -1 si no es comestible
+    private int indiceComida(String nombre) {
+
+        for (int i = 0; i < COMIDAS_NOMBRE.length; i++) {
+
+            if (COMIDAS_NOMBRE[i].equals(nombre)) {
+
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    private boolean comerPrimeraDisponible() {
+
+        for (int i = 0; i < COMIDAS_NOMBRE.length; i++) {
+
+            if (empezarAComer(i)) {
+
+                return true;
+            }
+        }
+
+        System.out.println(
+            "No tenes nada para comer."
+        );
+
+        return false;
+    }
+
+    // Empieza a comer la comida numero i de la lista (si la tiene)
+    private boolean empezarAComer(int i) {
+
+        if (
+            !jugador.getInventario()
+                .tieneRecurso(
+                    COMIDAS_NOMBRE[i],
+                    1
+                )
+        ) {
+
+            return false;
+        }
+
+        final Comida comida =
                 new Comida(
-                    "Bayas",
+                    COMIDAS_NOMBRE[i],
                     1,
-                    10
+                    COMIDAS_VALOR[i]
                 );
 
-
-        // ======================================================
-        // COMER
-        // ======================================================
+        final boolean cruda =
+                CARNE_CRUDA.equals(COMIDAS_NOMBRE[i]);
 
         iniciarComer(
-            () -> jugador.comer(bayas)
+            () -> {
+
+                jugador.comer(comida);
+
+                if (cruda) {
+
+                    System.out.println(
+                        "La carne cruda te cayo mal."
+                    );
+
+                    jugador.recibirDanio(DANO_CARNE_CRUDA);
+                }
+            }
         );
 
         return true;

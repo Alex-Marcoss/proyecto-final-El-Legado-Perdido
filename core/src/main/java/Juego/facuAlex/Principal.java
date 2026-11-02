@@ -14,6 +14,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.ScreenUtils;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 
 import Juego.facuAlex.Mapa.*;
 import Juego.facuAlex.Pantallas.*;
@@ -48,6 +49,8 @@ public class Principal extends ApplicationAdapter {
     private RecetarioUI recetarioUI;
     private BarrasSupervivencia barrasSupervivencia;
     private BarraRapidaUI barraRapidaUI;
+    private CofreUI cofreUI;
+    private HornoUI hornoUI;
 
     private float graciaGuardian;
     private GestorCriaturas GestorCriaturas;
@@ -117,6 +120,14 @@ public class Principal extends ApplicationAdapter {
     private int estructuraSeleccionada = 1;
 
     private static final float TAMANO_ESTRUCTURA = 64f;
+
+    // MENSAJES EN PANTALLA
+
+    private static final float DURACION_MENSAJE = 2.5f;
+
+    private String mensaje;
+    private float tiempoMensaje;
+    private final GlyphLayout layoutMensaje = new GlyphLayout();
 
     // Texturas para la interfaz de construcción.
 
@@ -274,6 +285,7 @@ public class Principal extends ApplicationAdapter {
         cargando = true;
         pasoCarga = 0;
         tiempoCarga = 0f;
+        tiempoMensaje = 0f;
 
         pantallaCarga.mostrar();
         pantallaCarga.setProgreso(0.05f, "Preparando...");
@@ -344,6 +356,14 @@ public class Principal extends ApplicationAdapter {
                     barraRapidaUI.dispose();
                 }
 
+                if (cofreUI != null) {
+                    cofreUI.dispose();
+                }
+
+                if (hornoUI != null) {
+                    hornoUI.dispose();
+                }
+
                 if (panelEstructuraRescate != null) {
                     panelEstructuraRescate.dispose();
                 }
@@ -412,8 +432,9 @@ public class Principal extends ApplicationAdapter {
                         piedra, 10
                 );
 
+                // El mapa dejó libre esta zona al generar los recursos
                 float[] spawn =
-                        mapa.buscarPosicionLibre(3072, 3072);
+                        mapa.buscarPosicionLibre(Mapa.SPAWN_X, Mapa.SPAWN_Y);
 
                 jugador.setPosicion(spawn[0], spawn[1]);
 
@@ -429,10 +450,11 @@ public class Principal extends ApplicationAdapter {
                 GestorCriaturas =
                         new GestorCriaturas(mapa, jugador);
 
+                // Misma posición que el mapa reservó para el templo
                 templo = new Templo(
                         "estructuras/templo.png",
-                        spawn[0] + 300f,
-                        spawn[1] + 100f,
+                        Mapa.SPAWN_X + Mapa.TEMPLO_DX,
+                        Mapa.SPAWN_Y + Mapa.TEMPLO_DY,
                         ESCALA_TEMPLO
                 );
 
@@ -455,9 +477,13 @@ public class Principal extends ApplicationAdapter {
             case 3:
 
                 jugadorAnimacion = new JugadorAnimacion();
-                jugadorControl = new JugadorControl(jugador);
                 inventarioUI = new InventarioUI(jugador);
                 recetarioUI = new RecetarioUI(jugador);
+                cofreUI = new CofreUI(jugador);
+                hornoUI = new HornoUI(jugador);
+
+                jugadorControl = new JugadorControl(jugador);
+                jugadorControl.setBarraRapida(barraRapidaUI);
 
                 panelEstructuraRescate =
                         new PanelEstructuraRescate();
@@ -551,6 +577,28 @@ public class Principal extends ApplicationAdapter {
         for (arbustoBayas arbusto : mapa.getArbustosBayas()) {
             arbusto.actualizar(delta);
         }
+    }
+
+    // ¿Hay una mesa de fabricación al alcance del jugador?
+    private boolean hayMesaCerca() {
+
+        if (mapa == null || jugador == null
+                || ubicacion != Ubicacion.MUNDO) {
+            return false;
+        }
+
+        for (Estructura estructura : mapa.getEstructurasConstruidas()) {
+
+            if (estructura instanceof MesaFabricacion
+                    && estructura.estaCerca(
+                            jugador.getPosicionX(),
+                            jugador.getPosicionY())) {
+
+                return true;
+            }
+        }
+
+        return false;
     }
 
     // ==========================================================
@@ -1067,6 +1115,70 @@ public class Principal extends ApplicationAdapter {
     }
 
     // ==========================================================
+    // CAMA / DORMIR
+    // ==========================================================
+
+    private void intentarDormir() {
+
+        if (!cicloDia.puedeDormir()) {
+            mostrarMensaje("Solo puedes dormir de noche.");
+            return;
+        }
+
+        if (GestorCriaturas.hayEnemigosCerca(jugador)) {
+            mostrarMensaje("No puedes dormir con enemigos cerca.");
+            return;
+        }
+
+        modoConstruccion = false;
+
+        transicion.iniciar(() -> {
+            cicloDia.dormirHastaAmanecer();
+            GestorCriaturas.despejarEnemigos();
+        });
+    }
+
+    // ==========================================================
+    // MENSAJES EN PANTALLA
+    // ==========================================================
+
+    private void mostrarMensaje(String texto) {
+        mensaje = texto;
+        tiempoMensaje = DURACION_MENSAJE;
+    }
+
+    private void dibujarMensaje(float delta) {
+
+        if (mensaje == null || tiempoMensaje <= 0f) {
+            return;
+        }
+
+        tiempoMensaje -= delta;
+
+        // Se desvanece durante el último medio segundo
+        float alpha = Math.min(1f, tiempoMensaje / 0.5f);
+
+        batch.setProjectionMatrix(camara.combined);
+        batch.begin();
+
+        font.getData().setScale(1.2f);
+        layoutMensaje.setText(font, mensaje);
+
+        font.setColor(1f, 1f, 1f, alpha);
+        font.draw(
+                batch,
+                layoutMensaje,
+                camara.position.x - layoutMensaje.width / 2f,
+                camara.position.y + 150f
+        );
+
+        font.setColor(Color.WHITE);
+        font.getData().setScale(1f);
+
+        batch.end();
+    }
+
+    // ==========================================================
     // RENDER PRINCIPAL
     // ==========================================================
 
@@ -1119,7 +1231,23 @@ public class Principal extends ApplicationAdapter {
 
         cicloDia.actualizar(delta);
 
-        if (inventarioUI.estaAbierto()) {
+        // El recetario solo deja fabricar si hay una mesa cerca
+        recetarioUI.setMesaCerca(hayMesaCerca());
+
+        // Se calcula ANTES de actualizar las interfaces: si una se cierra en
+        // este frame (con E, por ejemplo), esa misma pulsación no vuelve a
+        // abrirla al comprobar las interacciones.
+        boolean interfazAbierta =
+                cofreUI.estaAbierto()
+                || hornoUI.estaAbierto()
+                || inventarioUI.estaAbierto()
+                || recetarioUI.estaAbierto();
+
+        if (cofreUI.estaAbierto()) {
+            cofreUI.actualizar();
+        } else if (hornoUI.estaAbierto()) {
+            hornoUI.actualizar();
+        } else if (inventarioUI.estaAbierto()) {
             inventarioUI.actualizar();
         } else if (recetarioUI.estaAbierto()) {
             recetarioUI.actualizar();
@@ -1133,10 +1261,6 @@ public class Principal extends ApplicationAdapter {
         boolean enTemplo = ubicacion == Ubicacion.TEMPLO;
 
         actualizarRecursos(delta);
-
-        boolean interfazAbierta =
-                inventarioUI.estaAbierto()
-                || recetarioUI.estaAbierto();
 
         if (!interfazAbierta && !transicion.isActiva()) {
 
@@ -1315,13 +1439,21 @@ public class Principal extends ApplicationAdapter {
             );
         }
 
-        // Panel del modo construcción por encima del mundo.
+        // Panel del modo construcción y mensajes por encima del mundo.
         dibujarModoConstruccion();
+        dibujarMensaje(delta);
 
         barrasSupervivencia.dibujar();
         barraRapidaUI.actualizar();
 
-        if (!interfazAbierta) {
+        // Estado actual de las interfaces (puede haber cambiado en este frame)
+        boolean interfazVisible =
+                cofreUI.estaAbierto()
+                || hornoUI.estaAbierto()
+                || inventarioUI.estaAbierto()
+                || recetarioUI.estaAbierto();
+
+        if (!interfazVisible) {
 
             barraRapidaUI.dibujar();
 
@@ -1335,7 +1467,11 @@ public class Principal extends ApplicationAdapter {
             }
         }
 
-        if (inventarioUI.estaAbierto()) {
+        if (cofreUI.estaAbierto()) {
+            cofreUI.dibujar();
+        } else if (hornoUI.estaAbierto()) {
+            hornoUI.dibujar();
+        } else if (inventarioUI.estaAbierto()) {
             inventarioUI.dibujar();
         } else if (recetarioUI.estaAbierto()) {
             recetarioUI.dibujar();
@@ -1576,10 +1712,7 @@ public class Principal extends ApplicationAdapter {
         float paddingY = 6f;
 
         // Medimos el texto correctamente con BitmapFont.
-        com.badlogic.gdx.graphics.g2d.GlyphLayout layout =
-                new com.badlogic.gdx.graphics.g2d.GlyphLayout(
-                        fuenteInteraccion, texto
-                );
+        GlyphLayout layout = new GlyphLayout(fuenteInteraccion, texto);
 
         float anchoCartel = layout.width + paddingX * 2f;
         float altoCartel = layout.height + paddingY * 2f;
@@ -1712,7 +1845,7 @@ public class Principal extends ApplicationAdapter {
     }
 
     // ==========================================================
-    // ESTRUCTURA DE RESCATE
+    // INTERACCIÓN CON ESTRUCTURAS
     // ==========================================================
 
     private boolean comprobarInteraccionEstructura() {
@@ -1775,19 +1908,19 @@ public class Principal extends ApplicationAdapter {
 
         // 5. Cofre.
         if (estructura instanceof Cofre) {
-            System.out.println("Cofre: interacción pendiente.");
+            cofreUI.abrir((Cofre) estructura);
             return true;
         }
 
         // 6. Horno.
         if (estructura instanceof Horno) {
-            System.out.println("Horno: interacción pendiente.");
+            hornoUI.abrir((Horno) estructura);
             return true;
         }
 
         // 7. Cama.
         if (estructura instanceof Cama) {
-            System.out.println("Cama: interacción pendiente.");
+            intentarDormir();
             return true;
         }
 
@@ -2013,6 +2146,14 @@ public class Principal extends ApplicationAdapter {
 
         if (barraRapidaUI != null) {
             barraRapidaUI.dispose();
+        }
+
+        if (cofreUI != null) {
+            cofreUI.dispose();
+        }
+
+        if (hornoUI != null) {
+            hornoUI.dispose();
         }
 
         if (gemaAzul != null) {

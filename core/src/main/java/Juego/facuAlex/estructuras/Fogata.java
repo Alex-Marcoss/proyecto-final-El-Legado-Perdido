@@ -4,7 +4,8 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-
+import com.badlogic.gdx.math.MathUtils;
+import Juego.facuAlex.sistemas.Luces;
 /*
  * Fogata animada.
  *
@@ -27,7 +28,7 @@ public class Fogata extends Estructura {
 
     private static final int COLUMNAS = 4;
     private static final int FILAS = 4;
-
+    
     // ---- Combustible (en segundos) ----
 
     // Una fogata recien armada arranca prendida con este combustible
@@ -41,7 +42,7 @@ public class Fogata extends Estructura {
     private static final float UMBRAL_MEDIA = 20f;
     private static final float UMBRAL_BAJA = 12f;
     private static final float UMBRAL_BRASAS = 5f;
-
+    private static final float RADIO_LUZ = 340f;
     // Tras apagarse, un ratito sigue saliendo humo
     private static final float TIEMPO_HUMO = 4f;
 
@@ -126,7 +127,19 @@ public class Fogata extends Estructura {
         return combustible > 0f;
     }
     
-    
+ // Se apaga suave durante los últimos 10 segundos de combustible
+    private float getIntensidadLuz() {
+        return Math.min(1f, combustible / 10f);
+    }
+
+    // El radio se achica a medida que se consume y titila un poco
+    private float getRadioLuz() {
+        float f = Math.min(1f, combustible / UMBRAL_ALTA);
+        float parpadeo = 1f
+                + 0.05f * MathUtils.sin(tiempoAnimacion * 9f)
+                + 0.03f * MathUtils.sin(tiempoAnimacion * 23f);
+        return RADIO_LUZ * (0.4f + 0.6f * f) * parpadeo;
+    }
 
     // =====================================================
     // DIBUJAR
@@ -137,15 +150,18 @@ public class Fogata extends Estructura {
 
         avanzar(Gdx.graphics.getDeltaTime());
 
-        batch.draw(
-                frames[frameActual()],
-                x,
-                y,
-                ancho,
-                alto
-        );
-    }
+        if (estaEncendida()) {
+            Luces.agregar(
+                    x + ancho / 2f,
+                    y + alto * 0.45f,
+                    getRadioLuz(),
+                    getIntensidadLuz()
+            );
+        }
 
+        batch.draw(frames[frameActual()], x, y, ancho, alto);
+    }
+    
     private void avanzar(float delta) {
 
         tiempoAnimacion += delta;

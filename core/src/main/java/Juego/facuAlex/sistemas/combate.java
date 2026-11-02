@@ -13,9 +13,6 @@ public class combate {
     // Ancho del área de ataque
     private static final float ANCHO_ATAQUE = 45f;
 
-    // Daño del jugador
-    private static final int DAÑO_JUGADOR = 20;
-
     public boolean atacar(
             Jugador jugador,
             Enemigo enemigo,
@@ -118,7 +115,9 @@ public class combate {
         // ATAQUE EXITOSO
         // =====================================================
 
-        enemigo.recibirDaño(DAÑO_JUGADOR);
+        int danio = jugador.getDanioAtaque();
+
+        enemigo.recibirDaño(danio);
 
         jugador.gastarEnergia(ENERGIA_ATAQUE);
 
@@ -126,7 +125,17 @@ public class combate {
             "Atacaste a "
             + enemigo.getNombre()
             + " y causaste "
-            + DAÑO_JUGADOR
+            + danio
+            + " de daño."
+        );
+
+        jugador.gastarEnergia(ENERGIA_ATAQUE);
+
+        System.out.println(
+            "Atacaste a "
+            + enemigo.getNombre()
+            + " y causaste "
+            + danio
             + " de daño."
         );
 
@@ -149,7 +158,7 @@ public class combate {
         return RANGO_ATAQUE;
     }
 
-    public int getDañoJugador() {
-        return DAÑO_JUGADOR;
+    public int getDañoJugador(Jugador jugador) {
+        return jugador.getDanioAtaque();
     }
 }
