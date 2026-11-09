@@ -3,6 +3,8 @@ package Juego.facuAlex.jugador;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 
+import Juego.facuAlex.Herramientas.Herramienta;
+import Juego.facuAlex.Herramientas.tipoHerramienta;
 import Juego.facuAlex.Mapa.Mapa;
 import Juego.facuAlex.enemigos.guardian.Guardian;
 import Juego.facuAlex.inventario.BarraRapidaUI;
@@ -72,6 +74,11 @@ public class JugadorControl {
     private float tiempoGolpe;
 
     private boolean punoAplicado;
+
+    // Herramienta con la que se esta dando el golpe actual
+    // (null = puño). Se fija al empezar el golpe para que la
+    // animacion no cambie si se cambia de slot a mitad del swing.
+    private tipoHerramienta tipoGolpe;
 
 
     // ==========================================================
@@ -883,6 +890,29 @@ public class JugadorControl {
     }
 
 
+    // Tipo de herramienta del golpe en curso (null = puño)
+    public tipoHerramienta getTipoGolpe() {
+
+        return tipoGolpe;
+    }
+
+    // Tipo de herramienta del slot seleccionado en la barra rapida
+    // (null si no hay nada o no es una herramienta)
+    private tipoHerramienta obtenerTipoEquipado() {
+
+        if (barraRapida == null) {
+            return null;
+        }
+
+        Item seleccionado = barraRapida.getItemSeleccionado();
+
+        if (seleccionado instanceof Herramienta) {
+            return ((Herramienta) seleccionado).getTipo();
+        }
+
+        return null;
+    }
+
     public float getTiempoGolpe() {
 
         return tiempoGolpe;
@@ -1089,6 +1119,8 @@ public class JugadorControl {
     // ==========================================================
 
     private void iniciarGolpe() {
+
+        tipoGolpe = obtenerTipoEquipado();
 
         tiempoGolpe = 0f;
 
