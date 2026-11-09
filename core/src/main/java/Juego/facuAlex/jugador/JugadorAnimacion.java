@@ -5,6 +5,8 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
+import Juego.facuAlex.Herramientas.tipoHerramienta;
+
 public class JugadorAnimacion {
 
     private Texture sheetTexture;
@@ -98,6 +100,26 @@ public class JugadorAnimacion {
     public static final float GOLPEAR_PIES_X_FRENTE = 50f;
 
     // =========================
+    // GOLPEAR CON HERRAMIENTA (hacha, pico, espada)
+    // =========================
+    // Cada hoja es 4x4 (filas: ABAJO, ARRIBA, DERECHA, IZQUIERDA)
+    // con celdas de 200x150 y los pies centrados en la celda.
+
+    private Texture golpearHachaTexture;
+    private Texture golpearPicoTexture;
+    private Texture golpearEspadaTexture;
+
+    private TextureRegion[][] golpearHacha;
+    private TextureRegion[][] golpearPico;
+    private TextureRegion[][] golpearEspada;
+
+    // Escala de cada hoja (el personaje de la espada viene mas chico)
+    private static final float GOLPEAR_HACHA_FACTOR = 1.07f;
+    private static final float GOLPEAR_PICO_FACTOR = 1.07f;
+    private static final float GOLPEAR_ESPADA_FACTOR = 1.19f;
+
+
+    // =========================
     // HERIDO (recibir dano)
     // =========================
 
@@ -168,6 +190,7 @@ public class JugadorAnimacion {
         cargarAnimacionMinar();
         cargarAnimacionTalar();
         cargarAnimacionGolpear();
+        cargarAnimacionesGolpearHerramientas();
         cargarAnimacionDano();
         cargarAnimacionRecolectar();
         cargarAnimacionComer();
@@ -268,6 +291,38 @@ public class JugadorAnimacion {
             golpearTexture,
             celdaAncho,
             celdaAlto
+        );
+    }
+
+    private void cargarAnimacionesGolpearHerramientas() {
+
+        golpearHachaTexture = cargarHoja("sprites/golpear_hacha.png");
+        golpearPicoTexture = cargarHoja("sprites/golpear_pico.png");
+        golpearEspadaTexture = cargarHoja("sprites/golpear_espada.png");
+
+        golpearHacha = dividirHoja(golpearHachaTexture);
+        golpearPico = dividirHoja(golpearPicoTexture);
+        golpearEspada = dividirHoja(golpearEspadaTexture);
+    }
+
+    private Texture cargarHoja(String ruta) {
+
+        Texture textura = new Texture(Gdx.files.internal(ruta));
+
+        textura.setFilter(
+            Texture.TextureFilter.Nearest,
+            Texture.TextureFilter.Nearest
+        );
+
+        return textura;
+    }
+
+    private TextureRegion[][] dividirHoja(Texture textura) {
+
+        return TextureRegion.split(
+            textura,
+            textura.getWidth() / 4,
+            textura.getHeight() / 4
         );
     }
 
@@ -760,6 +815,17 @@ public class JugadorAnimacion {
         float tiempo
     ) {
 
+        return getFrameGolpear(direccion, tiempo, null);
+    }
+
+    // tipo == null  -> golpe con el puno
+    // tipo != null  -> golpe con el hacha, el pico o la espada
+    public TextureRegion getFrameGolpear(
+        JugadorControl.Direccion direccion,
+        float tiempo,
+        tipoHerramienta tipo
+    ) {
+
         int fila;
 
         switch (direccion) {
@@ -769,7 +835,18 @@ public class JugadorAnimacion {
             default:        fila = 0; break;
         }
 
-        TextureRegion[] frames = golpear[fila];
+        TextureRegion[][] hoja = golpear;
+
+        if (tipo != null) {
+            switch (tipo) {
+                case HACHA:  hoja = golpearHacha;  break;
+                case PICO:   hoja = golpearPico;   break;
+                case ESPADA: hoja = golpearEspada; break;
+                default:     break;
+            }
+        }
+
+        TextureRegion[] frames = hoja[fila];
 
         float acumulado = 0f;
 
@@ -834,6 +911,30 @@ public class JugadorAnimacion {
         return GOLPEAR_FACTOR;
     }
 
+    public static float getGolpearFactor(tipoHerramienta tipo) {
+
+        if (tipo == null) {
+            return GOLPEAR_FACTOR;
+        }
+
+        switch (tipo) {
+            case HACHA:  return GOLPEAR_HACHA_FACTOR;
+            case PICO:   return GOLPEAR_PICO_FACTOR;
+            case ESPADA: return GOLPEAR_ESPADA_FACTOR;
+            default:     return GOLPEAR_FACTOR;
+        }
+    }
+
+    public static float getPiesXGolpear(
+        JugadorControl.Direccion direccion,
+        tipoHerramienta tipo
+    ) {
+
+        // Los pies quedan en el centro de la celda, igual que en la
+        // hoja del puño, asi que se usa el mismo anclaje.
+        return getPiesXGolpear(direccion);
+    }
+
     // Donde estan los pies (en pixeles de la celda de caminar)
     public static float getPiesXGolpear(
         JugadorControl.Direccion direccion
@@ -876,6 +977,18 @@ public class JugadorAnimacion {
 
         if (golpearTexture != null) {
             golpearTexture.dispose();
+        }
+
+        if (golpearHachaTexture != null) {
+            golpearHachaTexture.dispose();
+        }
+
+        if (golpearPicoTexture != null) {
+            golpearPicoTexture.dispose();
+        }
+
+        if (golpearEspadaTexture != null) {
+            golpearEspadaTexture.dispose();
         }
 
         if (danoTexture != null) {
