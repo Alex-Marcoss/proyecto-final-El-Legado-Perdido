@@ -1,5 +1,7 @@
 package Juego.facuAlex;
 
+import Juego.facuAlex.Herramientas.tipoHerramienta;
+
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
@@ -1567,15 +1569,19 @@ public class Principal extends ApplicationAdapter {
         JugadorControl.Direccion direccion =
                 jugadorControl.getDireccion();
 
+        // Hacha, pico o espada segun lo que tenga equipado (null = puño)
+        tipoHerramienta tipo = jugadorControl.getTipoGolpe();
+
         TextureRegion frame = jugadorAnimacion.getFrameGolpear(
                 direccion,
-                jugadorControl.getTiempoGolpe()
+                jugadorControl.getTiempoGolpe(),
+                tipo
         );
 
         dibujarFrameAccion(
                 frame,
-                JugadorAnimacion.getGolpearFactor(),
-                JugadorAnimacion.getPiesXGolpear(direccion)
+                JugadorAnimacion.getGolpearFactor(tipo),
+                JugadorAnimacion.getPiesXGolpear(direccion, tipo)
         );
     }
 
