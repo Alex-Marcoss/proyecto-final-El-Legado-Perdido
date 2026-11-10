@@ -1,6 +1,7 @@
 
 package Juego.facuAlex.jugador;
 
+import Juego.facuAlex.sistemas.Avisos;
 import com.badlogic.gdx.math.Rectangle;
 
 import Juego.facuAlex.recursos.*;
@@ -371,7 +372,10 @@ public class Jugador {
         int hambreAntes = hambre;
 
         recuperarHambre(comida.getHambreRecuperada());
-        inventario.gastarRecurso(comida.getNombre(), 1);
+        // Se gasta del stack que se uso (puede haber varios divididos)
+        if (!inventario.gastarUnidadDe(comida)) {
+            inventario.gastarRecurso(comida.getNombre(), 1);
+        }
 
         int hambreRecuperada = hambre - hambreAntes;
 
@@ -457,6 +461,10 @@ public class Jugador {
         recurso.getCantidad()
     );
 
+    Avisos.recurso(
+        "+" + recurso.getCantidad() + " " + recurso.getNombre()
+    );
+
     System.out.println(
         "Conseguiste " + recurso.getCantidad()
         + " de " + recurso.getNombre() + "."
@@ -510,6 +518,10 @@ public class Jugador {
             }
 
             inventario.agregarRecurso(drop, drop.getCantidad());
+
+            Avisos.recurso(
+                "+" + drop.getCantidad() + " " + drop.getNombre()
+            );
 
             System.out.println(
                 "Conseguiste " + drop.getCantidad()
@@ -742,6 +754,10 @@ public class Jugador {
     if (madera != null) {
         inventario.agregarRecurso(madera, madera.getCantidad());
 
+        Avisos.recurso(
+            "+" + madera.getCantidad() + " " + madera.getNombre()
+        );
+
         System.out.println(
             "Conseguiste " + madera.getCantidad() + " de madera."
         );
@@ -811,6 +827,10 @@ public class Jugador {
 
     if (recurso != null) {
         inventario.agregarRecurso(recurso, recurso.getCantidad());
+
+        Avisos.recurso(
+            "+" + recurso.getCantidad() + " " + recurso.getNombre()
+        );
 
         System.out.println(
             "Conseguiste " + recurso.getCantidad()
