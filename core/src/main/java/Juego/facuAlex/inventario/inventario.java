@@ -187,6 +187,21 @@ public class inventario {
             return true;
         }
 
+        // Mismo recurso en los dos slots: se juntan en un solo stack
+        if (items[posicionOrigen] instanceof Recursos
+                && items[posicionDestino] instanceof Recursos
+                && items[posicionOrigen].getNombre()
+                        .equals(items[posicionDestino].getNombre())) {
+
+            ((Recursos) items[posicionDestino]).agregarCantidad(
+                    ((Recursos) items[posicionOrigen]).getCantidad());
+
+            items[posicionOrigen] = null;
+            this.cantidad--;
+
+            return true;
+        }
+
         // Si hay otro objeto, intercambiar
         return intercambiarItems(
                 posicionOrigen,
@@ -226,23 +241,25 @@ public class inventario {
             String nombre,
             int cantidad) {
 
+        return contarRecurso(nombre) >= cantidad;
+    }
+
+    // Total de un recurso sumando todos los casilleros donde este
+    // (un recurso puede estar dividido en varios stacks)
+    public int contarRecurso(String nombre) {
+
+        int total = 0;
+
         for (int i = 0; i < items.length; i++) {
 
-            if (items[i] == null) {
-                continue;
-            }
+            if (items[i] instanceof Recursos
+                    && items[i].getNombre().equals(nombre)) {
 
-            if (items[i].getNombre().equals(nombre)
-                    && items[i] instanceof Recursos) {
-
-                Recursos recurso =
-                        (Recursos) items[i];
-
-                return recurso.getCantidad() >= cantidad;
+                total += ((Recursos) items[i]).getCantidad();
             }
         }
 
-        return false;
+        return total;
     }
 
     // ==========================================================
@@ -323,40 +340,125 @@ public class inventario {
             String nombre,
             int cantidad) {
 
-        for (int i = 0; i < items.length; i++) {
+        if (cantidad <= 0) {
+            return true;
+        }
 
-            if (items[i] == null) {
+        if (contarRecurso(nombre) < cantidad) {
+            return false;
+        }
+
+        int falta = cantidad;
+
+        for (int i = 0; i < items.length && falta > 0; i++) {
+
+            if (!(items[i] instanceof Recursos)
+                    || !items[i].getNombre().equals(nombre)) {
                 continue;
             }
 
-            if (items[i].getNombre().equals(nombre)
-                    && items[i] instanceof Recursos) {
+            Recursos recurso = (Recursos) items[i];
 
-                Recursos recurso =
-                        (Recursos) items[i];
+            int sacar = Math.min(falta, recurso.getCantidad());
 
-                if (recurso.getCantidad() >= cantidad) {
+            recurso.agregarCantidad(-sacar);
+            falta -= sacar;
 
-                    recurso.agregarCantidad(-cantidad);
+            // Si se queda sin unidades, liberar el slot.
+            if (recurso.getCantidad() <= 0) {
 
-                    // Si se queda sin unidades,
-                    // liberar el slot.
-                    if (recurso.getCantidad() <= 0) {
+                items[i] = null;
 
-                        items[i] = null;
+                this.cantidad--;
+            }
+        }
 
-                        this.cantidad--;
-                    }
+        return true;
+    }
 
-                    return true;
+    // Gasta 1 unidad de ESE stack en particular (el que el jugador
+    // tiene en la mano o en la barra), no de otro del mismo recurso.
+    // Devuelve false si ese stack no esta en el inventario.
+    public boolean gastarUnidadDe(Recursos stack) {
+
+        for (int i = 0; i < items.length; i++) {
+
+            if (items[i] == stack && stack != null) {
+
+                stack.agregarCantidad(-1);
+
+                if (stack.getCantidad() <= 0) {
+
+                    items[i] = null;
+
+                    this.cantidad--;
                 }
+
+                return true;
             }
         }
 
         return false;
     }
-    
-    
+
+    // ==========================================================
+    // DIVIDIR UN STACK
+    // ==========================================================
+
+    // Pasa "cantidad" unidades del stack de "origen" al slot "destino".
+    // El destino tiene que estar vacio o tener el mismo recurso.
+    // Siempre queda al menos 1 unidad en el origen.
+    public boolean dividirRecurso(
+            int origen,
+            int destino,
+            int cantidad) {
+
+        if (origen < 0 || origen >= items.length
+                || destino < 0 || destino >= items.length
+                || origen == destino
+                || cantidad <= 0) {
+
+            return false;
+        }
+
+        if (!(items[origen] instanceof Recursos)) {
+            return false;
+        }
+
+        Recursos fuente = (Recursos) items[origen];
+
+        if (cantidad >= fuente.getCantidad()) {
+            return false;
+        }
+
+        // Destino vacio: nace un stack nuevo
+        if (items[destino] == null) {
+
+            Recursos nuevo = fuente.separar(cantidad);
+
+            if (nuevo == null) {
+                return false;
+            }
+
+            items[destino] = nuevo;
+            this.cantidad++;
+
+            return true;
+        }
+
+        // Mismo recurso: se suma al stack que ya esta
+        if (items[destino] instanceof Recursos
+                && items[destino].getNombre().equals(fuente.getNombre())) {
+
+            fuente.agregarCantidad(-cantidad);
+            ((Recursos) items[destino]).agregarCantidad(cantidad);
+
+            return true;
+        }
+
+        return false;
+    }
+
 	 // ==========================================================
 	 // TRANSFERENCIAS ENTRE INVENTARIOS
 	 // ==========================================================
