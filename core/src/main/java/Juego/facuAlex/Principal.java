@@ -82,6 +82,10 @@ public class Principal extends ApplicationAdapter {
     private PantallaCarga pantallaCarga;
     private PantallaDerrota pantallaDerrota;
     private PantallaVictoria pantallaVictoria;
+    private PantallaPausa pantallaPausa;
+
+    // Juego en pausa (ESC)
+    private boolean enPausa;
 
     // ESTADO
 
@@ -152,6 +156,7 @@ public class Principal extends ApplicationAdapter {
 
         pantallaDerrota = new PantallaDerrota();
         pantallaVictoria = new PantallaVictoria();
+        pantallaPausa = new PantallaPausa();
         pantallaCarga = new PantallaCarga();
         menuInicio = new MenuInicio();
         transicion = new TransicionFade();
@@ -268,6 +273,7 @@ public class Principal extends ApplicationAdapter {
     private void comenzarCarga() {
 
         enMenu = false;
+        enPausa = false;
         derrota = false;
         victoria = false;
 
@@ -521,6 +527,7 @@ public class Principal extends ApplicationAdapter {
         victoria = false;
         cargando = false;
         enMenu = true;
+        enPausa = false;
         modoConstruccion = false;
 
         menuInicio.mostrar();
@@ -1070,6 +1077,38 @@ public class Principal extends ApplicationAdapter {
             return;
         }
 
+        // ------------------------------------------------------
+        // PAUSA: con el juego en pausa el tiempo no avanza (delta = 0)
+        // y no se procesa ninguna interacción.
+        // ------------------------------------------------------
+        boolean congelado = false;
+
+        if (enPausa) {
+
+            congelado = true;
+
+            PantallaPausa.Accion accionPausa =
+                    pantallaPausa.actualizar(delta);
+
+            if (accionPausa == PantallaPausa.Accion.CONTINUAR) {
+
+                // Este frame sigue congelado para que el click o la
+                // tecla que reanuda no active nada en el juego.
+                enPausa = false;
+
+            } else if (accionPausa
+                    == PantallaPausa.Accion.VOLVER_AL_MENU) {
+
+                enPausa = false;
+                volverAlMenu();
+                return;
+            }
+        }
+
+        if (congelado) {
+            delta = 0f;
+        }
+
         if (!derrota && !victoria && jugador.gameOver()) {
             derrota = true;
             pantallaDerrota.mostrar();
@@ -1117,7 +1156,20 @@ public class Principal extends ApplicationAdapter {
                 || inventarioUI.estaAbierto()
                 || recetarioUI.estaAbierto();
 
-        if (cofreUI.estaAbierto()) {
+        // ESC abre la pausa (si ESC cierra una interfaz o cancela el
+        // modo construcción, solo hace eso).
+        if (!congelado && !interfazAbierta && !modoConstruccion
+                && !transicion.isActiva()
+                && Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+
+            enPausa = true;
+            congelado = true;
+            pantallaPausa.mostrar();
+        }
+
+        if (congelado) {
+            // En pausa no se procesan las interfaces
+        } else if (cofreUI.estaAbierto()) {
             cofreUI.actualizar();
         } else if (hornoUI.estaAbierto()) {
             hornoUI.actualizar();
@@ -1136,7 +1188,7 @@ public class Principal extends ApplicationAdapter {
 
         actualizarRecursos(delta);
 
-        if (!interfazAbierta && !transicion.isActiva()) {
+        if (!congelado && !interfazAbierta && !transicion.isActiva()) {
 
             if (!enTemplo) {
                 actualizarConstruccion();
@@ -1327,7 +1379,9 @@ public class Principal extends ApplicationAdapter {
         dibujarModoConstruccion();
 
         barrasSupervivencia.dibujar();
-        barraRapidaUI.actualizar();
+        if (!congelado) {
+            barraRapidaUI.actualizar();
+        }
 
         // Estado actual de las interfaces (puede haber cambiado en este frame)
         boolean interfazVisible =
@@ -1341,7 +1395,9 @@ public class Principal extends ApplicationAdapter {
             barraRapidaUI.dibujar();
 
             if (enTemplo) {
-                comprobarRecogerGema();
+                if (!congelado) {
+                    comprobarRecogerGema();
+                }
             } else {
                 panelEstructuraRescate.dibujar(
                         jugador,
@@ -1364,6 +1420,11 @@ public class Principal extends ApplicationAdapter {
         Avisos.dibujar();
 
         transicion.dibujar();
+
+        // Menú de pausa por encima de todo
+        if (enPausa) {
+            pantallaPausa.dibujar();
+        }
     }
 
     // ==========================================================
@@ -1996,6 +2057,10 @@ public class Principal extends ApplicationAdapter {
 
         if (pantallaDerrota != null) {
             pantallaDerrota.dispose();
+        }
+
+        if (pantallaPausa != null) {
+            pantallaPausa.dispose();
         }
 
         if (pantallaVictoria != null) {
