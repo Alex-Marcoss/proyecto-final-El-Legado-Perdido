@@ -6,6 +6,7 @@ public class Item {
 
     protected String nombre;
     private Texture icono;
+    private String rutaIcono;
     
 
     public Item(String nombre) {
@@ -35,11 +36,21 @@ public class Item {
         }
 
         icono = new Texture(ruta);
+        rutaIcono = ruta;
 
         icono.setFilter(
             Texture.TextureFilter.Nearest,
             Texture.TextureFilter.Nearest
         );
+    }
+
+    // Carga el mismo icono que tiene otro item (cada item tiene su
+    // propia textura, asi liberar uno no afecta al otro)
+    public void copiarIconoDe(Item otro) {
+
+        if (otro != null && otro.rutaIcono != null) {
+            cargarIcono(otro.rutaIcono);
+        }
     }
 
     public Texture getIcono() {
@@ -50,6 +61,7 @@ public class Item {
         if (icono != null) {
             icono.dispose();
             icono = null;
+            rutaIcono = null;
         }
     }
     	
