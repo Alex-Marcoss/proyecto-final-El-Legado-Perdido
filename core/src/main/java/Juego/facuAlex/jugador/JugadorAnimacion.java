@@ -647,13 +647,29 @@ public class JugadorAnimacion {
             - TALAR_DURACION_FRAMES[TALAR_DURACION_FRAMES.length - 1];
     }
 
+    // Los frames salen de la hoja del hacha (golpear_hacha.png), vista de
+    // costado, igual que se hace al minar: se levanta el hacha, se baja
+    // con fuerza hacia el arbol y queda clavada en el impacto.
+    //
+    // Frames de cada fila de la hoja del hacha:
+    //   0 = hacha abajo   1 = hacha levantada
+    //   2 = golpe con estela   3 = hacha abajo, adelante
+    private static final int[] TALAR_ORDEN_FRAMES = {1, 1, 2, 2, 3};
+
+    private static final int FILA_HACHA_DERECHA = 2;
+    private static final int FILA_HACHA_IZQUIERDA = 3;
+
     public TextureRegion getFrameTalar(
         boolean haciaLaIzquierda,
         float tiempo
     ) {
 
         TextureRegion[] frames =
-            haciaLaIzquierda ? talarIzquierda : talarDerecha;
+            golpearHacha[
+                haciaLaIzquierda
+                    ? FILA_HACHA_IZQUIERDA
+                    : FILA_HACHA_DERECHA
+            ];
 
         float acumulado = 0f;
 
@@ -662,15 +678,18 @@ public class JugadorAnimacion {
             acumulado += TALAR_DURACION_FRAMES[i];
 
             if (tiempo < acumulado) {
-                return frames[i];
+                return frames[TALAR_ORDEN_FRAMES[i]];
             }
         }
 
-        return frames[frames.length - 1];
+        return frames[
+            TALAR_ORDEN_FRAMES[TALAR_ORDEN_FRAMES.length - 1]
+        ];
     }
 
     public float getTalarFactor() {
-        return talarFactor;
+        // Misma escala que el golpe con hacha (usa su misma hoja)
+        return GOLPEAR_HACHA_FACTOR;
     }
 
     // =========================
