@@ -15,6 +15,11 @@ public class Comida extends Recursos {
     }
 
     @Override
+    protected Recursos crearCopia(int n) {
+        return new Comida(nombre, n, hambreRecuperada);
+    }
+
+    @Override
     public void mostrarInfo() {
         System.out.println(
             nombre + ": " + getCantidad()
