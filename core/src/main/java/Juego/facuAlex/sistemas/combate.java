@@ -13,6 +13,10 @@ public class combate {
     // Ancho del área de ataque
     private static final float ANCHO_ATAQUE = 45f;
 
+    // Altura (desde los pies) donde nace el número de daño.
+    // El Guardian mide 96 px.
+    private static final float ALTURA_NUMERO_DANIO = 90f;
+
     public boolean atacar(
             Jugador jugador,
             Enemigo enemigo,
@@ -119,6 +123,14 @@ public class combate {
         int danio = jugador.getDanioAtaque();
 
         enemigo.recibirDaño(danio);
+
+        // Número de daño flotante sobre la cabeza del enemigo
+        TextosFlotantes.agregar(
+                enemigo.getPosicionX(),
+                enemigo.getPosicionY() + ALTURA_NUMERO_DANIO,
+                "-" + danio,
+                TextosFlotantes.BLANCO
+        );
 
         jugador.gastarEnergia(ENERGIA_ATAQUE);
 
