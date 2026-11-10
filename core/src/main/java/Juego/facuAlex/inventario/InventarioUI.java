@@ -46,6 +46,10 @@ public class InventarioUI {
     private float mouseArrastreX;
     private float mouseArrastreY;
 
+    // Division de stacks: 0 = se arrastra todo el stack;
+    // mayor que 0 = se lleva solo esa cantidad (Shift = mitad, Ctrl = 1)
+    private int cantidadDivision;
+
     // =====================================================
     // RESOLUCIÓN VIRTUAL
     // =====================================================
@@ -149,6 +153,7 @@ public class InventarioUI {
                 arrastrando = false;
                 slotArrastrado = -1;
                 slotSeleccionado = -1;
+                cantidadDivision = 0;
             }
         }
 
@@ -178,8 +183,20 @@ public class InventarioUI {
                     // Empezamos a arrastrar
                     arrastrando = true;
                     slotArrastrado = slot;
+                    cantidadDivision = 0;
 
-                    
+                    // Shift: llevar la mitad. Ctrl: llevar 1 unidad.
+                    if (item instanceof Recursos
+                            && ((Recursos) item).getCantidad() >= 2) {
+
+                        int total = ((Recursos) item).getCantidad();
+
+                        if (shiftPresionado()) {
+                            cantidadDivision = Math.max(1, total / 2);
+                        } else if (ctrlPresionado()) {
+                            cantidadDivision = 1;
+                        }
+                    }
                 }
             }
         }
@@ -212,16 +229,40 @@ public class InventarioUI {
 
             if (slotDestino != -1 && slotDestino != slotArrastrado) {
 
-                jugador.getInventario().moverItem(slotArrastrado, slotDestino);
+                if (cantidadDivision > 0) {
 
-                slotSeleccionado = slotDestino;
+                    // Dividir: solo funciona sobre un slot vacio o con
+                    // el mismo recurso; si no, no pasa nada.
+                    if (jugador.getInventario().dividirRecurso(
+                            slotArrastrado, slotDestino, cantidadDivision)) {
+
+                        slotSeleccionado = slotDestino;
+                    }
+
+                } else {
+
+                    jugador.getInventario().moverItem(slotArrastrado, slotDestino);
+
+                    slotSeleccionado = slotDestino;
+                }
             }
 
             arrastrando = false;
             slotArrastrado = -1;
+            cantidadDivision = 0;
         }
 
         mousePresionadoAnteriormente = mousePresionado;
+    }
+
+    private boolean shiftPresionado() {
+        return Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT)
+                || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT);
+    }
+
+    private boolean ctrlPresionado() {
+        return Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT)
+                || Gdx.input.isKeyPressed(Input.Keys.CONTROL_RIGHT);
     }
 
     // =====================================================
@@ -330,7 +371,8 @@ public class InventarioUI {
         }
 
         // El objeto que se está arrastrando no se dibuja en su slot
-        if (arrastrando && i == slotArrastrado) {
+        // (salvo al dividir: ahi el slot sigue mostrando lo que queda)
+        if (arrastrando && i == slotArrastrado && cantidadDivision == 0) {
             continue;
         }
 
@@ -348,7 +390,14 @@ public class InventarioUI {
         );
 
         if (item instanceof Recursos) {
-            dibujarCantidad((Recursos) item, x, y);
+
+            int mostrar = ((Recursos) item).getCantidad();
+
+            if (arrastrando && i == slotArrastrado && cantidadDivision > 0) {
+                mostrar -= cantidadDivision;
+            }
+
+            dibujarCantidad(mostrar, x, y);
         }
 
         // Barra de desgaste de las herramientas
@@ -378,8 +427,13 @@ public class InventarioUI {
             dibujarIcono(item, mouseArrastreX, mouseArrastreY, 0.85f);
 
             if (item instanceof Recursos) {
+
+                int mostrar = cantidadDivision > 0
+                        ? cantidadDivision
+                        : ((Recursos) item).getCantidad();
+
                 dibujarCantidad(
-                        (Recursos) item,
+                        mostrar,
                         mouseArrastreX - anchoSlot() / 2f,
                         mouseArrastreY - altoSlot() / 2f
                 );
@@ -395,6 +449,28 @@ public class InventarioUI {
             }
         }
     }
+
+    // Ayuda de controles debajo del panel
+    String ayuda = "Shift + arrastrar: dividir a la mitad   |   "
+            + "Ctrl + arrastrar: llevar 1";
+
+    layoutCantidad.setText(fuenteCantidad, ayuda);
+
+    fuenteCantidad.setColor(0f, 0f, 0f, 1f);
+    fuenteCantidad.draw(
+            batchInventario,
+            ayuda,
+            (ANCHO_VIRTUAL - layoutCantidad.width) / 2f + 1f,
+            panelY() - 14f - 1f
+    );
+
+    fuenteCantidad.setColor(1f, 1f, 1f, 1f);
+    fuenteCantidad.draw(
+            batchInventario,
+            ayuda,
+            (ANCHO_VIRTUAL - layoutCantidad.width) / 2f,
+            panelY() - 14f
+    );
 
     batchInventario.setColor(1f, 1f, 1f, 1f);
     batchInventario.end();
@@ -442,9 +518,7 @@ public class InventarioUI {
     // DIBUJAR CANTIDAD (esquina inferior derecha del slot)
     // =====================================================
 
-    private void dibujarCantidad(Recursos recurso, float slotX, float slotY) {
-
-        int cantidad = recurso.getCantidad();
+    private void dibujarCantidad(int cantidad, float slotX, float slotY) {
 
         if (cantidad <= 0) {
             return;
