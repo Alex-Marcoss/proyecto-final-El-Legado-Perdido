@@ -107,10 +107,10 @@ public abstract class Criatura extends Animal {
 
         if (!estaVivo()) {
 
-            if (estado != Estado.MUERTO) {
+        	if (estado != Estado.MUERTO) {
 
-                morir(jugador);
-            }
+        	    morir();
+        	}
 
             tiempoMuerte += delta;
             
@@ -125,7 +125,7 @@ public abstract class Criatura extends Animal {
         pensar(jugador, mapa, delta);
     }
 
-    private void morir(Jugador jugador) {
+    private void morir() {
 
         estado = Estado.MUERTO;
 
@@ -133,11 +133,7 @@ public abstract class Criatura extends Animal {
 
         tiempoMuerte = 0f;
 
-        // Entrega los drops directo al inventario
-        if (jugador != null) {
-
-            jugador.recogerDropsAnimal(this);
-        }
+        // Los drops los suelta GestorCriaturas en el suelo
     }
 
     public boolean haDesaparecido() {

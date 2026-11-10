@@ -20,6 +20,7 @@ import Juego.facuAlex.jugador.Jugador;
 import Juego.facuAlex.recursos.Item;
 import Juego.facuAlex.recursos.Recursos;
 
+
 public class BarraRapidaUI {
 
     // =====================================================
@@ -338,7 +339,13 @@ public class BarraRapidaUI {
             float y = sy + (altoSlot() - alto) / 2f;
 
             batch.draw(region, x, y, ancho, alto);
-
+            
+            if (item instanceof Herramienta) {
+                BarraDesgaste.dibujar(
+                        batch, pixelBlanco, (Herramienta) item,
+                        sx, sy, anchoSlot()
+                );
+            }
             // Cantidad
             if (item instanceof Recursos) {
 

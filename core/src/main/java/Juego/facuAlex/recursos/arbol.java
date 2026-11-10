@@ -57,10 +57,13 @@ public class arbol extends objetoMundo {
         );
     }
 
+ // Si la caja se ve a la izquierda del tronco, subí este valor; si se ve a la derecha, bajalo (negativo)
+    private static final float HITBOX_OFFSET_X = 0f;
+
     public Rectangle getHitbox() {
 
         return new Rectangle(
-            posicionX - HITBOX_ANCHO / 2f,
+            posicionX - HITBOX_ANCHO / 2f + HITBOX_OFFSET_X,
             posicionY + HITBOX_OFFSET_Y,
             HITBOX_ANCHO,
             HITBOX_ALTO

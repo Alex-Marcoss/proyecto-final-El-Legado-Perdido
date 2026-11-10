@@ -12,8 +12,10 @@ import Juego.facuAlex.recursos.Comida;
 import Juego.facuAlex.recursos.Item;
 import Juego.facuAlex.recursos.arbol;
 import Juego.facuAlex.recursos.roca;
+import Juego.facuAlex.sistemas.Avisos;
 import Juego.facuAlex.sistemas.combate;
 import Juego.facuAlex.enemigos.*;
+import Juego.facuAlex.recursos.Catalogo;
 
 public class JugadorControl {
 
@@ -44,7 +46,17 @@ public class JugadorControl {
         HERIDO
     }
 
+    
+    // ======================================================
+    // VELOCIDADES
+    // ======================================================
+    
+    float velocidadCaminar = 100f;
 
+    float velocidadCorrer = 170f;
+
+    float velocidad;
+    
     // ==========================================================
     // ESTADO DE MINADO
     // ==========================================================
@@ -144,7 +156,7 @@ public class JugadorControl {
             float delta,
             Mapa mapa) {
 
-
+    	
         // ======================================================
         // RECIBIO UN GOLPE
         // ======================================================
@@ -226,12 +238,13 @@ public class JugadorControl {
         // COMIENDO
         // ======================================================
 
-        if (estado == Estado.COMER) {
 
-            actualizarComer(delta);
-
-            return;
-        }
+	     if (estado == Estado.COMER) {
+	
+	         actualizarComer(delta);
+	
+	         return;
+	     }
 
 
         // ======================================================
@@ -268,19 +281,24 @@ public class JugadorControl {
                 );
 
 
-        // ======================================================
-        // COMER
-        // ======================================================
+       
 
-        if (Gdx.input.isKeyJustPressed(
-                Input.Keys.F)) {
+     // ======================================================
+     // COMER / USAR VENDAJE (tecla F)
+     // ======================================================
 
+     if (Gdx.input.isKeyJustPressed(Input.Keys.F)) {
 
-            if (comerBayas()) {
+         if (usarVendajeSeleccionado()) {
 
-                return;
-            }
-        }
+             return;
+         }
+
+         if (comerBayas()) {
+
+             return;
+         }
+     }
 
 
         // ======================================================
@@ -434,17 +452,9 @@ public class JugadorControl {
         }
 
 
-        // ======================================================
-        // VELOCIDADES
-        // ======================================================
+       
 
-        float velocidadCaminar =
-                100f;
-
-        float velocidadCorrer =
-                170f;
-
-        float velocidad;
+      
 
 
         // ======================================================
@@ -798,7 +808,7 @@ public class JugadorControl {
 
         tiempoComer += delta;
 
-
+        
 
 
         if (
@@ -1036,7 +1046,7 @@ public class JugadorControl {
 
                 } else {
 
-                    System.out.println("No tenes suficiente energia para atacar.");
+                	Avisos.error("No tenes suficiente energia para atacar.");
                 }
 
                 return;
@@ -1154,7 +1164,28 @@ public class JugadorControl {
     private static final String CARNE_CRUDA = "Carne";
 
     private static final int DANO_CARNE_CRUDA = 10;
+    
+ // Si lo seleccionado en la barra rápida es un vendaje, lo usa
+    private boolean usarVendajeSeleccionado() {
 
+        if (barraRapida == null) {
+            return false;
+        }
+
+        Item seleccionado = barraRapida.getItemSeleccionado();
+
+        if (seleccionado == null
+                || !Catalogo.VENDAJE.equals(seleccionado.getNombre())) {
+
+            return false;
+        }
+
+        jugador.usarVendaje();
+
+        return true;
+    }
+    
+    
     private boolean comerBayas() {
 
         return comerAlgo();
@@ -1168,9 +1199,7 @@ public class JugadorControl {
 
         if (jugador.getHambre() >= 100) {
 
-            System.out.println(
-                "No tenes hambre."
-            );
+        	Avisos.mostrar("No tenes hambre.");
 
             return false;
         }

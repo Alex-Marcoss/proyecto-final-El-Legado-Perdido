@@ -43,7 +43,7 @@ public class Recetario {
     	Receta recetaHacha = new Receta(
     	        () -> new hacha(20, 10),
     	        new Ingrediente[] {
-    	            new Ingrediente(Catalogo.MADERA, 3),
+    	            new Ingrediente(Catalogo.PALOS, 2),
     	            new Ingrediente(Catalogo.PIEDRA, 2),
     	            new Ingrediente(Catalogo.FIBRA, 1)
     	        }
@@ -52,7 +52,7 @@ public class Recetario {
     	Receta recetaPico = new Receta(
     	        () -> new pico(20, 15),
     	        new Ingrediente[] {
-    	            new Ingrediente(Catalogo.MADERA, 3),
+    	            new Ingrediente(Catalogo.PALOS, 2),
     	            new Ingrediente(Catalogo.PIEDRA, 4),
     	            new Ingrediente(Catalogo.FIBRA, 1)
     	        }
@@ -71,14 +71,14 @@ public class Recetario {
                 () -> Catalogo.crear(Catalogo.PALOS, 2),
                 new Ingrediente[] {
                     new Ingrediente(Catalogo.MADERA, 1)
-                }),
+                }).sinMesa(),
                 hachaFabricada, null);
 
         agregar(new Receta(
                 () -> Catalogo.crear(Catalogo.CUERDA, 1),
                 new Ingrediente[] {
                     new Ingrediente(Catalogo.FIBRA, 5)
-                }).sinMesa(),
+                }),
                 hachaFabricada, null);
 
         agregar(new Receta(

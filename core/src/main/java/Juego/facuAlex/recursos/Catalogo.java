@@ -37,7 +37,7 @@ public final class Catalogo {
         ICONOS.put(FIBRA, "objetos/fibra.png");
         ICONOS.put(BAYAS, "objetos/baya.png");
         ICONOS.put(CARNE, "objetos/carne.png");
-        ICONOS.put(CARNE_COCIDA, "objetos/carne_cocida.png");
+        ICONOS.put(CARNE_COCIDA, "objetos/carneCocida.png");
 
         ICONOS.put(HILO, "objetos/hilo.png");
         ICONOS.put(LANA, "objetos/lana.png");
@@ -85,8 +85,17 @@ public final class Catalogo {
 
         String ruta = ICONOS.get(nombre);
 
-        if (ruta != null && Gdx.files.internal(ruta).exists()) {
-            item.cargarIcono(ruta);
+        if (ruta == null) {
+            System.out.println("AVISO: no hay ruta de icono para: " + nombre);
+            return;
         }
+
+        if (!Gdx.files.internal(ruta).exists()) {
+            System.out.println("AVISO: falta el icono " + ruta
+                    + " (para " + nombre + ")");
+            return;
+        }
+
+        item.cargarIcono(ruta);
     }
 }

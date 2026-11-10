@@ -123,14 +123,6 @@ public class Principal extends ApplicationAdapter {
 
     private static final float TAMANO_ESTRUCTURA = 64f;
 
-    // MENSAJES EN PANTALLA
-
-    private static final float DURACION_MENSAJE = 2.5f;
-
-    private String mensaje;
-    private float tiempoMensaje;
-    private final GlyphLayout layoutMensaje = new GlyphLayout();
-
     // Texturas para la interfaz de construcción.
 
     private Texture texturaPixel;
@@ -287,7 +279,10 @@ public class Principal extends ApplicationAdapter {
         cargando = true;
         pasoCarga = 0;
         tiempoCarga = 0f;
-        tiempoMensaje = 0f;
+
+        // Sin avisos ni números flotantes de la partida anterior
+        Avisos.limpiar();
+        TextosFlotantes.limpiar();
 
         pantallaCarga.mostrar();
         pantallaCarga.setProgreso(0.05f, "Preparando...");
@@ -452,11 +447,11 @@ public class Principal extends ApplicationAdapter {
                 GestorCriaturas =
                         new GestorCriaturas(mapa, jugador);
 
-                // Misma posición que el mapa reservó para el templo
+                // Mismo lugar que el mapa reservó para el templo
                 templo = new Templo(
                         "estructuras/templo.png",
-                        Mapa.SPAWN_X + Mapa.TEMPLO_DX,
-                        Mapa.SPAWN_Y + Mapa.TEMPLO_DY,
+                        mapa.getTemploX(),
+                        mapa.getTemploY(),
                         ESCALA_TEMPLO
                 );
 
@@ -568,9 +563,7 @@ public class Principal extends ApplicationAdapter {
                     guardian.getPosicionY()
             );
 
-            System.out.println(
-                    "El Guardian dejo caer la Gema Azul."
-            );
+            Avisos.mostrar("El Guardian dejo caer la Gema Azul.");
         }
     }
 
@@ -689,51 +682,11 @@ public class Principal extends ApplicationAdapter {
     }
 
     private String obtenerNombreEstructuraSeleccionada() {
-
-        switch (estructuraSeleccionada) {
-
-            case 1:
-                return "Fogata";
-
-            case 2:
-                return "Mesa de fabricacion";
-
-            case 3:
-                return "Horno";
-
-            case 4:
-                return "Cofre";
-
-            case 5:
-                return "Cama";
-
-            default:
-                return "Ninguna";
-        }
+        return CostosEstructuras.nombre(estructuraSeleccionada);
     }
 
     private String obtenerCostoEstructuraSeleccionada() {
-
-        switch (estructuraSeleccionada) {
-
-            case 1:
-                return "Costo: 3 madera + 2 piedra";
-
-            case 2:
-                return "Costo: 5 madera + 2 piedra";
-
-            case 3:
-                return "Costo: 3 madera + 6 piedra";
-
-            case 4:
-                return "Costo: 5 madera";
-
-            case 5:
-                return "Costo: 4 madera + 2 fibra";
-
-            default:
-                return "";
-        }
+        return CostosEstructuras.textoCosto(estructuraSeleccionada);
     }
 
     private void dibujarPrevisualizacionConstruccion() {
@@ -866,108 +819,59 @@ public class Principal extends ApplicationAdapter {
         float x = posicionMouse.x - TAMANO_ESTRUCTURA / 2f;
         float y = posicionMouse.y - TAMANO_ESTRUCTURA / 2f;
 
-        Estructura nueva = null;
-
-        int maderaNecesaria = 0;
-        int piedraNecesaria = 0;
-        int fibraNecesaria = 0;
+        Estructura nueva;
 
         switch (estructuraSeleccionada) {
 
-            case 1:
+            case CostosEstructuras.FOGATA:
                 nueva = new Fogata(x, y);
-                maderaNecesaria = 3;
-                piedraNecesaria = 2;
                 break;
 
-            case 2:
+            case CostosEstructuras.MESA:
                 nueva = new MesaFabricacion(x, y);
-                maderaNecesaria = 5;
-                piedraNecesaria = 2;
                 break;
 
-            case 3:
+            case CostosEstructuras.HORNO:
                 nueva = new Horno(x, y);
-                maderaNecesaria = 3;
-                piedraNecesaria = 6;
                 break;
 
-            case 4:
+            case CostosEstructuras.COFRE:
                 nueva = new Cofre(x, y);
-                maderaNecesaria = 5;
                 break;
 
-            case 5:
+            case CostosEstructuras.CAMA:
                 nueva = new Cama(x, y);
-                maderaNecesaria = 4;
-                fibraNecesaria = 2;
                 break;
 
             default:
                 return;
         }
 
-        inventario inventarioJugador =
-                jugador.getInventario();
+        inventario inventarioJugador = jugador.getInventario();
 
-        if (maderaNecesaria > 0
-                && !inventarioJugador.tieneRecurso(
-                        "Madera", maderaNecesaria)) {
+        // ¿Alcanzan los materiales?
+        String falta = CostosEstructuras.materialFaltante(
+                inventarioJugador, estructuraSeleccionada);
 
-            System.out.println("No tenes suficiente madera.");
+        if (falta != null) {
+
+            Avisos.error("Te falta: " + falta + ".");
             nueva.dispose();
             return;
         }
 
-        if (piedraNecesaria > 0
-                && !inventarioJugador.tieneRecurso(
-                        "Piedra", piedraNecesaria)) {
-
-            System.out.println("No tenes suficiente piedra.");
-            nueva.dispose();
-            return;
-        }
-
-        if (fibraNecesaria > 0
-                && !inventarioJugador.tieneRecurso(
-                        "Fibra", fibraNecesaria)) {
-
-            System.out.println("No tenes suficiente fibra.");
-            nueva.dispose();
-            return;
-        }
-
+        // ¿Se puede construir en ese lugar?
         if (!mapa.agregarEstructura(nueva)) {
 
-            System.out.println(
-                    "No podes construir en ese lugar."
-            );
-
+            Avisos.error("No podes construir en ese lugar.");
             nueva.dispose();
             return;
         }
 
-        if (maderaNecesaria > 0) {
-            inventarioJugador.gastarRecurso(
-                    "Madera", maderaNecesaria
-            );
-        }
+        // Recién ahora se cobra
+        CostosEstructuras.cobrar(inventarioJugador, estructuraSeleccionada);
 
-        if (piedraNecesaria > 0) {
-            inventarioJugador.gastarRecurso(
-                    "Piedra", piedraNecesaria
-            );
-        }
-
-        if (fibraNecesaria > 0) {
-            inventarioJugador.gastarRecurso(
-                    "Fibra", fibraNecesaria
-            );
-        }
-
-        System.out.println(
-                "Construiste: " + nueva.getNombre()
-        );
+        Avisos.mostrar("Construiste: " + nueva.getNombre());
 
         modoConstruccion = false;
     }
@@ -1016,9 +920,7 @@ public class Principal extends ApplicationAdapter {
         if (jugador.getEnergia()
                 < plantaCercana.getEnergiaNecesaria()) {
 
-            System.out.println(
-                    "No tenes suficiente energia."
-            );
+            Avisos.error("No tenes suficiente energia.");
 
             return;
         }
@@ -1044,7 +946,10 @@ public class Principal extends ApplicationAdapter {
                             fibra.getCantidad()
                     );
 
-                    System.out.println("Recolectaste fibra.");
+                    Avisos.recurso(
+                            "+" + fibra.getCantidad()
+                            + " " + fibra.getNombre()
+                    );
                 }
         );
     }
@@ -1110,7 +1015,10 @@ public class Principal extends ApplicationAdapter {
                                 bayas.getCantidad()
                         );
 
-                        System.out.println("Recolectaste bayas.");
+                        Avisos.recurso(
+                                "+" + bayas.getCantidad()
+                                + " " + bayas.getNombre()
+                        );
                     }
                 }
         );
@@ -1123,12 +1031,12 @@ public class Principal extends ApplicationAdapter {
     private void intentarDormir() {
 
         if (!cicloDia.puedeDormir()) {
-            mostrarMensaje("Solo puedes dormir de noche.");
+            Avisos.error("Solo puedes dormir de noche.");
             return;
         }
 
         if (GestorCriaturas.hayEnemigosCerca(jugador)) {
-            mostrarMensaje("No puedes dormir con enemigos cerca.");
+            Avisos.error("No puedes dormir con enemigos cerca.");
             return;
         }
 
@@ -1137,47 +1045,8 @@ public class Principal extends ApplicationAdapter {
         transicion.iniciar(() -> {
             cicloDia.dormirHastaAmanecer();
             GestorCriaturas.despejarEnemigos();
+            Avisos.mostrar("Dormiste hasta el amanecer.");
         });
-    }
-
-    // ==========================================================
-    // MENSAJES EN PANTALLA
-    // ==========================================================
-
-    private void mostrarMensaje(String texto) {
-        mensaje = texto;
-        tiempoMensaje = DURACION_MENSAJE;
-    }
-
-    private void dibujarMensaje(float delta) {
-
-        if (mensaje == null || tiempoMensaje <= 0f) {
-            return;
-        }
-
-        tiempoMensaje -= delta;
-
-        // Se desvanece durante el último medio segundo
-        float alpha = Math.min(1f, tiempoMensaje / 0.5f);
-
-        batch.setProjectionMatrix(camara.combined);
-        batch.begin();
-
-        font.getData().setScale(1.2f);
-        layoutMensaje.setText(font, mensaje);
-
-        font.setColor(1f, 1f, 1f, alpha);
-        font.draw(
-                batch,
-                layoutMensaje,
-                camara.position.x - layoutMensaje.width / 2f,
-                camara.position.y + 150f
-        );
-
-        font.setColor(Color.WHITE);
-        font.getData().setScale(1f);
-
-        batch.end();
     }
 
     // ==========================================================
@@ -1233,6 +1102,9 @@ public class Principal extends ApplicationAdapter {
 
         cicloDia.actualizar(delta);
 
+        Avisos.actualizar(delta);
+        TextosFlotantes.actualizar(delta);
+
         // El recetario solo deja fabricar si hay una mesa cerca
         recetarioUI.setMesaCerca(hayMesaCerca());
 
@@ -1287,6 +1159,13 @@ public class Principal extends ApplicationAdapter {
 
             if (!interactuo && !enTemplo) {
                 interactuo = comprobarInteraccionEstructura();
+            }
+
+            // E recoge los drops del suelo (por ejemplo la carne de un animal)
+            if (!interactuo && !enTemplo
+                    && Gdx.input.isKeyJustPressed(Input.Keys.E)) {
+
+                interactuo = GestorCriaturas.recogerDropCercano(jugador);
             }
 
             // En modo construcción no se inicia la recolección
@@ -1441,9 +1320,11 @@ public class Principal extends ApplicationAdapter {
             );
         }
 
-        // Panel del modo construcción y mensajes por encima del mundo.
+        // Números de daño flotantes (no se oscurecen con la noche)
+        TextosFlotantes.dibujar(batch, camara, font);
+
+        // Panel del modo construcción por encima del mundo.
         dibujarModoConstruccion();
-        dibujarMensaje(delta);
 
         barrasSupervivencia.dibujar();
         barraRapidaUI.actualizar();
@@ -1478,6 +1359,9 @@ public class Principal extends ApplicationAdapter {
         } else if (recetarioUI.estaAbierto()) {
             recetarioUI.dibujar();
         }
+
+        // Avisos por encima de todo (también de las interfaces)
+        Avisos.dibujar();
 
         transicion.dibujar();
     }
@@ -1631,6 +1515,8 @@ public class Principal extends ApplicationAdapter {
 
     private void dibujarObjetosDetras(float yPies) {
 
+        GestorCriaturas.dibujarDrops(batch);
+
         for (arbol a : mapa.getArboles()) {
             if (!a.estaTalado() && a.getYOrden() > yPies) {
                 a.dibujar(batch);
@@ -1689,6 +1575,8 @@ public class Principal extends ApplicationAdapter {
         }
 
         GestorCriaturas.dibujarDelante(batch, yPies);
+
+        GestorCriaturas.dibujarCartelDrop(batch, font, jugador);
     }
 
     private void dibujarCartelFogata() {
@@ -1846,7 +1734,7 @@ public class Principal extends ApplicationAdapter {
             jugador.recogerItem(new GemaAzul());
             gemaAzul.recoger();
 
-            System.out.println("Recogiste la Gema Azul.");
+            Avisos.mostrar("Recogiste la Gema Azul.");
         }
     }
 
@@ -1888,18 +1776,14 @@ public class Principal extends ApplicationAdapter {
             if (!fogata.estaEncendida()) {
 
                 if (!jugador.getInventario().tieneRecurso("Madera", 3)) {
-                    System.out.println(
-                            "Necesitas 3 maderas para encender la fogata."
-                    );
+                    Avisos.error("Necesitas 3 maderas para encender la fogata.");
                     return true;
                 }
 
                 if (fogata.encender()) {
                     jugador.getInventario().gastarRecurso("Madera", 3);
 
-                    System.out.println(
-                            "Fogata encendida por 60 segundos."
-                    );
+                    Avisos.mostrar("Fogata encendida.");
                 }
             }
 
@@ -2107,6 +1991,8 @@ public class Principal extends ApplicationAdapter {
         if (overlayNoche != null) {
             overlayNoche.dispose();
         }
+
+        Avisos.dispose();
 
         if (pantallaDerrota != null) {
             pantallaDerrota.dispose();

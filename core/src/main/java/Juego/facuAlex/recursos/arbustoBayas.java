@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.Rectangle;
 
 import Juego.facuAlex.Herramientas.tipoHerramienta;
 
@@ -15,7 +16,16 @@ public class arbustoBayas extends objetoMundo {
 
     private TextureRegion arbustoConBayas;
     private TextureRegion arbustoSinBayas;
+    
+    
+ // Hitbox en la base del arbusto (centrada en posicionX, igual que el sprite)
+    private static final float HITBOX_ANCHO = 48f;
+    private static final float HITBOX_ALTO = 48f;
+    private static final float HITBOX_OFFSET_X = 0f;   // ajustalo si el dibujo no está centrado
+    private static final float HITBOX_OFFSET_Y = 0f;
 
+    
+    
     private float posicionX;
     private float posicionY;
 
@@ -23,7 +33,7 @@ public class arbustoBayas extends objetoMundo {
     // REGENERACIÓN
     // ==========================================================
 
-    private static final float TIEMPO_REGENERACION = 30f;
+    private static final float TIEMPO_REGENERACION = 60f;
 
     private float tiempoRegeneracion;
 
@@ -93,7 +103,18 @@ public class arbustoBayas extends objetoMundo {
                 frameHeight
             );
     }
+    
+    
+    public Rectangle getHitbox() {
 
+        return new Rectangle(
+            posicionX - HITBOX_ANCHO / 2f + HITBOX_OFFSET_X,
+            posicionY + HITBOX_OFFSET_Y,
+            HITBOX_ANCHO,
+            HITBOX_ALTO
+        );
+    }
+    
     // ==========================================================
     // DIBUJAR
     // ==========================================================

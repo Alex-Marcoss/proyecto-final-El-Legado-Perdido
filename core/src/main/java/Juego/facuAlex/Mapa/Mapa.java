@@ -7,6 +7,7 @@ import java.util.Random;
 
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.maps.MapLayer;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.maps.tiled.TmxMapLoader;
@@ -29,22 +30,41 @@ public class Mapa {
     private static final int CANTIDAD_ARBOLES = 50;
    
 
-    private static final int CANTIDAD_ROCAS = 30;
+    private static final int CANTIDAD_ROCAS = 40;
     
 
     private static final int CANTIDAD_PLANTAS = 40;
    
 
-    private static final int CANTIDAD_ARBUSTOS_BAYAS = 20;
+    private static final int CANTIDAD_ARBUSTOS_BAYAS = 15;
+    
+    private static final int CANTIDAD_MENAS_HIERRO = 15;
+    
+    private static final int CANTIDAD_MENAS_ORO = 5;
+    
+    private static final int CANTIDAD_MENAS_CARBON = 10;
     
  // Punto de aparición del jugador y ubicación del templo (Principal usa estas mismas)
     public static final float SPAWN_X = 3072f;
     public static final float SPAWN_Y = 3072f;
-    public static final float TEMPLO_DX = 300f;
-    public static final float TEMPLO_DY = 100f;
+    
+    private float temploX;
+    private float temploY;
+    
+
+
+    // Ubicación aleatoria del templo y de la estructura de rescate
+    private static final float BORDE_UBICACION = 400f;     // distancia mínima a los bordes del mapa
+    private static final float DIST_MIN_SPAWN = 500f;      // distancia mínima al spawn del jugador
+    private static final float DIST_MIN_ENTRE = 600f;      // distancia mínima entre templo y rescate
+    private static final int INTENTOS_UBICACION = 5000;
 
     // Espacio libre mínimo entre los bordes de dos objetos
     private static final float MARGEN_OBJETOS = 90f;
+    
+    // Distancia mínima entre un objeto y el agua
+    private static final float MARGEN_AGUA = 40f;
+    
 
     // "Tamaño" de cada cosa a efectos de separación
     private static final float RADIO_ARBOL = 50f;
@@ -56,13 +76,22 @@ public class Mapa {
     // Zonas reservadas (radio físico de lo que ya está ahí)
     private static final float RADIO_SPAWN = 60f;
     private static final float RADIO_RESCATE = 90f;
-    private static final float RADIO_TEMPLO = 260f;     // ajustalo al tamaño real del templo
-    private static final float TEMPLO_CENTRO_DX = 450f; // centro aproximado del templo
-    private static final float TEMPLO_CENTRO_DY = 250f; // respecto a SPAWN
+ 
+ // Tamaño real del templo en el mundo (PNG 470 x 256 con la escala de Principal)
+    private static final float ESCALA_TEMPLO = 1.5f;   // tiene que ser igual a Principal.ESCALA_TEMPLO
+    private static final float TEMPLO_ANCHO = 470f * ESCALA_TEMPLO;
+    private static final float TEMPLO_ALTO = 256f * ESCALA_TEMPLO;
 
-    private static final int CANTIDAD_MENAS_HIERRO = 10;
-    private static final int CANTIDAD_MENAS_ORO = 5;
-    private static final int CANTIDAD_MENAS_CARBON = 8;
+    // Centro del templo respecto a su esquina inferior izquierda
+    private static final float TEMPLO_CENTRO_OX = TEMPLO_ANCHO / 2f;
+    private static final float TEMPLO_CENTRO_OY = TEMPLO_ALTO / 2f;
+
+    // Radio que se reserva alrededor del templo (para recursos y distancias)
+    private static final float RADIO_TEMPLO = 360f;
+
+    // Pasto que tiene que haber alrededor del templo (para que se pueda rodear)
+    private static final float MARGEN_TIERRA_TEMPLO = 64f;
+
     
     /*
      * Tamaños aproximados de las áreas de colisión.
@@ -76,7 +105,13 @@ public class Mapa {
 
     private static final float ANCHO_RESCATE = 128f;
     private static final float ALTO_RESCATE = 128f;
+    
+ // Capas de suelo de piedra: se detectan por el nombre (cualquier capa de tiles
+ // cuyo nombre contenga alguna de estas palabras)
+    private static final String[] PALABRAS_PIEDRA = { "piedra", "roca", "stone", "rock" };
 
+    private final List<TiledMapTileLayer> capasPiedra = new ArrayList<>();
+    
     private Zona[] zonas;
     private LugarEspecial templo;
     private EstructuraRescateMundo estructuraRescate;
@@ -85,6 +120,11 @@ public class Mapa {
     private float rescateY;
 
     private TiledMap tiledMap;
+    private TiledMapTileLayer capaPasto;
+    private TiledMapTileLayer capaPasto2;
+    private int tileAnchoMapa;
+    private int tileAltoMapa;
+    
     private OrthogonalTiledMapRenderer mapRenderer;
 
     private List<arbol> arboles;
@@ -99,55 +139,234 @@ public class Mapa {
 
     public Mapa(float anchoDefecto, float altoDefecto) {
 
-        tiledMap = new TmxMapLoader().load("mapa pasto.tmx");
-        mapRenderer = new OrthogonalTiledMapRenderer(tiledMap);
+    	tiledMap = new TmxMapLoader().load("mapa pasto.tmx");
+    	mapRenderer = new OrthogonalTiledMapRenderer(tiledMap);
 
-        int tileWidth = tiledMap.getProperties()
-                .get("tilewidth", Integer.class);
+    	prepararCapas();
 
-        int tileHeight = tiledMap.getProperties()
-                .get("tileheight", Integer.class);
+    int tileWidth = tiledMap.getProperties()
+            .get("tilewidth", Integer.class);
 
-        int mapWidthTiles = tiledMap.getProperties()
-                .get("width", Integer.class);
+    int tileHeight = tiledMap.getProperties()
+            .get("tileheight", Integer.class);
 
-        int mapHeightTiles = tiledMap.getProperties()
-                .get("height", Integer.class);
+    int mapWidthTiles = tiledMap.getProperties()
+            .get("width", Integer.class);
 
-        ancho = mapWidthTiles * tileWidth;
-        alto = mapHeightTiles * tileHeight;
+    int mapHeightTiles = tiledMap.getProperties()
+            .get("height", Integer.class);
 
-        zonas = new Zona[3];
+    ancho = mapWidthTiles * tileWidth;
+    alto = mapHeightTiles * tileHeight;
 
-        zonas[0] = new Zona("Zona 1", 0, 0, ancho / 3, alto);
-        zonas[1] = new Zona("Zona 2", ancho / 3, 0, ancho / 3, alto);
-        zonas[2] = new Zona(
-                "Zona 3", (ancho / 3) * 2, 0, ancho / 3, alto);
+    random = new Random();
 
-        templo = new LugarEspecial(
-                "Templo", ancho * 0.75f, alto * 0.65f, 100, 100);
+    zonas = new Zona[3];
 
+    zonas[0] = new Zona("Zona 1", 0, 0, ancho / 3, alto);
+    zonas[1] = new Zona("Zona 2", ancho / 3, 0, ancho / 3, alto);
+    zonas[2] = new Zona(
+            "Zona 3", (ancho / 3) * 2, 0, ancho / 3, alto);
+
+    // Templo y estructura de rescate en lugares al azar
+    ubicarTemploYRescate();
+
+    // La zona "Templo" del mapa acompaña al templo real
+    templo = new LugarEspecial(
+            "Templo",
+            temploX + TEMPLO_CENTRO_OX - 50f,
+            temploY + TEMPLO_CENTRO_OY - 50f,
+            100, 100);
+
+    estructuraRescate = new EstructuraRescateMundo(
+            rescateX, rescateY);
+
+    arboles = new ArrayList<>();
+    rocas = new ArrayList<>();
+    plantas = new ArrayList<>();
+    arbustosBayas = new ArrayList<>();
+
+    reservarZonas();
+
+    crearArboles();
+    crearRocas();
+    crearMenas();
+    crearPlantas();
+    crearArbustosBayas();
+    }
+    
+ // ==========================================================
+ // UBICACIÓN ALEATORIA DE TEMPLO Y ESTRUCTURA DE RESCATE
+ // ==========================================================
+
+ private float distancia(float x1, float y1, float x2, float y2) {
+
+     float dx = x1 - x2;
+     float dy = y1 - y2;
+
+     return (float) Math.sqrt(dx * dx + dy * dy);
+ }
+
+ // ¿Todo el círculo (centro, mitad del radio y borde) está sobre pasto?
+private boolean rectanguloDeTierra(float x, float y, float w, float h,
+                                    float margen) {
+
+    float x0 = x - margen;
+    float y0 = y - margen;
+    float x1 = x + w + margen;
+    float y1 = y + h + margen;
+
+    int pasosX = Math.max(2, (int) Math.ceil((x1 - x0) / 96f));
+    int pasosY = Math.max(2, (int) Math.ceil((y1 - y0) / 96f));
+
+    for (int i = 0; i <= pasosX; i++) {
+        for (int j = 0; j <= pasosY; j++) {
+
+            float px = x0 + (x1 - x0) * i / pasosX;
+            float py = y0 + (y1 - y0) * j / pasosY;
+
+            if (!esTierra(px, py)) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+// ¿Todo el círculo (centro, mitad del radio y borde) está sobre pasto?
+private boolean zonaDeTierra(float cx, float cy, float radio) {
+
+    if (!esTierra(cx, cy)) {
+        return false;
+    }
+
+    for (int grado = 0; grado < 360; grado += 20)  {
+
+        float rad = (float) Math.toRadians(grado);
+        float cos = (float) Math.cos(rad);
+        float sin = (float) Math.sin(rad);
+
+        if (!esTierra(cx + cos * radio, cy + sin * radio)
+                || !esTierra(cx + cos * radio * 0.5f,
+                             cy + sin * radio * 0.5f)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+// Busca un lugar para el templo. Devuelve true si lo encontró.
+private boolean buscarLugarTemplo(float margenTierra, float distMinSpawn,
+                                  float borde) {
+
+    float rangoX = ancho - 2f * borde - TEMPLO_ANCHO;
+    float rangoY = alto - 2f * borde - TEMPLO_ALTO;
+
+    if (rangoX <= 0 || rangoY <= 0) {
+        return false;
+    }
+
+    for (int i = 0; i < INTENTOS_UBICACION; i++) {
+
+        float x = borde + random.nextFloat() * rangoX;
+        float y = borde + random.nextFloat() * rangoY;
+
+        float cx = x + TEMPLO_CENTRO_OX;
+        float cy = y + TEMPLO_CENTRO_OY;
+
+        if (distancia(cx, cy, SPAWN_X, SPAWN_Y)
+                < RADIO_TEMPLO + distMinSpawn) {
+            continue;
+        }
+
+        if (!rectanguloDeTierra(x, y, TEMPLO_ANCHO, TEMPLO_ALTO,
+                                margenTierra)) {
+            continue;
+        }
+
+        temploX = x;
+        temploY = y;
+        return true;
+    }
+
+    return false;
+}
+
+private void ubicarTemploYRescate() {
+
+    // ----- Templo: primero estricto, después cada vez más permisivo -----
+    boolean temploOk =
+            buscarLugarTemplo(MARGEN_TIERRA_TEMPLO, DIST_MIN_SPAWN,
+                              BORDE_UBICACION)
+            || buscarLugarTemplo(0f, DIST_MIN_SPAWN / 2f, 150f)
+            || buscarLugarTemplo(0f, 0f, 0f);
+
+    // Último recurso: al lado del jugador, como estaba antes
+    if (!temploOk) {
+        temploX = SPAWN_X + 300f;
+        temploY = SPAWN_Y + 100f;
+
+        System.out.println(
+                "AVISO: no se encontro un lugar de pasto para el templo, "
+                + "se usa la posicion fija.");
+    }
+
+    float temploCx = temploX + TEMPLO_CENTRO_OX;
+    float temploCy = temploY + TEMPLO_CENTRO_OY;
+
+    // ----- Estructura de rescate -----
+    boolean rescateOk = false;
+
+    for (int i = 0; i < INTENTOS_UBICACION && !rescateOk; i++) {
+
+        float cx = BORDE_UBICACION
+                + random.nextFloat() * (ancho - 2f * BORDE_UBICACION);
+
+        float cy = BORDE_UBICACION
+                + random.nextFloat() * (alto - 2f * BORDE_UBICACION);
+
+        if (distancia(cx, cy, SPAWN_X, SPAWN_Y)
+                < RADIO_RESCATE + DIST_MIN_SPAWN) {
+            continue;
+        }
+
+        if (distancia(cx, cy, temploCx, temploCy)
+                < RADIO_TEMPLO + RADIO_RESCATE + DIST_MIN_ENTRE) {
+            continue;
+        }
+
+        if (!zonaDeTierra(cx, cy, RADIO_RESCATE)) {
+            continue;
+        }
+
+        rescateX = cx - ANCHO_RESCATE / 2f;
+        rescateY = cy - ALTO_RESCATE / 2f;
+        rescateOk = true;
+    }
+
+    if (!rescateOk) {
         rescateX = ancho * 0.50f;
         rescateY = alto * 0.50f;
 
-        estructuraRescate = new EstructuraRescateMundo(
-                rescateX, rescateY);
-
-        arboles = new ArrayList<>();
-        rocas = new ArrayList<>();
-        plantas = new ArrayList<>();
-        arbustosBayas = new ArrayList<>();
-
-        random = new Random();
-
-        reservarZonas();
-
-        crearArboles();
-        crearRocas();
-        crearMenas();
-        crearPlantas();
-        crearArbustosBayas();
+        System.out.println(
+                "AVISO: no se encontro un lugar para la estructura de "
+                + "rescate, se usa el centro del mapa.");
     }
+
+    System.out.println("Templo en: " + (int) temploX + ", " + (int) temploY
+            + " | Rescate en: " + (int) rescateX + ", " + (int) rescateY);
+}
+
+ public float getTemploX() {
+     return temploX;
+ }
+
+ public float getTemploY() {
+     return temploY;
+ }
+    
 
     public EstructuraRescateMundo getEstructuraRescate() {
         return estructuraRescate;
@@ -186,15 +405,9 @@ public class Mapa {
 
         // Templo que dibuja Principal
         ocupados.add(new Ocupado(
-                SPAWN_X + TEMPLO_CENTRO_DX,
-                SPAWN_Y + TEMPLO_CENTRO_DY,
+                temploX + TEMPLO_CENTRO_OX,
+                temploY + TEMPLO_CENTRO_OY,
                 RADIO_TEMPLO));
-
-        // Zona de templo propia del mapa (LugarEspecial)
-        ocupados.add(new Ocupado(
-                ancho * 0.75f + 50f,
-                alto * 0.65f + 50f,
-                70f));
     }
 
     private boolean hayEspacio(float x, float y, float radio) {
@@ -214,34 +427,41 @@ public class Mapa {
     }
 
     // Coloca "cantidad" objetos en tierra y con espacio libre alrededor
-    private int generar(int cantidad, float radio,
-                        java.util.function.BiConsumer<Float, Float> fabrica) {
 
-        int creados = 0;
-        int intentos = 0;
+    // permitirPiedra = false: no aparece nada que toque un sector de piedra.
+    private int generar(int cantidad, float radio, boolean permitirPiedra,
+                    java.util.function.BiConsumer<Float, Float> fabrica) {
 
-        while (creados < cantidad && intentos < 10000) {
+    int creados = 0;
+    int intentos = 0;
 
-            intentos++;
+    while (creados < cantidad && intentos < 10000) {
 
-            float x = 100 + random.nextFloat() * (ancho - 200);
-            float y = 100 + random.nextFloat() * (alto - 200);
+        intentos++;
 
-            if (!esTierra(x, y) || !hayEspacio(x, y, radio)) {
-                continue;
-            }
+        float x = 100 + random.nextFloat() * (ancho - 200);
+        float y = 100 + random.nextFloat() * (alto - 200);
 
-            fabrica.accept(x, y);
-            ocupados.add(new Ocupado(x, y, radio));
-            creados++;
+        if (!zonaDeTierra(x, y, radio + MARGEN_AGUA)
+                || !hayEspacio(x, y, radio)) {
+            continue;
         }
 
-        return creados;
+        if (!permitirPiedra && hayPiedraEnZona(x, y, radio)) {
+            continue;
+        }
+
+        fabrica.accept(x, y);
+        ocupados.add(new Ocupado(x, y, radio));
+        creados++;
     }
+
+    return creados;
+}
 
     private void crearArboles() {
 
-        int n = generar(CANTIDAD_ARBOLES, RADIO_ARBOL,
+        int n = generar(CANTIDAD_ARBOLES, RADIO_ARBOL, false,
                 (x, y) -> arboles.add(new arbol(x, y)));
 
         System.out.println("Total de árboles creados: " + n);
@@ -249,7 +469,7 @@ public class Mapa {
 
     private void crearRocas() {
 
-        int n = generar(CANTIDAD_ROCAS, RADIO_ROCA,
+        int n = generar(CANTIDAD_ROCAS, RADIO_ROCA, true,
                 (x, y) -> rocas.add(new roca(x, y)));
 
         System.out.println("Total de rocas creadas: " + n);
@@ -258,13 +478,13 @@ public class Mapa {
     // Las menas viven en la misma lista que las rocas (son rocas especiales)
     private void crearMenas() {
 
-        int hierro = generar(CANTIDAD_MENAS_HIERRO, RADIO_MENA,
+        int hierro = generar(CANTIDAD_MENAS_HIERRO, RADIO_MENA, false,
                 (x, y) -> rocas.add(new Mena(Mena.Tipo.HIERRO, x, y)));
 
-        int oro = generar(CANTIDAD_MENAS_ORO, RADIO_MENA,
+        int oro = generar(CANTIDAD_MENAS_ORO, RADIO_MENA, true,
                 (x, y) -> rocas.add(new Mena(Mena.Tipo.ORO, x, y)));
 
-        int carbon = generar(CANTIDAD_MENAS_CARBON, RADIO_MENA,
+        int carbon = generar(CANTIDAD_MENAS_CARBON, RADIO_MENA, false,
                 (x, y) -> rocas.add(new Mena(Mena.Tipo.CARBON, x, y)));
 
         System.out.println("Menas creadas: " + hierro + " de hierro, "
@@ -273,7 +493,7 @@ public class Mapa {
 
     private void crearPlantas() {
 
-        int n = generar(CANTIDAD_PLANTAS, RADIO_PLANTA,
+        int n = generar(CANTIDAD_PLANTAS, RADIO_PLANTA, false,
                 (x, y) -> plantas.add(new planta(x, y)));
 
         System.out.println("Total de plantas creadas: " + n);
@@ -281,11 +501,12 @@ public class Mapa {
 
     private void crearArbustosBayas() {
 
-        int n = generar(CANTIDAD_ARBUSTOS_BAYAS, RADIO_ARBUSTO,
+        int n = generar(CANTIDAD_ARBUSTOS_BAYAS, RADIO_ARBUSTO, false,
                 (x, y) -> arbustosBayas.add(new arbustoBayas(x, y)));
 
         System.out.println("Total de arbustos de bayas creados: " + n);
     }
+    
 
     // ==========================================================
     // HITBOXES DE RECURSOS Y ESTRUCTURAS
@@ -348,82 +569,84 @@ public class Mapa {
     // CONSTRUCCIÓN
     // ==========================================================
 
-    public boolean puedeColocarEstructura(Estructura nueva) {
+    // Solo se comprueban los objetos que estén a menos de esta distancia
+	private static final float RADIO_BUSQUEDA = 250f;
+	
+	public boolean puedeColocarEstructura(Estructura nueva) {
+	
+	    if (nueva == null) {
+	        return false;
+	    }
+	
+	    Rectangle hitbox = nueva.getHitbox();
+	
+	    if (hitbox == null) {
+	        return false;
+	    }
+	
+	    return puedeCaminar(hitbox);
+	}
 
-        if (nueva == null) {
-            return false;
+	
+
+// ¿Está lejos este objeto como para ni mirar su hitbox?
+private boolean lejos(Rectangle h, float objetoX, float objetoY) {
+
+    float dx = objetoX - (h.x + h.width / 2f);
+    float dy = objetoY - (h.y + h.height / 2f);
+
+    return dx * dx + dy * dy > RADIO_BUSQUEDA * RADIO_BUSQUEDA;
+}
+
+private boolean hayObstaculo(Rectangle hitbox) {
+
+    for (arbol a : arboles) {
+        if (!a.estaTalado()
+                && !lejos(hitbox, a.getPosicionX(), a.getPosicionY())
+                && hitbox.overlaps(a.getHitbox())) {
+            return true;
         }
+    }
 
-        Rectangle hitbox = nueva.getHitbox();
-
-        if (hitbox == null) {
-            return false;
+    for (roca r : rocas) {
+        if (!lejos(hitbox, r.getPosicionX(), r.getPosicionY())
+                && hitbox.overlaps(r.getHitbox())) {
+            return true;
         }
+    }
 
-        // Debe estar dentro de los límites del mapa.
-        if (hitbox.x < 0 || hitbox.y < 0
-                || hitbox.x + hitbox.width > ancho
-                || hitbox.y + hitbox.height > alto) {
-            return false;
+    for (planta p : plantas) {
+        if (!p.estaAgotada()
+                && !lejos(hitbox, p.getPosicionX(), p.getPosicionY())
+                && hitbox.overlaps(hitboxPlanta(p))) {
+            return true;
         }
+    }
 
-        // Todos los puntos de la estructura deben estar sobre pasto.
-        if (!esTierra(hitbox.x, hitbox.y)
-                || !esTierra(hitbox.x + hitbox.width, hitbox.y)
-                || !esTierra(hitbox.x, hitbox.y + hitbox.height)
-                || !esTierra(
-                        hitbox.x + hitbox.width,
-                        hitbox.y + hitbox.height)) {
-            return false;
+    // Los arbustos ocupan espacio tengan bayas o no
+    for (arbustoBayas arbusto : arbustosBayas) {
+        if (!lejos(hitbox, arbusto.getPosicionX(), arbusto.getPosicionY())
+                && hitbox.overlaps(hitboxArbusto(arbusto))) {
+            return true;
         }
+    }
 
-        // Árboles.
-        for (arbol a : arboles) {
-            if (!a.estaTalado() && hitbox.overlaps(a.getHitbox())) {
-                return false;
-            }
-        }
-
-        // Rocas.
-        for (roca r : rocas) {
-            if (hitbox.overlaps(r.getHitbox())) {
-                return false;
-            }
-        }
-
-        // Plantas de fibra que todavía existen.
-        for (planta p : plantas) {
-            if (!p.estaAgotada() && hitbox.overlaps(hitboxPlanta(p))) {
-                return false;
-            }
-        }
-
-        // Los arbustos siguen ocupando espacio aunque no tengan bayas.
-        for (arbustoBayas arbusto : arbustosBayas) {
-            if (hitbox.overlaps(hitboxArbusto(arbusto))) {
-                return false;
-            }
-        }
-
-        // Estructura de rescate.
-        if (hitbox.overlaps(hitboxRescate())) {
-            return false;
-        }
-
-        // Templo.
-        if (colisionaConTemplo(hitbox)) {
-            return false;
-        }
-
-        // Otras estructuras construidas.
-        for (Estructura existente : estructurasConstruidas) {
-            if (hitbox.overlaps(existente.getHitbox())) {
-                return false;
-            }
-        }
-
+    if (hitbox.overlaps(hitboxRescate())) {
         return true;
     }
+
+    if (colisionaConTemplo(hitbox)) {
+        return true;
+    }
+
+    for (Estructura estructura : estructurasConstruidas) {
+        if (hitbox.overlaps(estructura.getHitbox())) {
+            return true;
+        }
+    }
+
+    return false;
+}
 
     public boolean agregarEstructura(Estructura nueva) {
 
@@ -485,46 +708,79 @@ public class Mapa {
 
     private boolean esTierra(float x, float y) {
 
-        TiledMapTileLayer capaPasto =
-                (TiledMapTileLayer) tiledMap.getLayers().get("pasto");
-
-        TiledMapTileLayer capaPasto2 =
-                (TiledMapTileLayer) tiledMap.getLayers().get("pasto 2");
-
-        if (capaPasto == null && capaPasto2 == null) {
+        // Fuera del mapa por abajo o por la izquierda (evita el redondeo a tile 0)
+        if (x < 0 || y < 0) {
             return false;
         }
 
-        int tileWidth = tiledMap.getProperties()
-                .get("tilewidth", Integer.class);
+        // Seguridad: si todavía no se cargaron las capas, se cargan acá
+        if (tileAnchoMapa <= 0 || tileAltoMapa <= 0) {
+            prepararCapas();
+        }
 
-        int tileHeight = tiledMap.getProperties()
-                .get("tileheight", Integer.class);
+        int tileX = (int) (x / tileAnchoMapa);
+        int tileY = (int) (y / tileAltoMapa);
 
-        int tileX = (int) (x / tileWidth);
-        int tileY = (int) (y / tileHeight);
+        return hayCelda(capaPasto, tileX, tileY)
+                || hayCelda(capaPasto2, tileX, tileY);
+    }
 
-        boolean hayPasto = false;
+    private boolean hayCelda(TiledMapTileLayer capa, int tileX, int tileY) {
 
-        if (capaPasto != null) {
-            TiledMapTileLayer.Cell celda =
-                    capaPasto.getCell(tileX, tileY);
+        if (capa == null) {
+            return false;
+        }
 
-            if (celda != null && celda.getTile() != null) {
-                hayPasto = true;
+        TiledMapTileLayer.Cell celda = capa.getCell(tileX, tileY);
+
+        return celda != null && celda.getTile() != null;
+    }
+    
+ // ¿Hay suelo de piedra en este punto?
+    private boolean esPiedra(float x, float y) {
+
+        if (capasPiedra.isEmpty() || x < 0 || y < 0) {
+            return false;
+        }
+
+        int tileX = (int) (x / tileAnchoMapa);
+        int tileY = (int) (y / tileAltoMapa);
+
+        for (TiledMapTileLayer capa : capasPiedra) {
+
+            if (hayCelda(capa, tileX, tileY)) {
+                return true;
             }
         }
 
-        if (capaPasto2 != null) {
-            TiledMapTileLayer.Cell celda =
-                    capaPasto2.getCell(tileX, tileY);
+        return false;
+    }
 
-            if (celda != null && celda.getTile() != null) {
-                hayPasto = true;
+    // ¿Hay piedra en alguna parte del círculo (centro, mitad del radio y borde)?
+    private boolean hayPiedraEnZona(float cx, float cy, float radio) {
+
+        if (capasPiedra.isEmpty()) {
+            return false;
+        }
+
+        if (esPiedra(cx, cy)) {
+            return true;
+        }
+
+        for (int grado = 0; grado < 360; grado += 20) {
+
+            float rad = (float) Math.toRadians(grado);
+            float cos = (float) Math.cos(rad);
+            float sin = (float) Math.sin(rad);
+
+            if (esPiedra(cx + cos * radio, cy + sin * radio)
+                    || esPiedra(cx + cos * radio * 0.5f,
+                                cy + sin * radio * 0.5f)) {
+                return true;
             }
         }
 
-        return hayPasto;
+        return false;
     }
 
     // ==========================================================
@@ -533,72 +789,28 @@ public class Mapa {
 
     public boolean puedeCaminar(Rectangle hitbox) {
 
-        if (hitbox == null) {
-            return false;
-        }
+	    if (hitbox == null) {
+	        return false;
+	    }
 
-        if (hitbox.x < 0 || hitbox.y < 0
-                || hitbox.x + hitbox.width > ancho
-                || hitbox.y + hitbox.height > alto) {
-            return false;
-        }
+	    // Dentro de los límites del mapa
+	    if (hitbox.x < 0 || hitbox.y < 0
+	            || hitbox.x + hitbox.width > ancho
+	            || hitbox.y + hitbox.height > alto) {
+	        return false;
+	    }
 
-        if (!esTierra(hitbox.x, hitbox.y)
-                || !esTierra(hitbox.x + hitbox.width, hitbox.y)
-                || !esTierra(hitbox.x, hitbox.y + hitbox.height)
-                || !esTierra(
-                        hitbox.x + hitbox.width,
-                        hitbox.y + hitbox.height)) {
-            return false;
-        }
+	    // Las cuatro esquinas sobre pasto
+	    if (!esTierra(hitbox.x, hitbox.y)
+	            || !esTierra(hitbox.x + hitbox.width, hitbox.y)
+	            || !esTierra(hitbox.x, hitbox.y + hitbox.height)
+	            || !esTierra(hitbox.x + hitbox.width,
+	                         hitbox.y + hitbox.height)) {
+	        return false;
+	    }
 
-        // Árboles.
-        for (arbol a : arboles) {
-            if (!a.estaTalado() && hitbox.overlaps(a.getHitbox())) {
-                return false;
-            }
-        }
-
-        // Rocas.
-        for (roca r : rocas) {
-            if (hitbox.overlaps(r.getHitbox())) {
-                return false;
-            }
-        }
-
-        // Plantas de fibra.
-        for (planta p : plantas) {
-            if (!p.estaAgotada() && hitbox.overlaps(hitboxPlanta(p))) {
-                return false;
-            }
-        }
-
-        // Arbustos de bayas, tengan bayas o no.
-        for (arbustoBayas arbusto : arbustosBayas) {
-            if (hitbox.overlaps(hitboxArbusto(arbusto))) {
-                return false;
-            }
-        }
-
-        // Estructura de rescate.
-        if (hitbox.overlaps(hitboxRescate())) {
-            return false;
-        }
-
-        // Templo.
-        if (colisionaConTemplo(hitbox)) {
-            return false;
-        }
-
-        // Estructuras construidas.
-        for (Estructura estructura : estructurasConstruidas) {
-            if (hitbox.overlaps(estructura.getHitbox())) {
-                return false;
-            }
-        }
-
-        return true;
-    }
+	    return !hayObstaculo(hitbox);
+	}
 
     // ==========================================================
     // BUSCAR POSICIÓN LIBRE
@@ -879,6 +1091,61 @@ public class Mapa {
 
         return cercano;
     }
+    
+   
+    // Carga las capas de pasto y de piedra y el tamaño de tile una sola vez
+	private void prepararCapas() {
+	
+	    tileAnchoMapa = tiledMap.getProperties()
+	            .get("tilewidth", Integer.class);
+	
+	    tileAltoMapa = tiledMap.getProperties()
+	            .get("tileheight", Integer.class);
+	
+	    capaPasto = (TiledMapTileLayer) tiledMap.getLayers().get("pasto");
+	    capaPasto2 = (TiledMapTileLayer) tiledMap.getLayers().get("pasto 2");
+	
+	    capasPiedra.clear();
+	
+	    StringBuilder nombres = new StringBuilder();
+	
+	    for (MapLayer capa : tiledMap.getLayers()) {
+	
+	        nombres.append("\"").append(capa.getName()).append("\" ");
+	
+	        if (!(capa instanceof TiledMapTileLayer)
+	                || capa == capaPasto
+	                || capa == capaPasto2) {
+	            continue;
+	        }
+	
+	        String nombre = capa.getName() == null
+	                ? "" : capa.getName().toLowerCase();
+	
+	        for (String palabra : PALABRAS_PIEDRA) {
+	
+	            if (nombre.contains(palabra)) {
+	                capasPiedra.add((TiledMapTileLayer) capa);
+	                break;
+	            }
+	        }
+	    }
+	
+	    System.out.println("Capas del mapa: " + nombres);
+	
+	    if (capasPiedra.isEmpty()) {
+	
+	        System.out.println(
+	                "AVISO: no se detecto ninguna capa de piedra. "
+	                + "Cambia PALABRAS_PIEDRA por parte del nombre de la capa.");
+	
+	    } else {
+	
+	        System.out.println(
+	                "Capas de piedra detectadas: " + capasPiedra.size());
+	    }
+	}
+    
 
     // ==========================================================
     // LIBERAR RECURSOS
@@ -930,4 +1197,7 @@ public class Mapa {
             tiledMap.dispose();
         }
     }
+    
+    
+    
 }

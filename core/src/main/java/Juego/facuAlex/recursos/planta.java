@@ -3,6 +3,7 @@ package Juego.facuAlex.recursos;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.math.Rectangle;
 
 import Juego.facuAlex.Herramientas.tipoHerramienta;
 
@@ -17,7 +18,15 @@ public class planta extends objetoMundo {
 
     private static final float ANCHO = 110f;
     private static final float ALTO = 110f;
+    
+ // Hitbox en la base de la planta (centrada en posicionX, igual que el sprite)
+    private static final float HITBOX_ANCHO = 32f;
+    private static final float HITBOX_ALTO = 32f;
+    private static final float HITBOX_OFFSET_X = 0f;   // ajustalo si el dibujo no está centrado
+    private static final float HITBOX_OFFSET_Y = 0f;
 
+    
+    
     public planta(float x, float y) {
 
         super("Planta");
@@ -36,6 +45,16 @@ public class planta extends objetoMundo {
         textura.setFilter(
             Texture.TextureFilter.Nearest,
             Texture.TextureFilter.Nearest
+        );
+    }
+    
+    public Rectangle getHitbox() {
+
+        return new Rectangle(
+            posicionX - HITBOX_ANCHO / 2f + HITBOX_OFFSET_X,
+            posicionY + HITBOX_OFFSET_Y,
+            HITBOX_ANCHO,
+            HITBOX_ALTO
         );
     }
 

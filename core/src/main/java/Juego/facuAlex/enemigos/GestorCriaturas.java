@@ -6,12 +6,16 @@ import java.util.Random;
 import java.util.function.Supplier;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import Juego.facuAlex.recursos.DropMundo;
+import Juego.facuAlex.recursos.Recursos;
 
 import Juego.facuAlex.Mapa.Mapa;
 import Juego.facuAlex.jugador.Jugador;
 
 public class GestorCriaturas {
 
+	private final List<DropMundo> drops = new ArrayList<DropMundo>();
 	private static final int VACAS_DIA = 8;
 	private static final int VACAS_NOCHE = 2;
 	private static final int LOBOS_NOCHE = 8;
@@ -25,7 +29,7 @@ public class GestorCriaturas {
 	private static final float ENEMIGO_DIST_MAX = 900f;
 	private static final float VACA_DIST_MIN = 750f;
 	private static final float VACA_DIST_MAX = 1100f;
-
+	
 	// Solo se retiran criaturas que están más lejos que esto
 	private static final float DIST_FUERA_DE_VISTA = 750f;
 	private static final float DISTANCIA_PELIGRO = 100f;
@@ -102,13 +106,24 @@ public class GestorCriaturas {
 
     public void actualizar(Jugador jugador, Mapa mapa, float delta) {
 
-        for (Criatura c : criaturas) {
+    for (Criatura c : criaturas) {
 
-            c.actualizar(jugador, mapa, delta);
+        c.actualizar(jugador, mapa, delta);
+
+        // obtenerDrops() devuelve los drops una sola vez al morir
+        // (después devuelve null, y soltarDrops lo ignora)
+        if (!c.estaVivo()) {
+
+            soltarDrops(
+                    c.obtenerDrops(),
+                    c.getPosicionX(),
+                    c.getPosicionY()
+            );
         }
-
-        criaturas.removeIf(Criatura::haDesaparecido);
     }
+
+    criaturas.removeIf(Criatura::haDesaparecido);
+}
 
     // Misma logica que tus arboles: las de mas arriba se dibujan detras
     public void dibujarDetras(SpriteBatch batch, float yPies) {
@@ -317,11 +332,116 @@ public class GestorCriaturas {
 
         return elegida;
     }
+    
+ // ==========================================================
+ // DROPS EN EL SUELO
+ // ==========================================================
 
-    public void dispose() {
+ // Deja los recursos tirados cerca de (x, y)
+ public void soltarDrops(Recursos[] items, float x, float y) {
 
-        CriaturaAnimacion.liberarTexturas();
+     if (items == null) {
+         return;
+     }
 
-        criaturas.clear();
-    }
+     for (Recursos item : items) {
+
+         if (item == null || item.getCantidad() <= 0) {
+             continue;
+         }
+
+         // Pequeña separación para que no se amontonen
+         float ox = (azar.nextFloat() - 0.5f) * 40f;
+         float oy = (azar.nextFloat() - 0.5f) * 20f;
+
+         drops.add(new DropMundo(item, x + ox, y + oy));
+     }
+ }
+
+ public void dibujarDrops(SpriteBatch batch) {
+
+     for (DropMundo d : drops) {
+         d.dibujar(batch);
+     }
+ }
+
+ // Cartel del drop más cercano (si hay alguno al alcance)
+ public void dibujarCartelDrop(SpriteBatch batch, BitmapFont font,
+                               Jugador jugador) {
+
+     DropMundo cercano = dropMasCercano(jugador);
+
+     if (cercano != null) {
+         cercano.dibujarCartel(batch, font);
+     }
+ }
+
+ private DropMundo dropMasCercano(Jugador jugador) {
+
+     DropMundo cercano = null;
+     float menor = Float.MAX_VALUE;
+
+     for (DropMundo d : drops) {
+
+         if (d.estaRecogido()
+                 || !d.estaCerca(jugador.getPosicionX(),
+                                 jugador.getPosicionY())) {
+             continue;
+         }
+
+         float distancia = d.distanciaAl(jugador.getPosicionX(),
+                                         jugador.getPosicionY());
+
+         if (distancia < menor) {
+             menor = distancia;
+             cercano = d;
+         }
+     }
+
+     return cercano;
+ }
+
+ // Recoge el drop más cercano. Devuelve true si había uno al alcance.
+ public boolean recogerDropCercano(Jugador jugador) {
+
+     DropMundo drop = dropMasCercano(jugador);
+
+     if (drop == null) {
+         return false;
+     }
+
+     Recursos item = drop.getItem();
+
+     // Solo se recoge si hay lugar (si no, quedaría perdido)
+     boolean hayLugar =
+             jugador.getInventario().buscarRecurso(item.getNombre()) != null
+             || jugador.getInventario().primerSlotLibre() != -1;
+
+     if (!hayLugar) {
+         System.out.println("Inventario lleno.");
+         return true;
+     }
+
+     jugador.getInventario().agregarRecurso(item, item.getCantidad());
+
+     drop.marcarRecogido();
+     drops.remove(drop);
+
+     System.out.println("Recogiste " + item.getCantidad()
+             + " de " + item.getNombre() + ".");
+
+     return true;
+ }
+
+ 	public void dispose() {
+
+	    CriaturaAnimacion.liberarTexturas();
+
+	    for (DropMundo d : drops) {
+	        d.dispose();
+	    }
+
+	    drops.clear();
+	    criaturas.clear();
+	}
 }

@@ -16,6 +16,7 @@ import Juego.facuAlex.receta.Receta;
 import Juego.facuAlex.sistemas.Construccion;
 import Juego.facuAlex.sistemas.Energia;
 import Juego.facuAlex.sistemas.Supervivencia;
+import Juego.facuAlex.sistemas.TextosFlotantes;
 import Juego.facuAlex.inventario.inventario;
 
 public class Jugador {
@@ -225,39 +226,53 @@ public class Jugador {
     }
 
 	public void recibirDanio(int cantidad) {
-	    if (cantidad <= 0 || vida <= 0) {
-	        return;
-	    }
+    if (cantidad <= 0 || vida <= 0) {
+        return;
+    }
 
-	    // La armadura equipada absorbe el daño primero
-	    if (armaduraEquipada != null) {
-	        cantidad = armaduraEquipada.absorber(cantidad);
+    int total = cantidad;
 
-	        if (armaduraEquipada.estaRota()) {
-	            romperArmadura();
-	        }
-	    }
+    // La armadura equipada absorbe el daño primero
+    if (armaduraEquipada != null) {
+        cantidad = armaduraEquipada.absorber(cantidad);
 
-	    if (sistemaSupervivencia != null) {
-	        sistemaSupervivencia.registrarDanio();
-	    }
+        if (armaduraEquipada.estaRota()) {
+            romperArmadura();
+        }
+    }
 
-	    // La armadura aguantó todo el golpe
-	    if (cantidad <= 0) {
-	        return;
-	    }
+    int absorbido = total - cantidad;
 
-	    vida -= cantidad;
+    // Números flotantes sobre la cabeza del jugador
+    float centroX = posicionX + 32f;
+    float cabeza = posicionY + 80f;
 
-	    if (vida < 0) {
-	        vida = 0;
-	    }
+    if (absorbido > 0) {
+        TextosFlotantes.agregar(centroX - 16f, cabeza,
+                "-" + absorbido, TextosFlotantes.AZUL);
+    }
 
-	    if (vida == 0) {
-	        System.out.println("El jugador ha muerto.");
-	        System.out.println("GAME OVER");
-	    }
-	}
+    if (cantidad > 0) {
+        TextosFlotantes.agregar(centroX + 16f, cabeza,
+                "-" + cantidad, TextosFlotantes.ROJO);
+    }
+
+    if (sistemaSupervivencia != null) {
+        sistemaSupervivencia.registrarDanio();
+    }
+
+    // La armadura aguantó todo el golpe
+    if (cantidad <= 0) {
+        return;
+    }
+
+    vida -= cantidad;
+
+    if (vida < 0) {
+        vida = 0;
+    }
+
+}
 
     public boolean consumirGolpeRecibido() {
         boolean resultado = golpeRecibido;
@@ -398,76 +413,80 @@ public class Jugador {
     // --------------------------------------------------
 
     public void interactuar(objetoMundo objeto) {
-        if (objeto == null) {
-            return;
-        }
-
-        tipoHerramienta herramientaNecesaria =
-            objeto.getHerramientaNecesaria();
-
-        if (herramientaNecesaria != null) {
-            if (herramientaEquipada == null) {
-                System.out.println("No tenes una herramienta equipada.");
-                return;
-            }
-
-            if (herramientaEquipada.getTipo() != herramientaNecesaria) {
-                System.out.println("La herramienta no sirve para este objeto.");
-                return;
-            }
-        }
-
-        if (energia < objeto.getEnergiaNecesaria()) {
-            System.out.println("No tenes suficiente energia.");
-            return;
-        }
-
-        Recursos recurso = objeto.recolectarRecurso();
-
-        if (recurso == null) {
-            System.out.println("No queda ningun recurso.");
-            return;
-        }
-
-        if (herramientaEquipada != null
-                && !herramientaEquipada.usar()) {
-            return;
-        }
-
-        gastarEnergia(objeto.getEnergiaNecesaria());
-
-        inventario.agregarRecurso(
-            recurso,
-            recurso.getCantidad()
-        );
-
-        System.out.println(
-            "Conseguiste " + recurso.getCantidad()
-            + " de " + recurso.getNombre() + "."
-        );
+    if (objeto == null) {
+        return;
     }
+
+    tipoHerramienta herramientaNecesaria =
+        objeto.getHerramientaNecesaria();
+
+    if (herramientaNecesaria != null) {
+        if (herramientaEquipada == null) {
+            System.out.println("No tenes una herramienta equipada.");
+            return;
+        }
+
+        if (herramientaEquipada.getTipo() != herramientaNecesaria) {
+            System.out.println("La herramienta no sirve para este objeto.");
+            return;
+        }
+    }
+
+    if (energia < objeto.getEnergiaNecesaria()) {
+        System.out.println("No tenes suficiente energia.");
+        return;
+    }
+
+    Recursos recurso = objeto.recolectarRecurso();
+
+    if (recurso == null) {
+        System.out.println("No queda ningun recurso.");
+        return;
+    }
+
+    if (herramientaEquipada != null
+            && !herramientaEquipada.usar()) {
+        return;
+    }
+
+    gastarEnergia(objeto.getEnergiaNecesaria());
+    romperHerramientaSiHaceFalta();
+
+    inventario.agregarRecurso(
+        recurso,
+        recurso.getCantidad()
+    );
+
+    System.out.println(
+        "Conseguiste " + recurso.getCantidad()
+        + " de " + recurso.getNombre() + "."
+    );
+}
 
     // --------------------------------------------------
     // COMBATE
     // --------------------------------------------------
 
     public void atacar(Enemigo enemigo) {
-        if (enemigo == null || !enemigo.estaVivo()) {
-            return;
-        }
-
-        int danio = getDanioAtaque();
-        enemigo.recibirDaño(danio);
-
-        System.out.println(
-            "Atacaste a " + enemigo.getNombre()
-            + " y causaste " + danio + " de daño."
-        );
-
-        if (!enemigo.estaVivo()) {
-            System.out.println(enemigo.getNombre() + " fue derrotado.");
-        }
+    if (enemigo == null || !enemigo.estaVivo()) {
+        return;
     }
+
+    int danio = getDanioAtaque();
+    enemigo.recibirDaño(danio);
+
+    // La herramienta equipada se gasta con el golpe
+    desgastarPorGolpe();
+
+
+    
+    TextosFlotantes.agregar(enemigo.getPosicionX(), enemigo.getPosicionY() + 70f,
+            "-" + danio, TextosFlotantes.BLANCO);
+    
+    if (!enemigo.estaVivo()) {
+        System.out.println(enemigo.getNombre() + " fue derrotado.");
+    }
+}
 
     // --------------------------------------------------
     // RECOGER RECURSOS DE ANIMALES
@@ -694,44 +713,45 @@ public class Jugador {
     }
 
     public void talarArbol(arbol arbol, Mapa mapa) {
-        if (arbol == null || mapa == null) {
-            return;
-        }
-
-        if (herramientaEquipada == null
-                || herramientaEquipada.getTipo() != tipoHerramienta.HACHA) {
-            System.out.println("Necesitas tener un hacha equipada.");
-            return;
-        }
-
-        int energiaNecesaria = arbol.getEnergiaNecesaria();
-
-        if (energia < energiaNecesaria) {
-            System.out.println("No tienes suficiente energia.");
-            return;
-        }
-
-        if (!herramientaEquipada.usar()) {
-            return;
-        }
-
-        gastarEnergia(energiaNecesaria);
-
-        Recursos madera = arbol.recolectarRecurso();
-
-        if (madera != null) {
-            inventario.agregarRecurso(madera, madera.getCantidad());
-
-            System.out.println(
-                "Conseguiste " + madera.getCantidad() + " de madera."
-            );
-        }
-
-        if (arbol.estaTalado()) {
-            mapa.eliminarArbol(arbol);
-            System.out.println("El arbol fue talado completamente.");
-        }
+    if (arbol == null || mapa == null) {
+        return;
     }
+
+    if (herramientaEquipada == null
+            || herramientaEquipada.getTipo() != tipoHerramienta.HACHA) {
+        System.out.println("Necesitas tener un hacha equipada.");
+        return;
+    }
+
+    int energiaNecesaria = arbol.getEnergiaNecesaria();
+
+    if (energia < energiaNecesaria) {
+        System.out.println("No tienes suficiente energia.");
+        return;
+    }
+
+    if (!herramientaEquipada.usar()) {
+        return;
+    }
+
+    gastarEnergia(energiaNecesaria);
+    romperHerramientaSiHaceFalta();
+
+    Recursos madera = arbol.recolectarRecurso();
+
+    if (madera != null) {
+        inventario.agregarRecurso(madera, madera.getCantidad());
+
+        System.out.println(
+            "Conseguiste " + madera.getCantidad() + " de madera."
+        );
+    }
+
+    if (arbol.estaTalado()) {
+        mapa.eliminarArbol(arbol);
+        System.out.println("El arbol fue talado completamente.");
+    }
+}
 
     // --------------------------------------------------
     // MINADO DE ROCAS
@@ -766,56 +786,83 @@ public class Jugador {
         }
 
         return true;
+        
     }
 
     public void minarRoca(roca roca, Mapa mapa) {
-        if (roca == null || mapa == null) {
+    if (roca == null || mapa == null) {
+        return;
+    }
+
+    // Misma validación que arriba, por si se llama directo a minarRoca
+    if (!puedeMinar(roca)) {
+        return;
+    }
+
+    if (!herramientaEquipada.usar()) {
+        System.out.println("El pico no tiene suficiente durabilidad.");
+        return;
+    }
+
+    gastarEnergia(roca.getEnergiaNecesaria());
+    romperHerramientaSiHaceFalta();
+
+    Recursos recurso = roca.recolectarRecurso();
+
+    if (recurso != null) {
+        inventario.agregarRecurso(recurso, recurso.getCantidad());
+
+        System.out.println(
+            "Conseguiste " + recurso.getCantidad()
+            + " de " + recurso.getNombre().toLowerCase() + "."
+        );
+    }
+
+    if (roca.estaAgotada()) {
+        mapa.eliminarRoca(roca);
+        System.out.println("La roca se agoto.");
+    }
+}
+    
+ // Si la herramienta equipada se quedó sin durabilidad, desaparece del inventario
+    private void romperHerramientaSiHaceFalta() {
+
+        if (herramientaEquipada == null || !herramientaEquipada.estaRota()) {
             return;
         }
 
-        // Misma validación que arriba, por si se llama directo a minarRoca
-        if (!puedeMinar(roca)) {
-            return;
+        System.out.println("Tu " + herramientaEquipada.getNombre() + " se rompio.");
+
+        for (int i = 0; i < inventario.getCantidadSlots(); i++) {
+            if (inventario.getItem(i) == herramientaEquipada) {
+                inventario.quitarItem(i);
+                break;
+            }
         }
 
-        if (!herramientaEquipada.usar()) {
-            System.out.println("El pico no tiene suficiente durabilidad.");
-            return;
-        }
-
-        gastarEnergia(roca.getEnergiaNecesaria());
-
-        Recursos recurso = roca.recolectarRecurso();
-
-        if (recurso != null) {
-            inventario.agregarRecurso(recurso, recurso.getCantidad());
-
-            System.out.println(
-                "Conseguiste " + recurso.getCantidad()
-                + " de " + recurso.getNombre().toLowerCase() + "."
-            );
-        }
-
-        if (roca.estaAgotada()) {
-            mapa.eliminarRoca(roca);
-            System.out.println("La roca se agoto.");
-        }
+        herramientaEquipada = null;
     }
     
- // Si la armadura equipada ya no está en el inventario (la guardaste en un
- // cofre, por ejemplo), se considera sacada
-    private void comprobarArmaduraEquipada() {
+ // Cada golpe que acierta gasta la herramienta equipada
+    public void desgastarPorGolpe() {
 
-     if (armaduraEquipada == null) {
-         return;
-     }
+        if (herramientaEquipada == null) {
+            return;
+        }
 
-     for (int i = 0; i < inventario.getCantidadSlots(); i++) {
-         if (inventario.getItem(i) == armaduraEquipada) {
-             return;
-         }
-     }
+        tipoHerramienta tipo = herramientaEquipada.getTipo();
 
-     armaduraEquipada = null;
- }
+        if (tipo != tipoHerramienta.HACHA
+                && tipo != tipoHerramienta.PICO
+                && tipo != tipoHerramienta.ESPADA) {
+            return;
+        }
+
+        herramientaEquipada.usar();
+        romperHerramientaSiHaceFalta();
+    }
+    
+    
+    
+    
 }

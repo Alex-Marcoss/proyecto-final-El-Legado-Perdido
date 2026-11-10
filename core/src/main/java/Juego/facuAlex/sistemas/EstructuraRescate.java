@@ -33,8 +33,9 @@ public class EstructuraRescate {
         // ==================================================
 
         materialesPorFase[1] = new Ingrediente[] {
-            new Ingrediente("Madera", 15),
-            new Ingrediente("Piedra", 10)
+            new Ingrediente("Madera", 10),
+            new Ingrediente("Piedra", 5),
+            new Ingrediente("Lana", 4)
         };
 
         // ==================================================
@@ -42,8 +43,9 @@ public class EstructuraRescate {
         // ==================================================
 
         materialesPorFase[2] = new Ingrediente[] {
-            new Ingrediente("Madera", 10),
-            new Ingrediente("Piedra", 15)
+            new Ingrediente("Piedra", 15),
+            new Ingrediente("Hierro", 5),
+            new Ingrediente("Madera", 5)
         };
 
         // ==================================================
@@ -51,8 +53,9 @@ public class EstructuraRescate {
         // ==================================================
 
         materialesPorFase[3] = new Ingrediente[] {
-            new Ingrediente("Madera", 15),
-            new Ingrediente("Piedra", 20)
+            new Ingrediente("Piedra", 20),
+            new Ingrediente("Hierro", 10),
+            new Ingrediente("Oro", 10)
         };
     }
 

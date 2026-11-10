@@ -37,16 +37,19 @@ public class MenuInicio {
     private static final String TITULO = "EL LEGADO PERDIDO";
 
     // Lista de controles: { "acción", "tecla" }
+ // Lista de controles: { "acción", "tecla" }
     private static final String[][] CONTROLES = {
             { "Moverse", "W  A  S  D" },
             { "Correr", "SHIFT" },
-            { "Interactuar (talar / minar / recolectar)", "E" },
-            { "Comer", "F" },
+            { "Interactuar/ talar / minar / recolectar ", "E" },
+            { "Comer / usar vendaje (el seleccionado)", "F" },
+            { "Atacar", "Espacio" },
             { "Abrir / cerrar inventario", "I" },
             { "Abrir / cerrar Recetas", "C" },
-            { "Atacar", "Espacio" },
             { "Elegir slot de la barra", "1 a 9 / RUEDA" },
             { "Mover objetos", "ARRASTRAR CON CLICK" },
+            { "Usar item (armadura / vendaje)", "CLICK DERECHO" },
+            { "Modo construcción", "P" },
             { "Equipar herramienta", "ELEGIRLA EN LA BARRA" }
     };
 
@@ -71,9 +74,12 @@ public class MenuInicio {
     private static final float Y_PRIMER_BOTON = 330f; // el de más arriba
 
     // Panel de controles
-    private static final float ANCHO_PANEL = 640f;
-    private static final float ALTO_PANEL = 460f;
-    private static final float Y_PANEL = 70f;
+    private static final float ANCHO_PANEL = 700f;
+    private static final float ALTO_PANEL = 560f;
+    private static final float Y_PANEL = 20f;
+
+    // Separación entre filas (se achica sola si hay muchos controles)
+    private static final float PASO_MAXIMO = 38f;
 
     // =====================================================
     // ATRIBUTOS
@@ -133,7 +139,7 @@ public class MenuInicio {
         // Botón "Volver" del panel de controles
         botonVolver = new Rectangle(
                 (ANCHO_VIRTUAL - ANCHO_BOTON) / 2f,
-                Y_PANEL + 25f,
+                Y_PANEL + 20f,
                 ANCHO_BOTON,
                 ALTO_BOTON
         );
@@ -295,50 +301,63 @@ public class MenuInicio {
 
     private void dibujarControles() {
 
-        float panelX = (ANCHO_VIRTUAL - ANCHO_PANEL) / 2f;
+    float panelX = (ANCHO_VIRTUAL - ANCHO_PANEL) / 2f;
 
-        dibujarPanel(panelX, Y_PANEL, ANCHO_PANEL, ALTO_PANEL, 0.93f);
+    dibujarPanel(panelX, Y_PANEL, ANCHO_PANEL, ALTO_PANEL, 0.93f);
 
-        // Título del panel
-        String titulo = "CONTROLES";
+    // Título del panel
+    String titulo = "CONTROLES";
 
-        layout.setText(fuenteTexto, titulo);
+    layout.setText(fuenteTexto, titulo);
 
-        fuenteTexto.setColor(0.95f, 0.78f, 0.30f, 1f);
-        fuenteTexto.draw(
+    fuenteTexto.setColor(0.95f, 0.78f, 0.30f, 1f);
+    fuenteTexto.draw(
+            batch,
+            titulo,
+            (ANCHO_VIRTUAL - layout.width) / 2f,
+            Y_PANEL + ALTO_PANEL - 30f
+    );
+
+    // La lista ocupa el espacio entre el título y el botón "Volver".
+    // Si hay muchos controles, las filas se juntan para que entren.
+    float yInicio = Y_PANEL + ALTO_PANEL - 85f;
+    float yFin = botonVolver.y + botonVolver.height + 28f;
+
+    float paso = PASO_MAXIMO;
+
+    if (CONTROLES.length > 1) {
+        paso = Math.min(
+                PASO_MAXIMO,
+                (yInicio - yFin) / (CONTROLES.length - 1)
+        );
+    }
+
+    float y = yInicio;
+
+    for (int i = 0; i < CONTROLES.length; i++) {
+
+        String accion = CONTROLES[i][0];
+        String tecla = CONTROLES[i][1];
+
+        fuenteChica.setColor(0.90f, 0.90f, 0.90f, 1f);
+        fuenteChica.draw(batch, accion, panelX + 40f, y);
+
+        layout.setText(fuenteChica, tecla);
+
+        fuenteChica.setColor(0.95f, 0.78f, 0.30f, 1f);
+        fuenteChica.draw(
                 batch,
-                titulo,
-                (ANCHO_VIRTUAL - layout.width) / 2f,
-                Y_PANEL + ALTO_PANEL - 30f
+                tecla,
+                panelX + ANCHO_PANEL - 40f - layout.width,
+                y
         );
 
-        // Lista: acción a la izquierda, tecla a la derecha
-        float y = Y_PANEL + ALTO_PANEL - 90f;
-
-        for (int i = 0; i < CONTROLES.length; i++) {
-
-            String accion = CONTROLES[i][0];
-            String tecla = CONTROLES[i][1];
-
-            fuenteChica.setColor(0.90f, 0.90f, 0.90f, 1f);
-            fuenteChica.draw(batch, accion, panelX + 40f, y);
-
-            layout.setText(fuenteChica, tecla);
-
-            fuenteChica.setColor(0.95f, 0.78f, 0.30f, 1f);
-            fuenteChica.draw(
-                    batch,
-                    tecla,
-                    panelX + ANCHO_PANEL - 40f - layout.width,
-                    y
-            );
-
-            y -= 38f;
-        }
-
-        // Botón volver
-        dibujarBoton(botonVolver, "Volver", botonVolver.contains(mouseX(), mouseY()));
+        y -= paso;
     }
+
+    // Botón volver
+    dibujarBoton(botonVolver, "Volver", botonVolver.contains(mouseX(), mouseY()));
+}
 
     // =====================================================
     // PANEL (cartel de madera oscura con borde)

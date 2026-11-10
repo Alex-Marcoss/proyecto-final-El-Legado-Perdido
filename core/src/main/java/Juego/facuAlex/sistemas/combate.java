@@ -97,7 +97,7 @@ public class combate {
         }
 
         // =====================================================
-        // EL ATAQUE NO ALCANZÓ AL ENEMIGO
+        // EL ATAQUE NO ALCANZÓ AL ENEMIGO (no gasta herramienta)
         // =====================================================
 
         if (!estaEnZonaDeAtaque) {
@@ -115,21 +115,15 @@ public class combate {
         // ATAQUE EXITOSO
         // =====================================================
 
+        // El daño se calcula ANTES de gastar la herramienta
         int danio = jugador.getDanioAtaque();
 
         enemigo.recibirDaño(danio);
 
         jugador.gastarEnergia(ENERGIA_ATAQUE);
 
-        System.out.println(
-            "Atacaste a "
-            + enemigo.getNombre()
-            + " y causaste "
-            + danio
-            + " de daño."
-        );
-
-        jugador.gastarEnergia(ENERGIA_ATAQUE);
+        // El golpe gasta la espada / hacha / pico equipado
+        jugador.desgastarPorGolpe();
 
         System.out.println(
             "Atacaste a "

@@ -29,7 +29,9 @@ public class InteriorTemplo {
     private static final String OBJ_SPAWN_GUARDIAN = "spawn_guardian";
     private static final String OBJ_SALIDA = "salida";
 
-    private static final boolean FORZAR_SPAWN_CENTRO = true;
+ // true = aparece justo adelante de la salida (abajo del templo)
+ // false = usa el objeto "spawn_jugador" de Tiled
+ private static final boolean SPAWN_JUNTO_A_SALIDA = true;
 
     private final TiledMap mapa;
     private final OrthogonalTiledMapRenderer renderer;
@@ -273,30 +275,27 @@ public class InteriorTemplo {
 
     private void aplicarRespaldos() {
 
-        if (FORZAR_SPAWN_CENTRO || !encontroSpawnJugador) {
-            spawnJugadorX = anchoMundo / 2f;
-            spawnJugadorY = altoMundo / 2f;
-        }
+    float th = tileAlto * escala;
 
-        if (!encontroSpawnGuardian) {
-            spawnGuardianX = anchoMundo / 2f;
-            spawnGuardianY = altoMundo * 0.75f;
-        }
-
-        if (!encontroSalida) {
-
-            float ancho = tileAncho * escala * 3f;
-            float alto = tileAlto * escala * 2f;
-            float y = tileAlto * escala * 3f;
-
-            salida.set(
-                anchoMundo / 2f - ancho / 2f,
-                y,
-                ancho,
-                alto
-            );
-        }
+    // Si Tiled no tiene un objeto "salida", se pone al final del pasillo de abajo
+    if (!encontroSalida) {
+        colocarSalidaEnPasillo();
     }
+
+    if (!encontroSpawnGuardian) {
+        spawnGuardianX = anchoMundo / 2f;
+        spawnGuardianY = altoMundo * 0.75f;
+    }
+
+    if (SPAWN_JUNTO_A_SALIDA || !encontroSpawnJugador) {
+        spawnJugadorX = salida.x + salida.width / 2f;
+        spawnJugadorY = salida.y + salida.height + th;
+    }
+
+    // Seguridad: si el punto cae contra una pared, busca el más cercano libre
+    // (24 x 12 es la hitbox de los pies del jugador)
+    ubicarSpawnLibre(24f, 12f);
+}
 
     // Busca una posición libre para el jugador al aparecer.
     public void ubicarSpawnLibre(float anchoPies, float altoPies) {
@@ -414,6 +413,60 @@ public class InteriorTemplo {
 
         return false;
     }
+    
+ // Pone la salida en la fila más baja de la capa "piso" (el final del pasillo),
+ // cubriendo todo el ancho del pasillo
+ private void colocarSalidaEnPasillo() {
+
+     float tw = tileAncho * escala;
+     float th = tileAlto * escala;
+
+     if (capaPiso != null) {
+
+         // cy = 0 es la fila de abajo
+         for (int cy = 0; cy < capaPiso.getHeight(); cy++) {
+
+             int minX = -1;
+             int maxX = -1;
+
+             for (int cx = 0; cx < capaPiso.getWidth(); cx++) {
+
+                 if (capaPiso.getCell(cx, cy) != null) {
+
+                     if (minX < 0) {
+                         minX = cx;
+                     }
+
+                     maxX = cx;
+                 }
+             }
+
+             if (minX >= 0) {
+
+                 salida.set(
+                     minX * tw,
+                     cy * th,
+                     (maxX - minX + 1) * tw,
+                     th
+                 );
+
+                 return;
+             }
+         }
+     }
+
+     // Respaldo si no hay capa "piso"
+     float ancho = tw * 3f;
+     float alto = th;
+     float y = th * 3f;
+
+     salida.set(
+         anchoMundo / 2f - ancho / 2f,
+         y,
+         ancho,
+         alto
+     );
+ }
 
     public boolean jugadorEnSalida(Rectangle pies) {
         return salida.overlaps(pies);

@@ -18,6 +18,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import Juego.facuAlex.jugador.Jugador;
 import Juego.facuAlex.recursos.Item;
 import Juego.facuAlex.recursos.Recursos;
+import Juego.facuAlex.Herramientas.Herramienta;
 
 public class InventarioUI {
 
@@ -30,7 +31,7 @@ public class InventarioUI {
 
     private BitmapFont fuenteCantidad;
     private GlyphLayout layoutCantidad;
-
+    private Texture pixelBlanco;
     private boolean abierto;
     private boolean mousePresionadoAnteriormente = false;
 
@@ -93,38 +94,45 @@ public class InventarioUI {
 
     public InventarioUI(Jugador jugador) {
 
-        this.jugador = jugador;
+    this.jugador = jugador;
 
-        batchInventario = new SpriteBatch();
+    batchInventario = new SpriteBatch();
 
-        panelTexture = new Texture(Gdx.files.internal("inventario/panel.png"));
-        slotTexture = new Texture(Gdx.files.internal("inventario/slot.png"));
+    panelTexture = new Texture(Gdx.files.internal("inventario/panel.png"));
+    slotTexture = new Texture(Gdx.files.internal("inventario/slot.png"));
 
-        panelTexture.setFilter(
-                Texture.TextureFilter.Nearest,
-                Texture.TextureFilter.Nearest
-        );
+    // Pixel blanco para las barras de desgaste
+    Pixmap pm = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+    pm.setColor(1f, 1f, 1f, 1f);
+    pm.fill();
+    pixelBlanco = new Texture(pm);
+    pm.dispose();
 
-        slotTexture.setFilter(
-                Texture.TextureFilter.Nearest,
-                Texture.TextureFilter.Nearest
-        );
+    panelTexture.setFilter(
+            Texture.TextureFilter.Nearest,
+            Texture.TextureFilter.Nearest
+    );
 
-        altoPanel = ANCHO_PANEL * panelTexture.getHeight() / panelTexture.getWidth();
+    slotTexture.setFilter(
+            Texture.TextureFilter.Nearest,
+            Texture.TextureFilter.Nearest
+    );
 
-        fuenteCantidad = new BitmapFont();
-        layoutCantidad = new GlyphLayout();
+    altoPanel = ANCHO_PANEL * panelTexture.getHeight() / panelTexture.getWidth();
 
-        fuenteCantidad.getRegion().getTexture().setFilter(
-                Texture.TextureFilter.Nearest,
-                Texture.TextureFilter.Nearest
-        );
+    fuenteCantidad = new BitmapFont();
+    layoutCantidad = new GlyphLayout();
 
-        abierto = false;
-        slotSeleccionado = -1;
-        arrastrando = false;
-        slotArrastrado = -1;
-    }
+    fuenteCantidad.getRegion().getTexture().setFilter(
+            Texture.TextureFilter.Nearest,
+            Texture.TextureFilter.Nearest
+    );
+
+    abierto = false;
+    slotSeleccionado = -1;
+    arrastrando = false;
+    slotArrastrado = -1;
+}
 
     // =====================================================
     // ACTUALIZAR
@@ -294,89 +302,103 @@ public class InventarioUI {
 
     public void dibujar() {
 
-        if (!abierto) {
-            return;
+    if (!abierto) {
+        return;
+    }
+
+    batchInventario.getProjectionMatrix()
+            .setToOrtho2D(0, 0, ANCHO_VIRTUAL, ALTO_VIRTUAL);
+
+    batchInventario.begin();
+    batchInventario.setColor(1f, 1f, 1f, 1f);
+
+    // Panel
+    batchInventario.draw(panelTexture, panelX(), panelY(), ANCHO_PANEL, altoPanel);
+
+    // Slots
+    for (int i = 0; i < CANTIDAD_SLOTS; i++) {
+
+        float x = obtenerSlotX(i % COLUMNAS);
+        float y = obtenerSlotY(i / COLUMNAS);
+
+        // Slot seleccionado
+        if (i == slotSeleccionado) {
+
+            batchInventario.setColor(1f, 1f, 1f, 0.30f);
+            batchInventario.draw(slotTexture, x, y, anchoSlot(), altoSlot());
+            batchInventario.setColor(1f, 1f, 1f, 1f);
         }
 
-        batchInventario.getProjectionMatrix()
-                .setToOrtho2D(0, 0, ANCHO_VIRTUAL, ALTO_VIRTUAL);
+        // El objeto que se está arrastrando no se dibuja en su slot
+        if (arrastrando && i == slotArrastrado) {
+            continue;
+        }
 
-        batchInventario.begin();
-        batchInventario.setColor(1f, 1f, 1f, 1f);
+        Item item = jugador.getInventario().getItem(i);
 
-        // Panel
-        batchInventario.draw(panelTexture, panelX(), panelY(), ANCHO_PANEL, altoPanel);
+        if (item == null) {
+            continue;
+        }
 
-        // Slots
-        for (int i = 0; i < CANTIDAD_SLOTS; i++) {
+        dibujarIcono(
+                item,
+                x + anchoSlot() / 2f,
+                y + altoSlot() / 2f,
+                1f
+        );
 
-            float x = obtenerSlotX(i % COLUMNAS);
-            float y = obtenerSlotY(i / COLUMNAS);
+        if (item instanceof Recursos) {
+            dibujarCantidad((Recursos) item, x, y);
+        }
 
-            // Slot seleccionado
-            if (i == slotSeleccionado) {
-
-                batchInventario.setColor(1f, 1f, 1f, 0.30f);
-                batchInventario.draw(slotTexture, x, y, anchoSlot(), altoSlot());
-                batchInventario.setColor(1f, 1f, 1f, 1f);
-            }
-
-            // El objeto que se está arrastrando no se dibuja en su slot
-            if (arrastrando && i == slotArrastrado) {
-                continue;
-            }
-
-            Item item = jugador.getInventario().getItem(i);
-
-            if (item == null) {
-                continue;
-            }
-
-            dibujarIcono(
-                    item,
-                    x + anchoSlot() / 2f,
-                    y + altoSlot() / 2f,
-                    1f
+        // Barra de desgaste de las herramientas
+        if (item instanceof Herramienta) {
+            BarraDesgaste.dibujar(
+                    batchInventario, pixelBlanco, (Herramienta) item,
+                    x, y, anchoSlot()
             );
+        }
+
+        // La armadura puesta se marca en azul
+        if (item == jugador.getArmaduraEquipada()) {
+
+            batchInventario.setColor(0.3f, 0.6f, 1f, 0.45f);
+            batchInventario.draw(slotTexture, x, y, anchoSlot(), altoSlot());
+            batchInventario.setColor(1f, 1f, 1f, 1f);
+        }
+    }
+
+    // Objeto arrastrado (encima de todo)
+    if (arrastrando && slotArrastrado != -1) {
+
+        Item item = jugador.getInventario().getItem(slotArrastrado);
+
+        if (item != null) {
+
+            dibujarIcono(item, mouseArrastreX, mouseArrastreY, 0.85f);
 
             if (item instanceof Recursos) {
-                dibujarCantidad((Recursos) item, x, y);
+                dibujarCantidad(
+                        (Recursos) item,
+                        mouseArrastreX - anchoSlot() / 2f,
+                        mouseArrastreY - altoSlot() / 2f
+                );
             }
-            
-         // La armadura puesta se marca en azul
-            Item enSlot = jugador.getInventario().getItem(i);
 
-            if (enSlot != null && enSlot == jugador.getArmaduraEquipada()) {
-
-                batchInventario.setColor(0.3f, 0.6f, 1f, 0.45f);
-                batchInventario.draw(slotTexture, x, y, anchoSlot(), altoSlot());
-                batchInventario.setColor(1f, 1f, 1f, 1f);
-            }
-            
-        }
-
-        // Objeto arrastrado (encima de todo)
-        if (arrastrando && slotArrastrado != -1) {
-
-            Item item = jugador.getInventario().getItem(slotArrastrado);
-
-            if (item != null) {
-
-                dibujarIcono(item, mouseArrastreX, mouseArrastreY, 0.85f);
-
-                if (item instanceof Recursos) {
-                    dibujarCantidad(
-                            (Recursos) item,
-                            mouseArrastreX - anchoSlot() / 2f,
-                            mouseArrastreY - altoSlot() / 2f
-                    );
-                }
+            if (item instanceof Herramienta) {
+                BarraDesgaste.dibujar(
+                        batchInventario, pixelBlanco, (Herramienta) item,
+                        mouseArrastreX - anchoSlot() / 2f,
+                        mouseArrastreY - altoSlot() / 2f,
+                        anchoSlot()
+                );
             }
         }
-
-        batchInventario.setColor(1f, 1f, 1f, 1f);
-        batchInventario.end();
     }
+
+    batchInventario.setColor(1f, 1f, 1f, 1f);
+    batchInventario.end();
+}
 
     // =====================================================
     // DIBUJAR ICONO (centrado en un punto)
@@ -522,6 +544,7 @@ public class InventarioUI {
         batchInventario.dispose();
         panelTexture.dispose();
         slotTexture.dispose();
+        pixelBlanco.dispose();
         fuenteCantidad.dispose();
     }
 }
