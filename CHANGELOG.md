@@ -134,8 +134,35 @@
 - El guardian ya tiene ataques propios animados y muerte animada.
 - El hambre se conecta con la vida permitiendo recuperarla si tiene suficiente y perderla si queda en 0.
 
-## [Nuevos avances y mejoras] 2026-10-025
+## [Nuevos avances y mejoras] 2026-10-25
 ### Agregados
 - Se pusieron los limites del templo asi el jugador no podra atravesar las paredes ni salir de la estructura del templo.
 - se agregaron los sprites de golpear con respectivos objetos.
+
+## [Nuevos avances y mejoras] 2026-11-02
+### Agregados:
+- Se agregaron las estructuras con sus funcionalidades: Horno, cofre, mesa de fabricacion, cama y fogata
+- Se agregaron nuevos recursos y recetas al juego
+- Se agregaron armaduras que protegen al jugador y le dan mas vida
+- Agregado de vendaje que permite curar directo la vida del jugador
+- se crearon pico hacha y espada de hierro y quedaron pico y hacha primitivos, con menos durabilidad y que permiten obtener menos recursos
+- Correcion de errores con la comida y algunos recursos
+
+## [Nuevos avances y mejoras] 2026-11-09
+### Agregados:
+- Se agregaron animaciones Al pegar con la espada, pegar con el hacha, pegar con el pico, y pegar de forma predeterminada (sin ninguna de las 3 mencionadas)
+
+## [Nuevos avances y mejoras] 2026-11-10
+- Se arreglo la interfaz de controles para que entren todos
+- Se agregaron barras de desgaste en las herramientas y la eliminacion de las mismas cuando llega a 0 su durabilidad
+- Se cambiaron los costos de las estructuras y de la estructura de rescate en cada una de sus fases
+- Se agregaron mensajes y alertas para mejorar la dinamica del juego y para que el usuario entienda mejor que pasa o porque no puede realizar tal accion
+- Se mejoro la animacion del hacha al talar
+- Se agrego la funcion de dividir recursos adentro del inventario
+- Se agrego un menu de pausa al tocar el escape
+
+## [Nuevos avances y mejoras] 2026-11-11
+- Se hicieron balances y cambios en el guardian, la vaca, el lobo y la araña en base a su velocidad, vida, velocidad de ataque y daño
+- Se Actualizo el ciclo dia y noche para que dure un poco mas cada hora
+- Se arreglaron problemas en el mapa con la aparicion de recursos y colisiones
 
