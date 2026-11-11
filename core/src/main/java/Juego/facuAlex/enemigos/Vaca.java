@@ -20,7 +20,7 @@ public class Vaca extends Criatura {
 
     public Vaca() {
 
-        super("Vaca", 100, 10, crearAnimacion(), 1f);
+        super("Vaca", 50, 0, crearAnimacion(), 1f);
     }
 
     // sprites/vaca.png: 9 columnas x 4 filas. Solo tiene vista de LADO.

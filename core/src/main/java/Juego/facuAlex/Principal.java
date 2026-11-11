@@ -450,16 +450,18 @@ public class Principal extends ApplicationAdapter {
                         jugador.getPosicionY()
                 );
 
-                GestorCriaturas =
-                        new GestorCriaturas(mapa, jugador);
-
-                // Mismo lugar que el mapa reservó para el templo
+             // Mismo lugar que el mapa reservó para el templo
                 templo = new Templo(
                         "estructuras/templo.png",
                         mapa.getTemploX(),
                         mapa.getTemploY(),
                         ESCALA_TEMPLO
                 );
+
+                mapa.setTemploSolido(templo);
+
+                GestorCriaturas =
+                        new GestorCriaturas(mapa, jugador);
 
                 interiorTemplo =
                         new InteriorTemplo(

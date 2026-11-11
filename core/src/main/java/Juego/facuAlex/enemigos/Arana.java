@@ -13,7 +13,7 @@ public class Arana extends CriaturaHostil {
             8,                   // daño
             crearAnimacion(),
             1f,                  // escala de dibujo
-            70f,                 // velocidad
+            90f,                 // velocidad
             220f,                // distancia de deteccion
             35f,                 // distancia de ataque
             1f                   // segundos entre ataques

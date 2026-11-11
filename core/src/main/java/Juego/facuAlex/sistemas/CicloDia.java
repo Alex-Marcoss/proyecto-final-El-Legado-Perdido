@@ -3,7 +3,7 @@ package Juego.facuAlex.sistemas;
 public class CicloDia {
 
     // 24 h * 25 s = 10 minutos reales por día completo (ajustable)
-    public static final float SEGUNDOS_POR_HORA = 18f;
+    public static final float SEGUNDOS_POR_HORA = 20f;
 
     private int dia;
     private int hora;

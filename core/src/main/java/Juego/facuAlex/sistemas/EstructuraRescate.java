@@ -35,7 +35,7 @@ public class EstructuraRescate {
         materialesPorFase[1] = new Ingrediente[] {
             new Ingrediente("Madera", 10),
             new Ingrediente("Piedra", 5),
-            new Ingrediente("Lana", 4)
+            new Ingrediente("Cuerda", 3)
         };
 
         // ==================================================

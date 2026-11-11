@@ -1,13 +1,12 @@
-
 package Juego.facuAlex.Mapa;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.function.BiConsumer;
 
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.maps.MapLayer;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.maps.tiled.TmxMapLoader;
@@ -24,47 +23,34 @@ import Juego.facuAlex.estructuras.*;
 
 public class Mapa {
 
-    private float ancho;
-    private float alto;
+    // ==========================================================
+    // CONSTANTES
+    // ==========================================================
 
+    // Cantidad de recursos
     private static final int CANTIDAD_ARBOLES = 50;
-   
-
     private static final int CANTIDAD_ROCAS = 40;
-    
-
     private static final int CANTIDAD_PLANTAS = 40;
-   
-
     private static final int CANTIDAD_ARBUSTOS_BAYAS = 15;
-    
     private static final int CANTIDAD_MENAS_HIERRO = 15;
-    
     private static final int CANTIDAD_MENAS_ORO = 5;
-    
     private static final int CANTIDAD_MENAS_CARBON = 10;
-    
- // Punto de aparición del jugador y ubicación del templo (Principal usa estas mismas)
+
+    // Punto de aparición del jugador
     public static final float SPAWN_X = 3072f;
     public static final float SPAWN_Y = 3072f;
-    
-    private float temploX;
-    private float temploY;
-    
-
 
     // Ubicación aleatoria del templo y de la estructura de rescate
-    private static final float BORDE_UBICACION = 400f;     // distancia mínima a los bordes del mapa
-    private static final float DIST_MIN_SPAWN = 500f;      // distancia mínima al spawn del jugador
-    private static final float DIST_MIN_ENTRE = 600f;      // distancia mínima entre templo y rescate
+    private static final float BORDE_UBICACION = 400f;  // distancia mínima a los bordes
+    private static final float DIST_MIN_SPAWN = 500f;   // distancia mínima al spawn
+    private static final float DIST_MIN_ENTRE = 600f;   // distancia mínima entre templo y rescate
     private static final int INTENTOS_UBICACION = 5000;
 
     // Espacio libre mínimo entre los bordes de dos objetos
     private static final float MARGEN_OBJETOS = 90f;
-    
+
     // Distancia mínima entre un objeto y el agua
     private static final float MARGEN_AGUA = 40f;
-    
 
     // "Tamaño" de cada cosa a efectos de separación
     private static final float RADIO_ARBOL = 50f;
@@ -73,12 +59,12 @@ public class Mapa {
     private static final float RADIO_PLANTA = 20f;
     private static final float RADIO_ARBUSTO = 30f;
 
-    // Zonas reservadas (radio físico de lo que ya está ahí)
+    // Zonas reservadas
     private static final float RADIO_SPAWN = 60f;
     private static final float RADIO_RESCATE = 90f;
- 
- // Tamaño real del templo en el mundo (PNG 470 x 256 con la escala de Principal)
-    private static final float ESCALA_TEMPLO = 1.5f;   // tiene que ser igual a Principal.ESCALA_TEMPLO
+
+    // Tamaño real del templo en el mundo (PNG 470 x 256)
+    private static final float ESCALA_TEMPLO = 1.5f;   // igual a Principal.ESCALA_TEMPLO
     private static final float TEMPLO_ANCHO = 470f * ESCALA_TEMPLO;
     private static final float TEMPLO_ALTO = 256f * ESCALA_TEMPLO;
 
@@ -89,14 +75,10 @@ public class Mapa {
     // Radio que se reserva alrededor del templo (para recursos y distancias)
     private static final float RADIO_TEMPLO = 360f;
 
-    // Pasto que tiene que haber alrededor del templo (para que se pueda rodear)
+    // Pasto que tiene que haber alrededor del templo (para poder rodearlo)
     private static final float MARGEN_TIERRA_TEMPLO = 64f;
 
-    
-    /*
-     * Tamaños aproximados de las áreas de colisión.
-     * Ajustarlos si los sprites tienen otras dimensiones.
-     */
+    // Áreas de colisión aproximadas (ajustar si los sprites cambian)
     private static final float ANCHO_PLANTA = 32f;
     private static final float ALTO_PLANTA = 32f;
 
@@ -105,278 +87,48 @@ public class Mapa {
 
     private static final float ANCHO_RESCATE = 128f;
     private static final float ALTO_RESCATE = 128f;
-    
- // Capas de suelo de piedra: se detectan por el nombre (cualquier capa de tiles
- // cuyo nombre contenga alguna de estas palabras)
-    private static final String[] PALABRAS_PIEDRA = { "piedra", "roca", "stone", "rock" };
 
-    private final List<TiledMapTileLayer> capasPiedra = new ArrayList<>();
-    
-    private Zona[] zonas;
-    private LugarEspecial templo;
-    private EstructuraRescateMundo estructuraRescate;
+    // Solo se comprueban los objetos a menos de esta distancia
+    private static final float RADIO_BUSQUEDA = 250f;
+
+    // ==========================================================
+    // ESTADO
+    // ==========================================================
+
+    private float ancho;
+    private float alto;
+
+    private float temploX;
+    private float temploY;
 
     private float rescateX;
     private float rescateY;
 
+    private Zona[] zonas;
+    private LugarEspecial templo;
+    private EstructuraRescateMundo estructuraRescate;
+
+    // Pared sólida del templo (la misma que usa el jugador). La asigna
+    // Principal con setTemploSolido() apenas crea el Templo.
+    private Templo temploSolido;
+
     private TiledMap tiledMap;
     private TiledMapTileLayer capaPasto;
-    private TiledMapTileLayer capaPasto2;
+    private TiledMapTileLayer capaPasto2;   // pasto + piedra: es suelo y a la vez piedra
     private int tileAnchoMapa;
     private int tileAltoMapa;
-    
+
     private OrthogonalTiledMapRenderer mapRenderer;
 
-    private List<arbol> arboles;
-    private List<roca> rocas;
-    private List<planta> plantas;
-    private List<arbustoBayas> arbustosBayas;
-
-    private Random random;
-
-    private List<Estructura> estructurasConstruidas =
-            new ArrayList<>();
-
-    public Mapa(float anchoDefecto, float altoDefecto) {
-
-    	tiledMap = new TmxMapLoader().load("mapa pasto.tmx");
-    	mapRenderer = new OrthogonalTiledMapRenderer(tiledMap);
-
-    	prepararCapas();
-
-    int tileWidth = tiledMap.getProperties()
-            .get("tilewidth", Integer.class);
-
-    int tileHeight = tiledMap.getProperties()
-            .get("tileheight", Integer.class);
-
-    int mapWidthTiles = tiledMap.getProperties()
-            .get("width", Integer.class);
-
-    int mapHeightTiles = tiledMap.getProperties()
-            .get("height", Integer.class);
-
-    ancho = mapWidthTiles * tileWidth;
-    alto = mapHeightTiles * tileHeight;
-
-    random = new Random();
-
-    zonas = new Zona[3];
-
-    zonas[0] = new Zona("Zona 1", 0, 0, ancho / 3, alto);
-    zonas[1] = new Zona("Zona 2", ancho / 3, 0, ancho / 3, alto);
-    zonas[2] = new Zona(
-            "Zona 3", (ancho / 3) * 2, 0, ancho / 3, alto);
-
-    // Templo y estructura de rescate en lugares al azar
-    ubicarTemploYRescate();
-
-    // La zona "Templo" del mapa acompaña al templo real
-    templo = new LugarEspecial(
-            "Templo",
-            temploX + TEMPLO_CENTRO_OX - 50f,
-            temploY + TEMPLO_CENTRO_OY - 50f,
-            100, 100);
-
-    estructuraRescate = new EstructuraRescateMundo(
-            rescateX, rescateY);
-
-    arboles = new ArrayList<>();
-    rocas = new ArrayList<>();
-    plantas = new ArrayList<>();
-    arbustosBayas = new ArrayList<>();
-
-    reservarZonas();
-
-    crearArboles();
-    crearRocas();
-    crearMenas();
-    crearPlantas();
-    crearArbustosBayas();
-    }
-    
- // ==========================================================
- // UBICACIÓN ALEATORIA DE TEMPLO Y ESTRUCTURA DE RESCATE
- // ==========================================================
-
- private float distancia(float x1, float y1, float x2, float y2) {
-
-     float dx = x1 - x2;
-     float dy = y1 - y2;
-
-     return (float) Math.sqrt(dx * dx + dy * dy);
- }
-
- // ¿Todo el círculo (centro, mitad del radio y borde) está sobre pasto?
-private boolean rectanguloDeTierra(float x, float y, float w, float h,
-                                    float margen) {
-
-    float x0 = x - margen;
-    float y0 = y - margen;
-    float x1 = x + w + margen;
-    float y1 = y + h + margen;
-
-    int pasosX = Math.max(2, (int) Math.ceil((x1 - x0) / 96f));
-    int pasosY = Math.max(2, (int) Math.ceil((y1 - y0) / 96f));
-
-    for (int i = 0; i <= pasosX; i++) {
-        for (int j = 0; j <= pasosY; j++) {
-
-            float px = x0 + (x1 - x0) * i / pasosX;
-            float py = y0 + (y1 - y0) * j / pasosY;
-
-            if (!esTierra(px, py)) {
-                return false;
-            }
-        }
-    }
-
-    return true;
-}
-
-// ¿Todo el círculo (centro, mitad del radio y borde) está sobre pasto?
-private boolean zonaDeTierra(float cx, float cy, float radio) {
-
-    if (!esTierra(cx, cy)) {
-        return false;
-    }
-
-    for (int grado = 0; grado < 360; grado += 20)  {
-
-        float rad = (float) Math.toRadians(grado);
-        float cos = (float) Math.cos(rad);
-        float sin = (float) Math.sin(rad);
-
-        if (!esTierra(cx + cos * radio, cy + sin * radio)
-                || !esTierra(cx + cos * radio * 0.5f,
-                             cy + sin * radio * 0.5f)) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-// Busca un lugar para el templo. Devuelve true si lo encontró.
-private boolean buscarLugarTemplo(float margenTierra, float distMinSpawn,
-                                  float borde) {
-
-    float rangoX = ancho - 2f * borde - TEMPLO_ANCHO;
-    float rangoY = alto - 2f * borde - TEMPLO_ALTO;
-
-    if (rangoX <= 0 || rangoY <= 0) {
-        return false;
-    }
-
-    for (int i = 0; i < INTENTOS_UBICACION; i++) {
-
-        float x = borde + random.nextFloat() * rangoX;
-        float y = borde + random.nextFloat() * rangoY;
-
-        float cx = x + TEMPLO_CENTRO_OX;
-        float cy = y + TEMPLO_CENTRO_OY;
-
-        if (distancia(cx, cy, SPAWN_X, SPAWN_Y)
-                < RADIO_TEMPLO + distMinSpawn) {
-            continue;
-        }
-
-        if (!rectanguloDeTierra(x, y, TEMPLO_ANCHO, TEMPLO_ALTO,
-                                margenTierra)) {
-            continue;
-        }
-
-        temploX = x;
-        temploY = y;
-        return true;
-    }
-
-    return false;
-}
-
-private void ubicarTemploYRescate() {
-
-    // ----- Templo: primero estricto, después cada vez más permisivo -----
-    boolean temploOk =
-            buscarLugarTemplo(MARGEN_TIERRA_TEMPLO, DIST_MIN_SPAWN,
-                              BORDE_UBICACION)
-            || buscarLugarTemplo(0f, DIST_MIN_SPAWN / 2f, 150f)
-            || buscarLugarTemplo(0f, 0f, 0f);
-
-    // Último recurso: al lado del jugador, como estaba antes
-    if (!temploOk) {
-        temploX = SPAWN_X + 300f;
-        temploY = SPAWN_Y + 100f;
-
-        System.out.println(
-                "AVISO: no se encontro un lugar de pasto para el templo, "
-                + "se usa la posicion fija.");
-    }
-
-    float temploCx = temploX + TEMPLO_CENTRO_OX;
-    float temploCy = temploY + TEMPLO_CENTRO_OY;
-
-    // ----- Estructura de rescate -----
-    boolean rescateOk = false;
-
-    for (int i = 0; i < INTENTOS_UBICACION && !rescateOk; i++) {
-
-        float cx = BORDE_UBICACION
-                + random.nextFloat() * (ancho - 2f * BORDE_UBICACION);
-
-        float cy = BORDE_UBICACION
-                + random.nextFloat() * (alto - 2f * BORDE_UBICACION);
-
-        if (distancia(cx, cy, SPAWN_X, SPAWN_Y)
-                < RADIO_RESCATE + DIST_MIN_SPAWN) {
-            continue;
-        }
-
-        if (distancia(cx, cy, temploCx, temploCy)
-                < RADIO_TEMPLO + RADIO_RESCATE + DIST_MIN_ENTRE) {
-            continue;
-        }
-
-        if (!zonaDeTierra(cx, cy, RADIO_RESCATE)) {
-            continue;
-        }
-
-        rescateX = cx - ANCHO_RESCATE / 2f;
-        rescateY = cy - ALTO_RESCATE / 2f;
-        rescateOk = true;
-    }
-
-    if (!rescateOk) {
-        rescateX = ancho * 0.50f;
-        rescateY = alto * 0.50f;
-
-        System.out.println(
-                "AVISO: no se encontro un lugar para la estructura de "
-                + "rescate, se usa el centro del mapa.");
-    }
-
-    System.out.println("Templo en: " + (int) temploX + ", " + (int) temploY
-            + " | Rescate en: " + (int) rescateX + ", " + (int) rescateY);
-}
-
- public float getTemploX() {
-     return temploX;
- }
-
- public float getTemploY() {
-     return temploY;
- }
-    
-
-    public EstructuraRescateMundo getEstructuraRescate() {
-        return estructuraRescate;
-    }
-
-    // ==========================================================
-    // CREACIÓN DE RECURSOS
-    // ==========================================================
-
-    
+    private final List<arbol> arboles = new ArrayList<>();
+    private final List<roca> rocas = new ArrayList<>();
+    private final List<planta> plantas = new ArrayList<>();
+    private final List<arbustoBayas> arbustosBayas = new ArrayList<>();
+    private final List<Estructura> estructurasConstruidas = new ArrayList<>();
+
+    private final List<Ocupado> ocupados = new ArrayList<>();
+
+    private final Random random = new Random();
 
     private static class Ocupado {
 
@@ -389,9 +141,332 @@ private void ubicarTemploYRescate() {
         }
     }
 
-    private final List<Ocupado> ocupados = new ArrayList<>();
+    // ==========================================================
+    // CONSTRUCTOR
+    // ==========================================================
 
- // Lugares que nada puede ocupar ni tener pegados
+    public Mapa(float anchoDefecto, float altoDefecto) {
+
+        tiledMap = new TmxMapLoader().load("mapa pasto.tmx");
+        mapRenderer = new OrthogonalTiledMapRenderer(tiledMap);
+
+        prepararCapas();
+
+        int mapWidthTiles = tiledMap.getProperties()
+                .get("width", Integer.class);
+
+        int mapHeightTiles = tiledMap.getProperties()
+                .get("height", Integer.class);
+
+        ancho = mapWidthTiles * tileAnchoMapa;
+        alto = mapHeightTiles * tileAltoMapa;
+
+        zonas = new Zona[3];
+
+        zonas[0] = new Zona("Zona 1", 0, 0, ancho / 3, alto);
+        zonas[1] = new Zona("Zona 2", ancho / 3, 0, ancho / 3, alto);
+        zonas[2] = new Zona("Zona 3", (ancho / 3) * 2, 0, ancho / 3, alto);
+
+        // Templo y estructura de rescate en lugares al azar
+        ubicarTemploYRescate();
+
+        // La zona "Templo" del mapa acompaña al templo real
+        templo = new LugarEspecial(
+                "Templo",
+                temploX + TEMPLO_CENTRO_OX - 50f,
+                temploY + TEMPLO_CENTRO_OY - 50f,
+                100, 100);
+
+        estructuraRescate = new EstructuraRescateMundo(rescateX, rescateY);
+
+        reservarZonas();
+
+        crearArboles();
+        crearRocas();
+        crearMenas();
+        crearPlantas();
+        crearArbustosBayas();
+    }
+
+    // ==========================================================
+    // CAPAS DEL MAPA
+    // ==========================================================
+
+    // Carga las capas y el tamaño de tile una sola vez
+    private void prepararCapas() {
+
+        tileAnchoMapa = tiledMap.getProperties()
+                .get("tilewidth", Integer.class);
+
+        tileAltoMapa = tiledMap.getProperties()
+                .get("tileheight", Integer.class);
+
+        capaPasto = (TiledMapTileLayer) tiledMap.getLayers().get("pasto");
+        capaPasto2 = (TiledMapTileLayer) tiledMap.getLayers().get("pasto 2");
+
+        if (capaPasto == null || capaPasto2 == null) {
+            System.out.println(
+                    "AVISO: falta la capa \"pasto\" o \"pasto 2\" en el mapa.");
+        }
+    }
+
+    private boolean hayCelda(TiledMapTileLayer capa, int tileX, int tileY) {
+
+        if (capa == null) {
+            return false;
+        }
+
+        TiledMapTileLayer.Cell celda = capa.getCell(tileX, tileY);
+
+        return celda != null && celda.getTile() != null;
+    }
+
+    // ¿Hay suelo (pasto o piedra) en este punto?
+    private boolean esTierra(float x, float y) {
+
+        // Fuera del mapa por abajo o por la izquierda (evita el redondeo a tile 0)
+        if (x < 0 || y < 0) {
+            return false;
+        }
+
+        // Seguridad: si todavía no se cargaron las capas, se cargan acá
+        if (tileAnchoMapa <= 0 || tileAltoMapa <= 0) {
+            prepararCapas();
+        }
+
+        int tileX = (int) (x / tileAnchoMapa);
+        int tileY = (int) (y / tileAltoMapa);
+
+        return hayCelda(capaPasto, tileX, tileY)
+                || hayCelda(capaPasto2, tileX, tileY);
+    }
+
+    // ¿Hay suelo de piedra en este punto? ("pasto 2" es la capa de piedra)
+    private boolean esPiedra(float x, float y) {
+
+        if (capaPasto2 == null || x < 0 || y < 0) {
+            return false;
+        }
+
+        int tileX = (int) (x / tileAnchoMapa);
+        int tileY = (int) (y / tileAltoMapa);
+
+        return hayCelda(capaPasto2, tileX, tileY);
+    }
+
+    // ¿Todo el círculo (centro, mitad del radio y borde) está sobre suelo?
+    private boolean zonaDeTierra(float cx, float cy, float radio) {
+
+        if (!esTierra(cx, cy)) {
+            return false;
+        }
+
+        for (int grado = 0; grado < 360; grado += 20) {
+
+            float rad = (float) Math.toRadians(grado);
+            float cos = (float) Math.cos(rad);
+            float sin = (float) Math.sin(rad);
+
+            if (!esTierra(cx + cos * radio, cy + sin * radio)
+                    || !esTierra(cx + cos * radio * 0.5f,
+                                 cy + sin * radio * 0.5f)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    // ¿Hay piedra en alguna parte del círculo (centro, mitad del radio y borde)?
+    private boolean hayPiedraEnZona(float cx, float cy, float radio) {
+
+        if (capaPasto2 == null) {
+            return false;
+        }
+
+        if (esPiedra(cx, cy)) {
+            return true;
+        }
+
+        for (int grado = 0; grado < 360; grado += 20) {
+
+            float rad = (float) Math.toRadians(grado);
+            float cos = (float) Math.cos(rad);
+            float sin = (float) Math.sin(rad);
+
+            if (esPiedra(cx + cos * radio, cy + sin * radio)
+                    || esPiedra(cx + cos * radio * 0.5f,
+                                cy + sin * radio * 0.5f)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // ¿Todo el rectángulo (con margen) está sobre suelo?
+    private boolean rectanguloDeTierra(float x, float y, float w, float h,
+                                       float margen) {
+
+        float x0 = x - margen;
+        float y0 = y - margen;
+        float x1 = x + w + margen;
+        float y1 = y + h + margen;
+
+        int pasosX = Math.max(2, (int) Math.ceil((x1 - x0) / 96f));
+        int pasosY = Math.max(2, (int) Math.ceil((y1 - y0) / 96f));
+
+        for (int i = 0; i <= pasosX; i++) {
+            for (int j = 0; j <= pasosY; j++) {
+
+                float px = x0 + (x1 - x0) * i / pasosX;
+                float py = y0 + (y1 - y0) * j / pasosY;
+
+                if (!esTierra(px, py)) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    // ==========================================================
+    // UBICACIÓN ALEATORIA DE TEMPLO Y ESTRUCTURA DE RESCATE
+    // ==========================================================
+
+    private float distancia(float x1, float y1, float x2, float y2) {
+
+        float dx = x1 - x2;
+        float dy = y1 - y2;
+
+        return (float) Math.sqrt(dx * dx + dy * dy);
+    }
+
+    // Busca un lugar para el templo. Devuelve true si lo encontró.
+    private boolean buscarLugarTemplo(float margenTierra, float distMinSpawn,
+                                      float borde) {
+
+        float rangoX = ancho - 2f * borde - TEMPLO_ANCHO;
+        float rangoY = alto - 2f * borde - TEMPLO_ALTO;
+
+        if (rangoX <= 0 || rangoY <= 0) {
+            return false;
+        }
+
+        for (int i = 0; i < INTENTOS_UBICACION; i++) {
+
+            float x = borde + random.nextFloat() * rangoX;
+            float y = borde + random.nextFloat() * rangoY;
+
+            float cx = x + TEMPLO_CENTRO_OX;
+            float cy = y + TEMPLO_CENTRO_OY;
+
+            if (distancia(cx, cy, SPAWN_X, SPAWN_Y)
+                    < RADIO_TEMPLO + distMinSpawn) {
+                continue;
+            }
+
+            if (!rectanguloDeTierra(x, y, TEMPLO_ANCHO, TEMPLO_ALTO,
+                                    margenTierra)) {
+                continue;
+            }
+
+            temploX = x;
+            temploY = y;
+            return true;
+        }
+
+        return false;
+    }
+
+    private void ubicarTemploYRescate() {
+
+        // ----- Templo: primero estricto, después cada vez más permisivo -----
+        boolean temploOk =
+                buscarLugarTemplo(MARGEN_TIERRA_TEMPLO, DIST_MIN_SPAWN,
+                                  BORDE_UBICACION)
+                || buscarLugarTemplo(0f, DIST_MIN_SPAWN / 2f, 150f)
+                || buscarLugarTemplo(0f, 0f, 0f);
+
+        // Último recurso: al lado del jugador
+        if (!temploOk) {
+            temploX = SPAWN_X + 300f;
+            temploY = SPAWN_Y + 100f;
+
+            System.out.println(
+                    "AVISO: no se encontro un lugar de pasto para el templo, "
+                    + "se usa la posicion fija.");
+        }
+
+        float temploCx = temploX + TEMPLO_CENTRO_OX;
+        float temploCy = temploY + TEMPLO_CENTRO_OY;
+
+        // ----- Estructura de rescate -----
+        boolean rescateOk = false;
+
+        for (int i = 0; i < INTENTOS_UBICACION && !rescateOk; i++) {
+
+            float cx = BORDE_UBICACION
+                    + random.nextFloat() * (ancho - 2f * BORDE_UBICACION);
+
+            float cy = BORDE_UBICACION
+                    + random.nextFloat() * (alto - 2f * BORDE_UBICACION);
+
+            if (distancia(cx, cy, SPAWN_X, SPAWN_Y)
+                    < RADIO_RESCATE + DIST_MIN_SPAWN) {
+                continue;
+            }
+
+            if (distancia(cx, cy, temploCx, temploCy)
+                    < RADIO_TEMPLO + RADIO_RESCATE + DIST_MIN_ENTRE) {
+                continue;
+            }
+
+            if (!zonaDeTierra(cx, cy, RADIO_RESCATE)) {
+                continue;
+            }
+
+            rescateX = cx - ANCHO_RESCATE / 2f;
+            rescateY = cy - ALTO_RESCATE / 2f;
+            rescateOk = true;
+        }
+
+        if (!rescateOk) {
+            rescateX = ancho * 0.50f;
+            rescateY = alto * 0.50f;
+
+            System.out.println(
+                    "AVISO: no se encontro un lugar para la estructura de "
+                    + "rescate, se usa el centro del mapa.");
+        }
+
+        System.out.println("Templo en: " + (int) temploX + ", " + (int) temploY
+                + " | Rescate en: " + (int) rescateX + ", " + (int) rescateY);
+    }
+
+    public float getTemploX() {
+        return temploX;
+    }
+
+    public float getTemploY() {
+        return temploY;
+    }
+
+    // Principal llama esto justo después de crear el Templo
+    public void setTemploSolido(Templo templo) {
+        this.temploSolido = templo;
+    }
+
+    public EstructuraRescateMundo getEstructuraRescate() {
+        return estructuraRescate;
+    }
+
+    // ==========================================================
+    // CREACIÓN DE RECURSOS
+    // ==========================================================
+
+    // Lugares que nada puede ocupar ni tener pegados
     private void reservarZonas() {
 
         // Estructura de rescate
@@ -403,7 +478,7 @@ private void ubicarTemploYRescate() {
         // Donde aparece el jugador
         ocupados.add(new Ocupado(SPAWN_X, SPAWN_Y, RADIO_SPAWN));
 
-        // Templo que dibuja Principal
+        // Templo
         ocupados.add(new Ocupado(
                 temploX + TEMPLO_CENTRO_OX,
                 temploY + TEMPLO_CENTRO_OY,
@@ -426,38 +501,37 @@ private void ubicarTemploYRescate() {
         return true;
     }
 
-    // Coloca "cantidad" objetos en tierra y con espacio libre alrededor
-
+    // Coloca "cantidad" objetos en tierra y con espacio libre alrededor.
     // permitirPiedra = false: no aparece nada que toque un sector de piedra.
     private int generar(int cantidad, float radio, boolean permitirPiedra,
-                    java.util.function.BiConsumer<Float, Float> fabrica) {
+                        BiConsumer<Float, Float> fabrica) {
 
-    int creados = 0;
-    int intentos = 0;
+        int creados = 0;
+        int intentos = 0;
 
-    while (creados < cantidad && intentos < 10000) {
+        while (creados < cantidad && intentos < 10000) {
 
-        intentos++;
+            intentos++;
 
-        float x = 100 + random.nextFloat() * (ancho - 200);
-        float y = 100 + random.nextFloat() * (alto - 200);
+            float x = 100 + random.nextFloat() * (ancho - 200);
+            float y = 100 + random.nextFloat() * (alto - 200);
 
-        if (!zonaDeTierra(x, y, radio + MARGEN_AGUA)
-                || !hayEspacio(x, y, radio)) {
-            continue;
+            if (!zonaDeTierra(x, y, radio + MARGEN_AGUA)
+                    || !hayEspacio(x, y, radio)) {
+                continue;
+            }
+
+            if (!permitirPiedra && hayPiedraEnZona(x, y, radio)) {
+                continue;
+            }
+
+            fabrica.accept(x, y);
+            ocupados.add(new Ocupado(x, y, radio));
+            creados++;
         }
 
-        if (!permitirPiedra && hayPiedraEnZona(x, y, radio)) {
-            continue;
-        }
-
-        fabrica.accept(x, y);
-        ocupados.add(new Ocupado(x, y, radio));
-        creados++;
+        return creados;
     }
-
-    return creados;
-}
 
     private void crearArboles() {
 
@@ -506,16 +580,11 @@ private void ubicarTemploYRescate() {
 
         System.out.println("Total de arbustos de bayas creados: " + n);
     }
-    
 
     // ==========================================================
     // HITBOXES DE RECURSOS Y ESTRUCTURAS
     // ==========================================================
 
-    /*
-     * Se construyen las hitboxes a partir de las posiciones
-     * disponibles en las clases de recursos.
-     */
     private Rectangle hitboxPlanta(planta p) {
         return new Rectangle(
                 p.getPosicionX(),
@@ -540,113 +609,142 @@ private void ubicarTemploYRescate() {
                 ALTO_RESCATE);
     }
 
-    /*
-     * Comprueba varios puntos de la hitbox contra la zona del
-     * templo. Esto evita depender de métodos de colisión que
-     * LugarEspecial no expone.
-     */
-    private boolean colisionaConTemplo(Rectangle hitbox) {
+    // ==========================================================
+    // COLISIONES (jugador, criaturas y construcción)
+    // ==========================================================
 
-        float izquierda = hitbox.x;
-        float derecha = hitbox.x + hitbox.width;
-        float abajo = hitbox.y;
-        float arriba = hitbox.y + hitbox.height;
-        float centroX = hitbox.x + hitbox.width / 2f;
-        float centroY = hitbox.y + hitbox.height / 2f;
+    // ¿Está lejos este objeto como para ni mirar su hitbox?
+    private boolean lejos(Rectangle h, float objetoX, float objetoY) {
 
-        return estaEnTemplo(izquierda, abajo)
-                || estaEnTemplo(derecha, abajo)
-                || estaEnTemplo(izquierda, arriba)
-                || estaEnTemplo(derecha, arriba)
-                || estaEnTemplo(centroX, centroY)
-                || estaEnTemplo(centroX, abajo)
-                || estaEnTemplo(centroX, arriba)
-                || estaEnTemplo(izquierda, centroY)
-                || estaEnTemplo(derecha, centroY);
+        float dx = objetoX - (h.x + h.width / 2f);
+        float dy = objetoY - (h.y + h.height / 2f);
+
+        return dx * dx + dy * dy > RADIO_BUSQUEDA * RADIO_BUSQUEDA;
+    }
+
+    private boolean hayObstaculo(Rectangle hitbox) {
+
+        for (arbol a : arboles) {
+            if (!a.estaTalado()
+                    && !lejos(hitbox, a.getPosicionX(), a.getPosicionY())
+                    && hitbox.overlaps(a.getHitbox())) {
+                return true;
+            }
+        }
+
+        for (roca r : rocas) {
+            if (!lejos(hitbox, r.getPosicionX(), r.getPosicionY())
+                    && hitbox.overlaps(r.getHitbox())) {
+                return true;
+            }
+        }
+
+        for (planta p : plantas) {
+            if (!p.estaAgotada()
+                    && !lejos(hitbox, p.getPosicionX(), p.getPosicionY())
+                    && hitbox.overlaps(hitboxPlanta(p))) {
+                return true;
+            }
+        }
+
+        // Los arbustos ocupan espacio tengan bayas o no
+        for (arbustoBayas arbusto : arbustosBayas) {
+            if (!lejos(hitbox, arbusto.getPosicionX(), arbusto.getPosicionY())
+                    && hitbox.overlaps(hitboxArbusto(arbusto))) {
+                return true;
+            }
+        }
+
+        if (hitbox.overlaps(hitboxRescate())) {
+            return true;
+        }
+
+        // Misma pared que usa el jugador: deja libre la puerta
+        if (temploSolido != null && temploSolido.colisiona(hitbox)) {
+            return true;
+        }
+
+        for (Estructura estructura : estructurasConstruidas) {
+            if (hitbox.overlaps(estructura.getHitbox())) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public boolean puedeCaminar(Rectangle hitbox) {
+
+        if (hitbox == null) {
+            return false;
+        }
+
+        // Dentro de los límites del mapa
+        if (hitbox.x < 0 || hitbox.y < 0
+                || hitbox.x + hitbox.width > ancho
+                || hitbox.y + hitbox.height > alto) {
+            return false;
+        }
+
+        // Las cuatro esquinas sobre suelo
+        if (!esTierra(hitbox.x, hitbox.y)
+                || !esTierra(hitbox.x + hitbox.width, hitbox.y)
+                || !esTierra(hitbox.x, hitbox.y + hitbox.height)
+                || !esTierra(hitbox.x + hitbox.width,
+                             hitbox.y + hitbox.height)) {
+            return false;
+        }
+
+        return !hayObstaculo(hitbox);
+    }
+
+    // Busca en espiral la posición libre más cercana (esquina del sprite de 64 px)
+    public float[] buscarPosicionLibre(float x, float y) {
+
+        final float paso = 16f;
+
+        for (int radio = 0; radio <= 40; radio++) {
+            for (int dx = -radio; dx <= radio; dx++) {
+                for (int dy = -radio; dy <= radio; dy++) {
+
+                    if (Math.max(Math.abs(dx), Math.abs(dy)) != radio) {
+                        continue;
+                    }
+
+                    float px = x + dx * paso;
+                    float py = y + dy * paso;
+
+                    Rectangle pies = new Rectangle(
+                            px + 20f, py, 24f, 12f);
+
+                    if (puedeCaminar(pies)) {
+                        return new float[] { px, py };
+                    }
+                }
+            }
+        }
+
+        return new float[] { x, y };
     }
 
     // ==========================================================
     // CONSTRUCCIÓN
     // ==========================================================
 
-    // Solo se comprueban los objetos que estén a menos de esta distancia
-	private static final float RADIO_BUSQUEDA = 250f;
-	
-	public boolean puedeColocarEstructura(Estructura nueva) {
-	
-	    if (nueva == null) {
-	        return false;
-	    }
-	
-	    Rectangle hitbox = nueva.getHitbox();
-	
-	    if (hitbox == null) {
-	        return false;
-	    }
-	
-	    return puedeCaminar(hitbox);
-	}
+    public boolean puedeColocarEstructura(Estructura nueva) {
 
-	
-
-// ¿Está lejos este objeto como para ni mirar su hitbox?
-private boolean lejos(Rectangle h, float objetoX, float objetoY) {
-
-    float dx = objetoX - (h.x + h.width / 2f);
-    float dy = objetoY - (h.y + h.height / 2f);
-
-    return dx * dx + dy * dy > RADIO_BUSQUEDA * RADIO_BUSQUEDA;
-}
-
-private boolean hayObstaculo(Rectangle hitbox) {
-
-    for (arbol a : arboles) {
-        if (!a.estaTalado()
-                && !lejos(hitbox, a.getPosicionX(), a.getPosicionY())
-                && hitbox.overlaps(a.getHitbox())) {
-            return true;
+        if (nueva == null) {
+            return false;
         }
-    }
 
-    for (roca r : rocas) {
-        if (!lejos(hitbox, r.getPosicionX(), r.getPosicionY())
-                && hitbox.overlaps(r.getHitbox())) {
-            return true;
+        Rectangle hitbox = nueva.getHitbox();
+
+        if (hitbox == null) {
+            return false;
         }
-    }
 
-    for (planta p : plantas) {
-        if (!p.estaAgotada()
-                && !lejos(hitbox, p.getPosicionX(), p.getPosicionY())
-                && hitbox.overlaps(hitboxPlanta(p))) {
-            return true;
-        }
+        return puedeCaminar(hitbox);
     }
-
-    // Los arbustos ocupan espacio tengan bayas o no
-    for (arbustoBayas arbusto : arbustosBayas) {
-        if (!lejos(hitbox, arbusto.getPosicionX(), arbusto.getPosicionY())
-                && hitbox.overlaps(hitboxArbusto(arbusto))) {
-            return true;
-        }
-    }
-
-    if (hitbox.overlaps(hitboxRescate())) {
-        return true;
-    }
-
-    if (colisionaConTemplo(hitbox)) {
-        return true;
-    }
-
-    for (Estructura estructura : estructurasConstruidas) {
-        if (hitbox.overlaps(estructura.getHitbox())) {
-            return true;
-        }
-    }
-
-    return false;
-}
 
     public boolean agregarEstructura(Estructura nueva) {
 
@@ -702,146 +800,42 @@ private boolean hayObstaculo(Rectangle hitbox) {
         }
     }
 
-    // ==========================================================
-    // COMPROBAR PASTO
-    // ==========================================================
+    public Fogata obtenerFogataEncendidaCercana(
+            float x, float y, float distanciaMaxima) {
 
-    private boolean esTierra(float x, float y) {
+        Fogata cercana = null;
+        float distanciaMenor = distanciaMaxima;
 
-        // Fuera del mapa por abajo o por la izquierda (evita el redondeo a tile 0)
-        if (x < 0 || y < 0) {
-            return false;
-        }
+        for (Estructura estructura : estructurasConstruidas) {
 
-        // Seguridad: si todavía no se cargaron las capas, se cargan acá
-        if (tileAnchoMapa <= 0 || tileAltoMapa <= 0) {
-            prepararCapas();
-        }
+            if (!(estructura instanceof Fogata)) {
+                continue;
+            }
 
-        int tileX = (int) (x / tileAnchoMapa);
-        int tileY = (int) (y / tileAltoMapa);
+            Fogata fogata = (Fogata) estructura;
 
-        return hayCelda(capaPasto, tileX, tileY)
-                || hayCelda(capaPasto2, tileX, tileY);
-    }
+            if (!fogata.estaEncendida()) {
+                continue;
+            }
 
-    private boolean hayCelda(TiledMapTileLayer capa, int tileX, int tileY) {
+            float centroX = fogata.getX() + fogata.getAncho() / 2f;
+            float centroY = fogata.getY() + fogata.getAlto() / 2f;
 
-        if (capa == null) {
-            return false;
-        }
+            float d = distancia(x, y, centroX, centroY);
 
-        TiledMapTileLayer.Cell celda = capa.getCell(tileX, tileY);
-
-        return celda != null && celda.getTile() != null;
-    }
-    
- // ¿Hay suelo de piedra en este punto?
-    private boolean esPiedra(float x, float y) {
-
-        if (capasPiedra.isEmpty() || x < 0 || y < 0) {
-            return false;
-        }
-
-        int tileX = (int) (x / tileAnchoMapa);
-        int tileY = (int) (y / tileAltoMapa);
-
-        for (TiledMapTileLayer capa : capasPiedra) {
-
-            if (hayCelda(capa, tileX, tileY)) {
-                return true;
+            if (d < distanciaMenor) {
+                distanciaMenor = d;
+                cercana = fogata;
             }
         }
 
-        return false;
+        return cercana;
     }
 
-    // ¿Hay piedra en alguna parte del círculo (centro, mitad del radio y borde)?
-    private boolean hayPiedraEnZona(float cx, float cy, float radio) {
+    public boolean hayFogataEncendidaCerca(
+            float x, float y, float distanciaMaxima) {
 
-        if (capasPiedra.isEmpty()) {
-            return false;
-        }
-
-        if (esPiedra(cx, cy)) {
-            return true;
-        }
-
-        for (int grado = 0; grado < 360; grado += 20) {
-
-            float rad = (float) Math.toRadians(grado);
-            float cos = (float) Math.cos(rad);
-            float sin = (float) Math.sin(rad);
-
-            if (esPiedra(cx + cos * radio, cy + sin * radio)
-                    || esPiedra(cx + cos * radio * 0.5f,
-                                cy + sin * radio * 0.5f)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    // ==========================================================
-    // COLISIONES DEL JUGADOR
-    // ==========================================================
-
-    public boolean puedeCaminar(Rectangle hitbox) {
-
-	    if (hitbox == null) {
-	        return false;
-	    }
-
-	    // Dentro de los límites del mapa
-	    if (hitbox.x < 0 || hitbox.y < 0
-	            || hitbox.x + hitbox.width > ancho
-	            || hitbox.y + hitbox.height > alto) {
-	        return false;
-	    }
-
-	    // Las cuatro esquinas sobre pasto
-	    if (!esTierra(hitbox.x, hitbox.y)
-	            || !esTierra(hitbox.x + hitbox.width, hitbox.y)
-	            || !esTierra(hitbox.x, hitbox.y + hitbox.height)
-	            || !esTierra(hitbox.x + hitbox.width,
-	                         hitbox.y + hitbox.height)) {
-	        return false;
-	    }
-
-	    return !hayObstaculo(hitbox);
-	}
-
-    // ==========================================================
-    // BUSCAR POSICIÓN LIBRE
-    // ==========================================================
-
-    public float[] buscarPosicionLibre(float x, float y) {
-
-        final float paso = 16f;
-
-        for (int radio = 0; radio <= 40; radio++) {
-            for (int dx = -radio; dx <= radio; dx++) {
-                for (int dy = -radio; dy <= radio; dy++) {
-
-                    if (Math.max(Math.abs(dx), Math.abs(dy)) != radio) {
-                        continue;
-                    }
-
-                    float px = x + dx * paso;
-                    float py = y + dy * paso;
-
-                    Rectangle pies = new Rectangle(
-                            px + 20f, py, 24f, 12f);
-
-                    if (puedeCaminar(pies)) {
-                        return new float[] { px, py };
-                    }
-                }
-            }
-        }
-
-        return new float[] { x, y };
+        return obtenerFogataEncendidaCercana(x, y, distanciaMaxima) != null;
     }
 
     // ==========================================================
@@ -853,17 +847,6 @@ private boolean hayObstaculo(Rectangle hitbox) {
         if (mapRenderer != null) {
             mapRenderer.setView(camara);
             mapRenderer.render();
-        }
-    }
-
-    // ==========================================================
-    // ACTUALIZAR ARBUSTOS
-    // ==========================================================
-
-    public void actualizarArbustosBayas(float delta) {
-
-        for (arbustoBayas arbusto : arbustosBayas) {
-            arbusto.actualizar(delta);
         }
     }
 
@@ -925,63 +908,21 @@ private boolean hayObstaculo(Rectangle hitbox) {
         float distanciaMenor = distanciaMaxima;
 
         for (arbol actual : arboles) {
+
             if (actual.estaTalado()) {
                 continue;
             }
 
-            float dx = jugadorX - actual.getPosicionX();
-            float dy = jugadorY - actual.getPosicionY();
-            float distancia = (float) Math.sqrt(dx * dx + dy * dy);
+            float d = distancia(jugadorX, jugadorY,
+                    actual.getPosicionX(), actual.getPosicionY());
 
-            if (distancia <= distanciaMenor) {
-                distanciaMenor = distancia;
+            if (d <= distanciaMenor) {
+                distanciaMenor = d;
                 cercano = actual;
             }
         }
 
         return cercano;
-    }
-    
-    public Fogata obtenerFogataEncendidaCercana(
-            float x, float y, float distanciaMaxima) {
-
-        Fogata cercana = null;
-        float distanciaMenor = distanciaMaxima;
-
-        for (Estructura estructura : estructurasConstruidas) {
-
-            if (!(estructura instanceof Fogata)) {
-                continue;
-            }
-
-            Fogata fogata = (Fogata) estructura;
-
-            if (!fogata.estaEncendida()) {
-                continue;
-            }
-
-            float centroX = fogata.getX() + fogata.getAncho() / 2f;
-            float centroY = fogata.getY() + fogata.getAlto() / 2f;
-
-            float dx = x - centroX;
-            float dy = y - centroY;
-
-            float distancia = (float) Math.sqrt(dx * dx + dy * dy);
-
-            if (distancia < distanciaMenor) {
-                distanciaMenor = distancia;
-                cercana = fogata;
-            }
-        }
-
-        return cercana;
-    }
-
-    public boolean hayFogataEncendidaCerca(
-            float x, float y, float distanciaMaxima) {
-
-        return obtenerFogataEncendidaCercana(
-                x, y, distanciaMaxima) != null;
     }
 
     // ==========================================================
@@ -1007,12 +948,12 @@ private boolean hayObstaculo(Rectangle hitbox) {
         float distanciaMenor = distanciaMaxima;
 
         for (roca actual : rocas) {
-            float dx = jugadorX - actual.getPosicionX();
-            float dy = jugadorY - actual.getPosicionY();
-            float distancia = (float) Math.sqrt(dx * dx + dy * dy);
 
-            if (distancia <= distanciaMenor) {
-                distanciaMenor = distancia;
+            float d = distancia(jugadorX, jugadorY,
+                    actual.getPosicionX(), actual.getPosicionY());
+
+            if (d <= distanciaMenor) {
+                distanciaMenor = d;
                 cercana = actual;
             }
         }
@@ -1043,16 +984,16 @@ private boolean hayObstaculo(Rectangle hitbox) {
         float distanciaMenor = distanciaMaxima;
 
         for (planta actual : plantas) {
+
             if (actual.estaAgotada()) {
                 continue;
             }
 
-            float dx = jugadorX - actual.getPosicionX();
-            float dy = jugadorY - actual.getPosicionY();
-            float distancia = (float) Math.sqrt(dx * dx + dy * dy);
+            float d = distancia(jugadorX, jugadorY,
+                    actual.getPosicionX(), actual.getPosicionY());
 
-            if (distancia <= distanciaMenor) {
-                distanciaMenor = distancia;
+            if (d <= distanciaMenor) {
+                distanciaMenor = d;
                 cercana = actual;
             }
         }
@@ -1075,77 +1016,22 @@ private boolean hayObstaculo(Rectangle hitbox) {
         float distanciaMenor = distanciaMaxima;
 
         for (arbustoBayas arbusto : arbustosBayas) {
+
             if (!arbusto.tieneBayas()) {
                 continue;
             }
 
-            float dx = jugadorX - arbusto.getPosicionX();
-            float dy = jugadorY - arbusto.getPosicionY();
-            float distancia = (float) Math.sqrt(dx * dx + dy * dy);
+            float d = distancia(jugadorX, jugadorY,
+                    arbusto.getPosicionX(), arbusto.getPosicionY());
 
-            if (distancia <= distanciaMenor) {
-                distanciaMenor = distancia;
+            if (d <= distanciaMenor) {
+                distanciaMenor = d;
                 cercano = arbusto;
             }
         }
 
         return cercano;
     }
-    
-   
-    // Carga las capas de pasto y de piedra y el tamaño de tile una sola vez
-	private void prepararCapas() {
-	
-	    tileAnchoMapa = tiledMap.getProperties()
-	            .get("tilewidth", Integer.class);
-	
-	    tileAltoMapa = tiledMap.getProperties()
-	            .get("tileheight", Integer.class);
-	
-	    capaPasto = (TiledMapTileLayer) tiledMap.getLayers().get("pasto");
-	    capaPasto2 = (TiledMapTileLayer) tiledMap.getLayers().get("pasto 2");
-	
-	    capasPiedra.clear();
-	
-	    StringBuilder nombres = new StringBuilder();
-	
-	    for (MapLayer capa : tiledMap.getLayers()) {
-	
-	        nombres.append("\"").append(capa.getName()).append("\" ");
-	
-	        if (!(capa instanceof TiledMapTileLayer)
-	                || capa == capaPasto
-	                || capa == capaPasto2) {
-	            continue;
-	        }
-	
-	        String nombre = capa.getName() == null
-	                ? "" : capa.getName().toLowerCase();
-	
-	        for (String palabra : PALABRAS_PIEDRA) {
-	
-	            if (nombre.contains(palabra)) {
-	                capasPiedra.add((TiledMapTileLayer) capa);
-	                break;
-	            }
-	        }
-	    }
-	
-	    System.out.println("Capas del mapa: " + nombres);
-	
-	    if (capasPiedra.isEmpty()) {
-	
-	        System.out.println(
-	                "AVISO: no se detecto ninguna capa de piedra. "
-	                + "Cambia PALABRAS_PIEDRA por parte del nombre de la capa.");
-	
-	    } else {
-	
-	        System.out.println(
-	                "Capas de piedra detectadas: " + capasPiedra.size());
-	    }
-	}
-    
 
     // ==========================================================
     // LIBERAR RECURSOS
@@ -1153,41 +1039,34 @@ private boolean hayObstaculo(Rectangle hitbox) {
 
     public void dispose() {
 
-        if (arboles != null) {
-            for (arbol a : arboles) {
-                a.dispose();
-            }
+        for (arbol a : arboles) {
+            a.dispose();
         }
 
-        if (rocas != null) {
-            for (roca r : rocas) {
-                r.dispose();
-            }
+        for (roca r : rocas) {
+            r.dispose();
         }
 
-        if (plantas != null) {
-            for (planta p : plantas) {
-                p.dispose();
-            }
+        for (planta p : plantas) {
+            p.dispose();
         }
 
-        if (arbustosBayas != null) {
-            for (arbustoBayas arbusto : arbustosBayas) {
-                arbusto.dispose();
-            }
+        for (arbustoBayas arbusto : arbustosBayas) {
+            arbusto.dispose();
         }
 
         if (estructuraRescate != null) {
             estructuraRescate.dispose();
         }
 
-        if (estructurasConstruidas != null) {
-            for (Estructura estructura : estructurasConstruidas) {
-                estructura.dispose();
-            }
-
-            estructurasConstruidas.clear();
+        for (Estructura estructura : estructurasConstruidas) {
+            estructura.dispose();
         }
+
+        estructurasConstruidas.clear();
+
+        // El Templo lo libera Principal, no el mapa
+        temploSolido = null;
 
         if (mapRenderer != null) {
             mapRenderer.dispose();
@@ -1197,7 +1076,4 @@ private boolean hayObstaculo(Rectangle hitbox) {
             tiledMap.dispose();
         }
     }
-    
-    
-    
 }

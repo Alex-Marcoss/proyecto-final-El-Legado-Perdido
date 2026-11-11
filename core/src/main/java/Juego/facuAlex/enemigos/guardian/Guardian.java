@@ -78,7 +78,7 @@ public class Guardian extends Enemigo {
     // TIEMPOS
     // =====================================================
 
-    private static final float TIEMPO_PREPARACION = 0.8f;
+    private static final float TIEMPO_PREPARACION = 0.7f;
 
     private static final float TIEMPO_IMPACTO = 0.2f;
 
@@ -89,7 +89,7 @@ public class Guardian extends Enemigo {
 
     // El rayo horizontal solo se usa si el jugador está a su izquierda o derecha:
     // la diferencia de altura (Y) tiene que ser menor que esto
-    private static final float TOLERANCIA_ALINEACION = 45f;
+    private static final float TOLERANCIA_ALINEACION = 30f;
 
     private float tiempoEstado;
 
@@ -127,7 +127,7 @@ public class Guardian extends Enemigo {
 
         distanciaAtaque = 90f;
 
-        tiempoEntreAtaques = 1.5f;
+        tiempoEntreAtaques = 1f;
 
         tiempoAtaque = 0f;
 

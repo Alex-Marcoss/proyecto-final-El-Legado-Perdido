@@ -51,7 +51,7 @@ public class JugadorControl {
     // VELOCIDADES
     // ======================================================
     
-    float velocidadCaminar = 100f;
+    float velocidadCaminar = 300f;
 
     float velocidadCorrer = 170f;
 

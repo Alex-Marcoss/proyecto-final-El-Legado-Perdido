@@ -14,7 +14,7 @@ public class Lobo extends CriaturaHostil {
             12,                  // daño
             crearAnimacion(),
             1f,                  // escala de dibujo
-            95f,                 // velocidad
+            105f,                 // velocidad
             300f,                // distancia de deteccion
             40f,                 // distancia de ataque
             1.2f                 // segundos entre ataques
