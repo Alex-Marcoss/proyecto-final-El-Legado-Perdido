@@ -166,3 +166,6 @@
 - Se Actualizo el ciclo dia y noche para que dure un poco mas cada hora
 - Se arreglaron problemas en el mapa con la aparicion de recursos y colisiones
 
+## [Nuevos avances y mejoras] 2026-11-12
+- Se agrego el logo del juego.
+- Se agrego la opcion de ver los controles en la pantalla de pausa.
