@@ -38,7 +38,8 @@ public class MenuInicio {
 
     // Lista de controles: { "acción", "tecla" }
  // Lista de controles: { "acción", "tecla" }
-    private static final String[][] CONTROLES = {
+    // (pública: la pantalla de pausa muestra esta misma lista)
+    public static final String[][] CONTROLES = {
             { "Moverse", "W  A  S  D" },
             { "Correr", "SHIFT" },
             { "Interactuar/ talar / minar / recolectar ", "E" },
@@ -48,9 +49,11 @@ public class MenuInicio {
             { "Abrir / cerrar Recetas", "C" },
             { "Elegir slot de la barra", "1 a 9 / RUEDA" },
             { "Mover objetos", "ARRASTRAR CON CLICK" },
+            { "Dividir stack (mitad / 1 unidad)", "SHIFT / CTRL + ARRASTRAR" },
             { "Usar item (armadura / vendaje)", "CLICK DERECHO" },
             { "Modo construcción", "P" },
-            { "Equipar herramienta", "ELEGIRLA EN LA BARRA" }
+            { "Equipar herramienta", "ELEGIRLA EN LA BARRA" },
+            { "Pausa", "ESC" }
     };
 
     // =====================================================
